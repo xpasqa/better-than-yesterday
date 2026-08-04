@@ -3,6 +3,7 @@ import {
   ArrowRightIcon, ArrowsClockwiseIcon, BookOpenIcon, BracketsCurlyIcon,
   BugIcon, CaretRightIcon, PaperPlaneTiltIcon, SparkleIcon,
 } from '@phosphor-icons/react'
+import AgentResult from './AgentResult'
 import './AgentView.css'
 
 interface Category {
@@ -48,11 +49,31 @@ const capabilities = ['Plans the work', 'Writes the code', 'Shows every diff']
 
 export default function AgentView() {
   const [prompt, setPrompt] = useState('')
+  const [submitted, setSubmitted] = useState<{ prompt: string; time: string } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const applyExample = (example: string) => {
     setPrompt(example)
     textareaRef.current?.focus()
+  }
+
+  const submit = () => {
+    const trimmed = prompt.trim()
+    if (!trimmed) return
+    setSubmitted({
+      prompt: trimmed,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    })
+  }
+
+  if (submitted) {
+    return (
+      <AgentResult
+        prompt={submitted.prompt}
+        time={submitted.time}
+        onBack={() => { setSubmitted(null); setPrompt('') }}
+      />
+    )
   }
 
   return (
@@ -85,12 +106,15 @@ export default function AgentView() {
             placeholder="e.g. Add a dark mode toggle to the sidebar…"
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
+            }}
             rows={1}
           />
           <button
             className="agent-view__submit-btn"
-            disabled
-            title="Demo only — not wired to a real agent"
+            onClick={submit}
+            disabled={!prompt.trim()}
             aria-label="Run"
             type="button"
           >
