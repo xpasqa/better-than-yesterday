@@ -1,6 +1,6 @@
 export type Priority = 1 | 2 | 3 | 4
 
-export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline'
+export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline' | 'storage'
 
 export interface OutlineNode {
   id: string
@@ -44,4 +44,21 @@ export interface Section {
   name: string
   projectId: string
   tasks: Task[]
+}
+
+export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'
+
+export interface StorageFolder {
+  id: string
+  name: string
+  parentId: string | null
+}
+
+export interface StorageFile {
+  id: string
+  name: string
+  parentId: string | null
+  type: StorageFileType
+  size: string
+  modifiedAt: string
 }

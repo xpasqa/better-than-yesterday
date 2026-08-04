@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChartLineUpIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SquaresFourIcon, TrayIcon,
 } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
@@ -126,9 +126,13 @@ export default function Sidebar({
             </button>
           </li>
           <li>
-            <button className="sidebar__nav-item" type="button">
-              <span className="sidebar__nav-icon"><ChartLineUpIcon size={18} /></span>
-              <span className="sidebar__nav-label">Reporting</span>
+            <button
+              className={`sidebar__nav-item ${activeView === 'storage' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('storage')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><FolderIcon size={18} /></span>
+              <span className="sidebar__nav-label">Storage</span>
             </button>
           </li>
           <li>

@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
 import TaskDetailModal from './components/TaskDetailModal'
 import OutlineView from './components/OutlineView'
+import StorageView from './components/StorageView'
 import type { ViewType } from './types'
 import { tasks as initialTasks } from './data/mockData'
 import type { Task } from './types'
@@ -56,6 +57,8 @@ function App() {
       />
       {activeView === 'outline' ? (
         <OutlineView />
+      ) : activeView === 'storage' ? (
+        <StorageView />
       ) : (
         <MainContent
           activeView={activeView}
