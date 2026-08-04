@@ -47,6 +47,18 @@
   position: relative;
 }
 
+/*
+ * WorkFlowy-style guide line. Margin shifts the whole box (border included)
+ * so the border-left lands exactly under the parent's bullet centre:
+ * 16px collapse-toggle + 2px gap + half of the 20px bullet = 28px.
+ * Height falls out of the box model automatically — no pixel math per row.
+ */
+.outline-node__children {
+  margin-left: 28px;
+  padding-left: 6px;
+  border-left: 1.5px solid var(--divider-primary);
+}
+
 .outline-node:hover {
   background: rgba(0, 0, 0, 0.025);
 }
@@ -103,10 +115,10 @@
 }
 
 .outline-node__bullet-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--text-tertiary);
+  background: var(--text-secondary);
   transition: background 0.1s;
   display: block;
 }
@@ -120,7 +132,7 @@
   flex: 1;
   font-size: 14px;
   color: var(--text-primary);
-  line-height: 22px;
+  line-height: 21px;
   padding: 3px 4px;
   border-radius: 3px;
   min-width: 0;

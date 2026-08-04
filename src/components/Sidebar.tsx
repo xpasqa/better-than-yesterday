@@ -141,7 +141,7 @@ export default function Sidebar({
               onClick={() => onViewChange('outline')}
               type="button"
             >
-              <span className="sidebar__nav-icon sidebar__nav-icon--outline"><ListBulletsIcon size={18} /></span>
+              <span className="sidebar__nav-icon"><ListBulletsIcon size={18} /></span>
               <span className="sidebar__nav-label">Outline</span>
             </button>
           </li>

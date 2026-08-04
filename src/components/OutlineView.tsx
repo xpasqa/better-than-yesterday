@@ -77,8 +77,7 @@ function flattenVisible(nodes: OutlineNode[], depth = 0): { node: OutlineNode; d
 // --- Node component ---
 interface OutlineNodeRowProps {
   node: OutlineNode
-  depth: number
-  isFocused: boolean
+  focusedId: string | null
   onFocus: (id: string) => void
   onChange: (id: string, content: string) => void
   onToggleCollapse: (id: string) => void
@@ -89,15 +88,21 @@ interface OutlineNodeRowProps {
   onOutdent: (id: string) => void
   onArrowUp: (id: string) => void
   onArrowDown: (id: string) => void
-  hasChildren: boolean
 }
 
-function OutlineNodeRow({
-  node, depth, isFocused,
-  onFocus, onChange, onToggleCollapse, onToggleComplete,
-  onEnter, onDelete, onIndent, onOutdent, onArrowUp, onArrowDown,
-  hasChildren,
-}: OutlineNodeRowProps) {
+/*
+ * Renders itself, then recurses into its own children inside a wrapper div.
+ * The wrapper's border-left IS the WorkFlowy-style guide line — nesting the
+ * DOM this way means the line's height falls out of the box model for free,
+ * instead of us computing pixel heights from the flattened row count.
+ */
+function OutlineNodeRow(props: OutlineNodeRowProps) {
+  const {
+    node, focusedId, onFocus, onChange, onToggleCollapse, onToggleComplete,
+    onEnter, onDelete, onIndent, onOutdent, onArrowUp, onArrowDown,
+  } = props
+  const hasChildren = node.children.length > 0
+  const isFocused = focusedId === node.id
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -114,49 +119,56 @@ function OutlineNodeRow({
   }
 
   return (
-    <div
-      className={`outline-node ${node.isCompleted ? 'outline-node--completed' : ''}`}
-      style={{ paddingLeft: `${depth * 20 + 4}px` }}
-    >
-      {/* Collapse toggle — only visible when node has children */}
-      <button
-        className={`outline-node__collapse ${hasChildren ? 'outline-node__collapse--visible' : ''}`}
-        onClick={() => hasChildren && onToggleCollapse(node.id)}
-        tabIndex={-1}
-        aria-label={node.isCollapsed ? 'Expand' : 'Collapse'}
-      >
-        <svg
-          width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
-          style={{ transform: node.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+    <div>
+      <div className={`outline-node ${node.isCompleted ? 'outline-node--completed' : ''}`}>
+        {/* Collapse toggle — only visible when node has children */}
+        <button
+          className={`outline-node__collapse ${hasChildren ? 'outline-node__collapse--visible' : ''}`}
+          onClick={() => hasChildren && onToggleCollapse(node.id)}
+          tabIndex={-1}
+          aria-label={node.isCollapsed ? 'Expand' : 'Collapse'}
         >
-          <path d="M2 3l3 4 3-4H2z" />
-        </svg>
-      </button>
+          <svg
+            width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
+            style={{ transform: node.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+          >
+            <path d="M2 3l3 4 3-4H2z" />
+          </svg>
+        </button>
 
-      {/* Bullet */}
-      <button
-        className="outline-node__bullet"
-        onClick={() => onToggleComplete(node.id)}
-        tabIndex={-1}
-        aria-label="Toggle complete"
-      >
-        <span className="outline-node__bullet-dot" />
-      </button>
+        {/* Bullet */}
+        <button
+          className="outline-node__bullet"
+          onClick={() => onToggleComplete(node.id)}
+          tabIndex={-1}
+          aria-label="Toggle complete"
+        >
+          <span className="outline-node__bullet-dot" />
+        </button>
 
-      {/* Content input */}
-      <input
-        ref={inputRef}
-        className="outline-node__input"
-        value={node.content}
-        placeholder="Type something…"
-        onChange={e => onChange(node.id, e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => onFocus(node.id)}
-      />
+        {/* Content input */}
+        <input
+          ref={inputRef}
+          className="outline-node__input"
+          value={node.content}
+          placeholder="Type something…"
+          onChange={e => onChange(node.id, e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => onFocus(node.id)}
+        />
 
-      {/* Child count badge when collapsed */}
-      {node.isCollapsed && hasChildren && (
-        <span className="outline-node__child-count">{node.children.length}</span>
+        {/* Child count badge when collapsed */}
+        {node.isCollapsed && hasChildren && (
+          <span className="outline-node__child-count">{node.children.length}</span>
+        )}
+      </div>
+
+      {hasChildren && !node.isCollapsed && (
+        <div className="outline-node__children">
+          {node.children.map(child => (
+            <OutlineNodeRow key={child.id} {...props} node={child} />
+          ))}
+        </div>
       )}
     </div>
   )
@@ -269,13 +281,11 @@ export default function OutlineView() {
         </div>
 
         <div className="outline-view__body">
-          {flat.map(({ node, depth }) => (
+          {nodes.map(node => (
             <OutlineNodeRow
               key={node.id}
               node={node}
-              depth={depth}
-              isFocused={focusedId === node.id}
-              hasChildren={node.children.length > 0}
+              focusedId={focusedId}
               onFocus={setFocusedId}
               onChange={handleChange}
               onToggleCollapse={handleToggleCollapse}
