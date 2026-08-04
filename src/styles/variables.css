@@ -1,7 +1,7 @@
 /* Todoist Design Tokens - extracted from app.todoist.com */
 :root {
   /* Typography */
-  --font-family: -apple-system, "system-ui", "Segoe UI", "Noto Sans", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-family: 'Better', -apple-system, "system-ui", "Segoe UI", "Noto Sans", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-size-tiny: 8px;
   --font-size-xsmall: 10px;
   --font-size-small: 11px;

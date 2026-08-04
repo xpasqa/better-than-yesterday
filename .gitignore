@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Font source dropbox — served copies live in public/fonts, which are tracked
+better-font
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
