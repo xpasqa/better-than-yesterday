@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CaretDownIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
 import { projects } from '../data/mockData'
 import TaskList from './TaskList'
@@ -35,13 +36,6 @@ function getTodayLabel(): string {
   const weekday = now.toLocaleDateString('en-US', { weekday: 'long' })
   return `${day} ${month} ‧ Today ‧ ${weekday}`
 }
-
-const CheckCircleIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M8 12l3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
 function filterTasks(tasks: Task[], view: ViewType, projectId: string | null): Task[] {
   const today = new Date().toISOString().split('T')[0]
@@ -175,12 +169,11 @@ function CompletedSection({ tasks, onToggleComplete, onDeleteTask }: {
         className="main-content__completed-toggle"
         onClick={() => setExpanded(e => !e)}
       >
-        <svg
-          width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+        <CaretDownIcon
+          size={14}
+          weight="bold"
           style={{ transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}
-        >
-          <path d="M7 10l5 5 5-5z"/>
-        </svg>
+        />
         <span>Completed</span>
         <span className="main-content__section-count">{tasks.length}</span>
       </button>

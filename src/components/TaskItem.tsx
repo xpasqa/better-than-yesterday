@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Task, Priority } from '../types'
 import { projects, labels } from '../data/mockData'
 import './TaskItem.css'
@@ -41,27 +42,7 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
 }
 
 const FlagIcon = ({ priority }: { priority: Priority }) => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill={priorityColors[priority]}>
-    <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
-  </svg>
-)
-
-const CalendarIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
-  </svg>
-)
-
-const MoreIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-  </svg>
-)
-
-const TrashIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>
-  </svg>
+  <PhFlagIcon size={12} weight="fill" color={priorityColors[priority]} />
 )
 
 export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskItemProps) {
@@ -102,7 +83,7 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskI
         <div className="task-item__meta">
           {dueInfo && (
             <span className={`task-item__due ${dueInfo.overdue ? 'task-item__due--overdue' : ''} ${dueInfo.isToday ? 'task-item__due--today' : ''}`}>
-              <CalendarIcon />
+              <CalendarBlankIcon size={12} />
               {dueInfo.text}
             </span>
           )}
@@ -134,7 +115,7 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskI
               onClick={() => setShowMenu(m => !m)}
               aria-label="More options"
             >
-              <MoreIcon />
+              <DotsThreeIcon size={18} weight="bold" />
             </button>
             {showMenu && (
               <div className="task-item__dropdown">
@@ -142,7 +123,7 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskI
                   className="task-item__dropdown-item task-item__dropdown-item--danger"
                   onClick={() => { onDeleteTask(task.id); setShowMenu(false) }}
                 >
-                  <TrashIcon />
+                  <TrashIcon size={16} />
                   Delete task
                 </button>
               </div>
