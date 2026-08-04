@@ -75,12 +75,12 @@
 
 /* Collapse toggle */
 .outline-node__collapse {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
+  border-radius: 4px;
   color: transparent;
   flex-shrink: 0;
   transition: color 0.1s, background 0.1s;
@@ -88,13 +88,14 @@
 }
 
 .outline-node__collapse--visible {
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
+/* Red on hover — same brand accent the bullet dot and add-item icon use */
 .outline-node__collapse--visible:hover {
-  background: rgba(0, 0, 0, 0.07);
-  color: var(--text-secondary);
+  background: rgba(211, 51, 34, 0.08);
+  color: var(--brand-red-idle);
 }
 
 /* Bullet */

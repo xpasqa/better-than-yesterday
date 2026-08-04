@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { CaretDownIcon } from '@phosphor-icons/react'
 import type { OutlineNode } from '../types'
 import './OutlineView.css'
 
@@ -128,12 +129,11 @@ function OutlineNodeRow(props: OutlineNodeRowProps) {
           tabIndex={-1}
           aria-label={node.isCollapsed ? 'Expand' : 'Collapse'}
         >
-          <svg
-            width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
+          <CaretDownIcon
+            size={13}
+            weight="bold"
             style={{ transform: node.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
-          >
-            <path d="M2 3l3 4 3-4H2z" />
-          </svg>
+          />
         </button>
 
         {/* Bullet */}
