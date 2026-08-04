@@ -235,14 +235,18 @@
   margin-top: 16px;
 }
 
-/* Not uppercase and not grey — it reads as a normal dark 13px label */
+/*
+ * Not uppercase and not grey — it reads as a normal dark 13px label.
+ * Padding matches the nav-list inset (12px list + 5px item) so "My Projects"
+ * lines up flush with "Search" / "Personal" below it, not further left.
+ */
 .sidebar__section-header {
   display: flex;
   align-items: center;
   gap: 2px;
   width: 100%;
   height: 36px;
-  padding: 0 4px;
+  padding: 0 17px;
   font-size: var(--font-size-normal);
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
@@ -256,21 +260,9 @@
 }
 
 .sidebar__section-title {
+  flex: 1;
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-}
-
-.sidebar__section-badge {
-  font-size: 10px;
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: #5e5e5e;
-  background: var(--divider-primary);
-  border-radius: 4px;
-  padding: 3px 6px;
-  margin-left: 8px;
-  white-space: nowrap;
 }
 
 /* Collapse chevron sits at the far right of the section header, not the left */

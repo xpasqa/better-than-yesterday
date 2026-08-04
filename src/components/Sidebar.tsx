@@ -220,7 +220,6 @@ export default function Sidebar({
         <div className="sidebar__section">
           <div className="sidebar__section-header">
             <span className="sidebar__section-title">My Projects</span>
-            <span className="sidebar__section-badge">Used: {allProjects.length}/5</span>
             <button
               className="sidebar__section-add"
               title="Add project"
