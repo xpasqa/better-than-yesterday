@@ -4,6 +4,7 @@ import MainContent from './components/MainContent'
 import TaskDetailModal from './components/TaskDetailModal'
 import OutlineView from './components/OutlineView'
 import StorageView from './components/StorageView'
+import AgentView from './components/AgentView'
 import type { ViewType } from './types'
 import { tasks as initialTasks } from './data/mockData'
 import type { Task } from './types'
@@ -59,6 +60,8 @@ function App() {
         <OutlineView />
       ) : activeView === 'storage' ? (
         <StorageView />
+      ) : activeView === 'agent' ? (
+        <AgentView />
       ) : (
         <MainContent
           activeView={activeView}

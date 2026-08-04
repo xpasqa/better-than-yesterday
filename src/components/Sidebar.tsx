@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, FolderIcon,
-  ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SquaresFourIcon, TrayIcon,
+  ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon,
 } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
 import { projects } from '../data/mockData'
@@ -143,6 +143,16 @@ export default function Sidebar({
             >
               <span className="sidebar__nav-icon"><ListBulletsIcon size={18} /></span>
               <span className="sidebar__nav-label">Outline</span>
+            </button>
+          </li>
+          <li>
+            <button
+              className={`sidebar__nav-item ${activeView === 'agent' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('agent')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><SparkleIcon size={18} /></span>
+              <span className="sidebar__nav-label">Agent</span>
             </button>
           </li>
         </ul>
