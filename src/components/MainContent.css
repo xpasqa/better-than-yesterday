@@ -6,29 +6,39 @@
   position: relative;
 }
 
+/* Content column is exactly 800px, centred in whatever space is left */
 .main-content__inner {
-  max-width: 818px;
+  max-width: var(--editor-max-width);
   margin: 0 auto;
-  padding: 32px 55px 100px 55px;
+  padding: 56px 0 100px;
 }
 
 /* Header */
 .main-content__header {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .main-content__title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #202020;
-  line-height: 28px;
+  font-size: var(--font-size-header);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+  line-height: 35px;
 }
 
+/* "5 tasks", not a date — indented to clear the leading check icon */
 .main-content__subtitle {
-  font-size: 13px;
-  color: #999;
-  margin-top: 0;
-  line-height: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-regular);
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 17px;
+}
+
+.main-content__subtitle svg {
+  flex-shrink: 0;
 }
 
 /* Section */
@@ -36,40 +46,43 @@
   margin-bottom: 0;
 }
 
+/*
+ * Section header bleeds 16px wider than the content column (measured 832px vs 800px)
+ * and its label is a full 14px/700 — not a small grey caption.
+ */
 .main-content__section-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-  padding: 10px 0 6px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 0;
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-strong);
+  line-height: 20px;
+  color: var(--text-primary);
+  padding: 0 16px 6px;
+  margin: 0 -16px;
+  border-bottom: 1px solid var(--divider-primary);
+  min-height: 33px;
 }
 
-.main-content__section-header--overdue {
-  color: #db4035;
-}
-
+/* The "Overdue" label itself stays dark; only Reschedule is red */
 .main-content__reschedule-btn {
   margin-left: auto;
-  font-size: 12px;
-  color: #db4035;
-  font-weight: 500;
+  font-size: var(--font-size-normal);
+  color: var(--brand-red-idle);
+  font-weight: var(--font-weight-medium);
   padding: 2px 6px;
   border-radius: 4px;
   transition: background 0.1s;
 }
 
 .main-content__reschedule-btn:hover {
-  background: rgba(219,64,53,0.08);
+  background: rgba(211,51,34,0.08);
 }
 
 .main-content__section-count {
   font-size: 12px;
-  color: #999;
-  font-weight: 400;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
   margin-left: 2px;
 }
 
@@ -79,9 +92,9 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 8px 2px;
-  font-size: 14px;
-  color: #999;
+  padding: 8px 0;
+  font-size: var(--font-size-content);
+  color: var(--text-secondary);
   border-radius: 5px;
   transition: color 0.1s;
   margin-top: 2px;
@@ -90,14 +103,10 @@
 }
 
 .main-content__add-task-btn:hover {
-  color: #db4035;
+  color: var(--brand-red-idle);
 }
 
-.main-content__add-task-btn:hover .main-content__add-task-icon {
-  background: #db4035;
-  color: #fff;
-}
-
+/* The "+" is red at rest, and only fills in on hover */
 .main-content__add-task-icon {
   width: 18px;
   height: 18px;
@@ -108,9 +117,14 @@
   font-size: 20px;
   font-weight: 300;
   line-height: 1;
-  color: #999;
+  color: var(--brand-red-idle);
   transition: background 0.15s, color 0.15s;
   padding-bottom: 1px;
+}
+
+.main-content__add-task-btn:hover .main-content__add-task-icon {
+  background: var(--brand-red-idle);
+  color: #fff;
 }
 
 /* Completed section */

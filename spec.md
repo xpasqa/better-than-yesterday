@@ -235,6 +235,12 @@ Diukur langsung dari `app.todoist.com` yang sudah login, via `getComputedStyle` 
 | Section header | 13px semi-bold | **14px / 700**, line-height 20px |
 | Separator task | `#f0f0f0` | **`#eee`** |
 | Meta text | `#808080` | **`#666`** |
+| Warna ikon nav | Inbox biru, Today hijau, dst | **monokrom `#202020`** — hanya item aktif jadi merah |
+| Teks item aktif | tidak disebut | ikon + label + count semua **`#d33322`** |
+| Chevron section | di kiri | **di kanan** |
+| Tombol "Add task" | tidak disebut | item **paling atas** di nav, merah, 14px/600 |
+| Ikon Today | kalender polos | kalender berisi **angka tanggal hari ini** |
+| Header sidebar | avatar kotak merah + nama workspace | avatar **bulat** + nama user + chevron + **ikon bell** |
 | Project indicator | dot 8px solid | **ikon `#` (hash)** berwarna |
 | Background halaman | main putih | **body `#fcfaf8`**, main `#fff` di atasnya |
 | Top bar | ada, h 44px | **TIDAK ADA** — jangan bikin `TopBar.tsx` |

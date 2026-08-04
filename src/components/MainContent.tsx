@@ -27,10 +27,21 @@ function getViewTitle(view: ViewType, projectId: string | null): string {
   }
 }
 
+/* Todoist renders this as "4 Aug ‧ Today ‧ Tuesday" — U+2027 separators, not "·" */
 function getTodayLabel(): string {
   const now = new Date()
-  return now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  const day = now.getDate()
+  const month = now.toLocaleDateString('en-US', { month: 'short' })
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' })
+  return `${day} ${month} ‧ Today ‧ ${weekday}`
 }
+
+const CheckCircleIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8 12l3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
 function filterTasks(tasks: Task[], view: ViewType, projectId: string | null): Task[] {
   const today = new Date().toISOString().split('T')[0]
@@ -65,6 +76,7 @@ export default function MainContent({
     ? filteredTasks.filter(t => t.dueDate === today && !t.isCompleted)
     : filteredTasks.filter(t => !t.isCompleted)
   const completedTasks = filteredTasks.filter(t => t.isCompleted)
+  const openTaskCount = overdueTasks.length + todayTasks.length
 
   const defaultProjectId = activeView === 'project' && activeProjectId
     ? activeProjectId
@@ -76,15 +88,16 @@ export default function MainContent({
         {/* Header */}
         <div className="main-content__header">
           <h1 className="main-content__title">{title}</h1>
-          {activeView === 'today' && (
-            <p className="main-content__subtitle">{getTodayLabel()}</p>
-          )}
+          <p className="main-content__subtitle">
+            <CheckCircleIcon />
+            {openTaskCount} {openTaskCount === 1 ? 'task' : 'tasks'}
+          </p>
         </div>
 
         {/* Overdue section */}
         {overdueTasks.length > 0 && (
           <div className="main-content__section">
-            <div className="main-content__section-header main-content__section-header--overdue">
+            <div className="main-content__section-header">
               <span>Overdue</span>
               <button className="main-content__reschedule-btn">Reschedule</button>
             </div>

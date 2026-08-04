@@ -11,9 +11,11 @@ html, body, #root {
 
 body {
   font-family: var(--font-family);
-  font-size: var(--font-size-content);
+  /* Todoist's base is 13px; 14px is only the task-title size */
+  font-size: var(--font-size-normal);
   color: var(--text-primary);
-  background: var(--bg-primary);
+  /* Warm base tone — the white main panel sits on top of this */
+  background: var(--bg-sidebar);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

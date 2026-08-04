@@ -113,8 +113,8 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskI
           ))}
           {project && task.projectId !== 'inbox' && (
             <span className="task-item__project">
-              <span className="task-item__project-dot" style={{ background: project.color }} />
               {project.name}
+              <span className="task-item__project-hash" style={{ color: project.color }}>#</span>
             </span>
           )}
         </div>

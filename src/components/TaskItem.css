@@ -1,18 +1,36 @@
+/*
+ * Measured on live Todoist: a 2-line row is exactly 58px tall.
+ * The row bleeds 8px past the 800px content column on each side so the hover
+ * background extends beyond the text, while the border-bottom stays inset.
+ */
 .task-item {
   display: flex;
   align-items: flex-start;
-  gap: 11px;
-  padding: 9px 2px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider-primary);
   position: relative;
   cursor: pointer;
-  border-radius: 5px;
-  transition: background 0.08s;
-  min-height: 38px;
+  min-height: 42px;
 }
 
-.task-item:hover {
+/* Hover fill bleeds 8px wider than the row; the separator above does not */
+.task-item::before {
+  content: '';
+  position: absolute;
+  inset: 0 calc(-1 * var(--task-row-bleed));
+  background: transparent;
+  transition: background 0.08s;
+  pointer-events: none;
+}
+
+.task-item:hover::before {
   background: rgba(0,0,0,0.018);
+}
+
+/* Keep real content above the fill */
+.task-item > * {
+  position: relative;
 }
 
 .task-item:last-child {
@@ -38,11 +56,12 @@
   height: 18px;
   min-width: 18px;
   border-radius: 50%;
-  border: 1.5px solid #d3d3d3;
+  border: 1px solid #d3d3d3;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 2px;
+  /* Circle sits 3px below the row top so it optically centres on the title */
+  margin-top: 3px;
   transition: border-color 0.15s, background 0.15s;
   flex-shrink: 0;
   color: #fff;
@@ -77,7 +96,7 @@
 
 .task-item__description {
   font-size: 12px;
-  color: #808080;
+  color: var(--text-secondary);
   margin-top: 1px;
   line-height: 17px;
   white-space: nowrap;
@@ -87,12 +106,14 @@
 }
 
 /* Meta row */
+/* Meta row: 12px / lh 16px / #666 — measured, sits 5px under the title */
 .task-item__meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 5px;
+  height: 16px;
 }
 
 .task-item__due {
@@ -100,21 +121,23 @@
   align-items: center;
   gap: 3px;
   font-size: 12px;
-  color: #808080;
-  line-height: 1;
+  color: var(--text-secondary);
+  line-height: 16px;
 }
 
 .task-item__due--today {
-  color: #058527;
+  color: var(--color-positive);
 }
 
 .task-item__due--overdue {
-  color: #db4035;
+  /* Overdue reuses the p1 red, not the brand red */
+  color: var(--priority-p1);
+  line-height: 18px;
 }
 
 .task-item__label {
   font-size: 12px;
-  color: #808080;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -123,16 +146,16 @@
 .task-item__project {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 12px;
-  color: #808080;
+  color: var(--text-secondary);
+  line-height: 16px;
   margin-left: auto;
 }
 
-.task-item__project-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.task-item__project-hash {
+  font-size: 13px;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -140,9 +163,9 @@
 .task-item__actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 0;
   opacity: 0;
   transition: opacity 0.1s;
 }
@@ -151,14 +174,15 @@
   opacity: 1;
 }
 
+/* 24px hit targets on a 32px pitch → 8px gap */
 .task-item__action-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #808080;
+  color: var(--text-secondary);
   transition: background 0.1s, color 0.1s;
   cursor: pointer;
 }

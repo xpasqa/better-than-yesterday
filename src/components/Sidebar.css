@@ -1,8 +1,8 @@
 .sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
   height: 100vh;
-  background: #fcfaf8;
+  background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -32,12 +32,13 @@
   flex: 1;
 }
 
+/* Round photo avatar, not a rounded-square initial */
 .sidebar__avatar {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  border-radius: 5px;
-  background: #db4035;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: #4a4a4a;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -48,28 +49,64 @@
 
 .sidebar__workspace-name {
   font-size: 13px;
-  font-weight: 600;
-  color: #202020;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.sidebar__collapse-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
+.sidebar__workspace-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.sidebar__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.sidebar__bell {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius-small);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #808080;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: background 0.1s, opacity 0.15s;
+  color: var(--text-secondary);
+  transition: background 0.1s;
 }
 
-.sidebar:hover .sidebar__collapse-btn {
-  opacity: 1;
+.sidebar__bell:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sidebar__bell-dot {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--meta-orange);
+  border: 1.5px solid var(--bg-sidebar);
+}
+
+.sidebar__collapse-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.1s;
 }
 
 .sidebar__collapse-btn:hover {
@@ -92,7 +129,8 @@
 
 .sidebar__nav-list {
   list-style: none;
-  padding: 0 8px;
+  /* Nav wrapper is 256px inside the 280px sidebar → 12px inset each side */
+  padding: 0 var(--nav-item-inset);
 }
 
 .sidebar__nav-item {
@@ -100,13 +138,14 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 4px 8px;
-  border-radius: 5px;
-  font-size: 13px;
-  color: #444;
+  padding: 5px;
+  border-radius: var(--border-radius-small);
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
   transition: background 0.08s;
   text-align: left;
-  height: 32px;
+  /* 34px rows, no gap between them — that pitch is what reads as "Todoist" */
+  height: var(--nav-item-height);
   cursor: pointer;
 }
 
@@ -115,13 +154,13 @@
 }
 
 .sidebar__nav-item--active {
-  background: rgba(0,0,0,0.07);
-  color: #202020;
-  font-weight: 500;
+  /* Warm peach, not a grey tint */
+  background: var(--bg-selected);
+  color: var(--text-primary);
 }
 
 .sidebar__nav-item--active:hover {
-  background: rgba(0,0,0,0.07);
+  background: var(--bg-selected);
 }
 
 .sidebar__nav-icon {
@@ -133,10 +172,32 @@
   flex-shrink: 0;
 }
 
-.sidebar__nav-icon--inbox svg   { color: #246fe0; }
-.sidebar__nav-icon--today svg   { color: #058527; }
-.sidebar__nav-icon--upcoming svg { color: #692ec2; }
-.sidebar__nav-icon--filters svg { color: #f48318; }
+/*
+ * Nav icons are monochrome and simply inherit the row's colour — they are NOT
+ * tinted per item. Only the active row turns red, icon and label together.
+ */
+.sidebar__nav-item--active,
+.sidebar__nav-item--active .sidebar__nav-icon {
+  color: var(--brand-red-idle);
+}
+
+/* Today's icon carries the current date inside the calendar glyph */
+.sidebar__nav-icon--today {
+  position: relative;
+}
+
+.sidebar__nav-date {
+  position: absolute;
+  top: 52%;
+  left: 0;
+  right: 0;
+  transform: translateY(-42%);
+  text-align: center;
+  font-size: 8px;
+  font-weight: var(--font-weight-strong);
+  line-height: 1;
+  letter-spacing: -0.3px;
+}
 
 .sidebar__nav-label {
   flex: 1;
@@ -148,16 +209,25 @@
 
 .sidebar__nav-count {
   font-size: 12px;
-  color: #808080;
+  color: var(--meta-charcoal);
   font-weight: 400;
 }
 
-.sidebar__project-dot {
-  width: 8px;
-  height: 8px;
-  min-width: 8px;
-  border-radius: 50%;
-  margin-left: 5px;
+.sidebar__nav-item--active .sidebar__nav-count {
+  color: var(--brand-red-idle);
+}
+
+/* Projects use a coloured "#" glyph, not a dot */
+.sidebar__project-hash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 400;
 }
 
 /* Sections */
@@ -165,26 +235,90 @@
   margin-top: 4px;
 }
 
+/* Not uppercase and not grey — it reads as a normal dark 13px label */
 .sidebar__section-header {
   display: flex;
   align-items: center;
   gap: 2px;
   width: 100%;
-  padding: 4px 8px 2px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #808080;
-  letter-spacing: 0.3px;
+  height: 36px;
+  padding: 0 4px;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-small);
   position: relative;
   cursor: pointer;
 }
 
 .sidebar__section-header:hover {
-  color: #444;
+  background: rgba(0,0,0,0.04);
 }
 
-.sidebar__section-header span:nth-child(2) {
-  flex: 1;
+.sidebar__section-title {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.sidebar__section-badge {
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #5e5e5e;
+  background: var(--divider-primary);
+  border-radius: 4px;
+  padding: 3px 6px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+/* Collapse chevron sits at the far right of the section header, not the left */
+.sidebar__section-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.sidebar__section-chevron:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Primary "Add task" action — red, and the first thing in the nav */
+.sidebar__add-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: var(--nav-item-height);
+  padding: 5px;
+  border-radius: var(--border-radius-small);
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-medium);
+  color: var(--brand-red-idle);
+  text-align: left;
+  transition: background 0.08s;
+}
+
+.sidebar__add-task:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar__add-task-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand-red-idle);
+  color: #fff;
+  flex-shrink: 0;
 }
 
 .sidebar__section-add {
