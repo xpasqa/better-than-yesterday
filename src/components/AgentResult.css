@@ -243,3 +243,34 @@
 .agent-result__apply-btn:disabled {
   background: #f4b8b4;
 }
+
+.agent-result__feedback {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 16px;
+}
+
+.agent-result__feedback-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  transition: background 0.1s, color 0.1s;
+}
+
+.agent-result__feedback-btn:disabled {
+  cursor: default;
+}
+
+.agent-result__feedback-btn:not(:disabled):hover {
+  background: var(--bg-highlight);
+  color: var(--text-secondary);
+}
+
+.agent-result__feedback-btn--active {
+  color: var(--brand-red-idle);
+}

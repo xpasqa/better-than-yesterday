@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, FolderIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon,
 } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
@@ -17,6 +17,13 @@ interface SidebarProps {
   onToggleCollapse: () => void
 }
 
+const recentChats = [
+  'Dashboard panel overflow',
+  'Refactor auth flow',
+  'Generate a REST API',
+  'Explain React hooks',
+]
+
 const ChevronDown = ({ open }: { open: boolean }) => (
   <CaretDownIcon
     size={14}
@@ -30,6 +37,7 @@ export default function Sidebar({
   onViewChange, onProjectChange, onToggleCollapse
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
+  const [chatsExpanded, setChatsExpanded] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
   const todayCount = tasks.filter(t => !t.isCompleted && t.dueDate === today).length
@@ -190,6 +198,33 @@ export default function Sidebar({
                     {getProjectTaskCount(project.id) > 0 && (
                       <span className="sidebar__nav-count">{getProjectTaskCount(project.id)}</span>
                     )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Recent Chats — mock list, mirrors the Agent page's conversation history */}
+        <div className="sidebar__section">
+          <div className="sidebar__section-header">
+            <span className="sidebar__section-title">Recent Chats</span>
+            <button
+              className="sidebar__section-chevron"
+              onClick={() => setChatsExpanded(e => !e)}
+              title={chatsExpanded ? 'Collapse' : 'Expand'}
+              type="button"
+            >
+              <ChevronDown open={chatsExpanded} />
+            </button>
+          </div>
+          {chatsExpanded && (
+            <ul className="sidebar__nav-list">
+              {recentChats.map(title => (
+                <li key={title}>
+                  <button className="sidebar__nav-item" onClick={() => onViewChange('agent')} type="button">
+                    <span className="sidebar__nav-icon"><ChatCircleIcon size={18} /></span>
+                    <span className="sidebar__nav-label">{title}</span>
                   </button>
                 </li>
               ))}

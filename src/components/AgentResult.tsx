@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import {
-  ArrowLeftIcon, CheckCircleIcon, CheckIcon, FileCssIcon, SparkleIcon,
+  ArrowClockwiseIcon, ArrowLeftIcon, CheckCircleIcon, CheckIcon, CopyIcon,
+  FileCssIcon, SpeakerHighIcon, SparkleIcon, ThumbsDownIcon, ThumbsUpIcon,
 } from '@phosphor-icons/react'
 import './AgentResult.css'
 
@@ -24,7 +26,19 @@ const diffLines = [
   { type: 'ctx', text: '}' },
 ] as const
 
+const summaryText = 'This is a demo response — nothing here is wired to a real agent. '
+  + 'In a working version, this is where a summary of the actual change would go.'
+
 export default function AgentResult({ prompt, time, onBack }: AgentResultProps) {
+  const [copied, setCopied] = useState(false)
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
+
+  const copySummary = async () => {
+    await navigator.clipboard.writeText(summaryText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <main className="agent-result">
       <div className="agent-result__inner">
@@ -51,11 +65,7 @@ export default function AgentResult({ prompt, time, onBack }: AgentResultProps) 
             <span className="agent-result__meta">{time}</span>
           </div>
 
-          <p className="agent-result__summary">
-            This is a demo response — nothing here is wired to a real agent.
-            In a working version, this is where a summary of the actual
-            change would go.
-          </p>
+          <p className="agent-result__summary">{summaryText}</p>
 
           <ul className="agent-result__checklist">
             {steps.map(step => (
@@ -102,6 +112,51 @@ export default function AgentResult({ prompt, time, onBack }: AgentResultProps) 
               type="button"
             >
               Apply changes
+            </button>
+          </div>
+
+          <div className="agent-result__feedback">
+            <button
+              className="agent-result__feedback-btn"
+              onClick={copySummary}
+              title={copied ? 'Copied' : 'Copy response'}
+              type="button"
+            >
+              <CopyIcon size={15} weight={copied ? 'fill' : 'regular'} />
+            </button>
+            <button
+              className="agent-result__feedback-btn"
+              disabled
+              title="Demo only — not wired to a real agent"
+              aria-label="Read aloud"
+              type="button"
+            >
+              <SpeakerHighIcon size={15} />
+            </button>
+            <button
+              className={`agent-result__feedback-btn ${feedback === 'up' ? 'agent-result__feedback-btn--active' : ''}`}
+              onClick={() => setFeedback(f => f === 'up' ? null : 'up')}
+              aria-label="Good response"
+              type="button"
+            >
+              <ThumbsUpIcon size={15} weight={feedback === 'up' ? 'fill' : 'regular'} />
+            </button>
+            <button
+              className={`agent-result__feedback-btn ${feedback === 'down' ? 'agent-result__feedback-btn--active' : ''}`}
+              onClick={() => setFeedback(f => f === 'down' ? null : 'down')}
+              aria-label="Bad response"
+              type="button"
+            >
+              <ThumbsDownIcon size={15} weight={feedback === 'down' ? 'fill' : 'regular'} />
+            </button>
+            <button
+              className="agent-result__feedback-btn"
+              disabled
+              title="Demo only — not wired to a real agent"
+              aria-label="Retry"
+              type="button"
+            >
+              <ArrowClockwiseIcon size={15} />
             </button>
           </div>
         </div>

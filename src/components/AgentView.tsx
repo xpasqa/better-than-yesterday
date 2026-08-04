@@ -1,61 +1,25 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
-  ArrowRightIcon, ArrowsClockwiseIcon, BookOpenIcon, BracketsCurlyIcon,
-  BugIcon, CaretRightIcon, PaperPlaneTiltIcon, SparkleIcon,
+  CaretDownIcon, MicrophoneIcon, PaperPlaneTiltIcon, PlusIcon, SparkleIcon, WaveformIcon,
 } from '@phosphor-icons/react'
 import AgentResult from './AgentResult'
 import './AgentView.css'
 
-interface Category {
-  id: string
-  icon: typeof BugIcon
-  title: string
-  description: string
-  example: string
+const USER_NAME = 'Pasqa'
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 0 && hour < 5) return `Up late, ${USER_NAME}?`
+  if (hour < 12) return `Good morning, ${USER_NAME}`
+  if (hour < 18) return `Good afternoon, ${USER_NAME}`
+  if (hour < 22) return `Good evening, ${USER_NAME}`
+  return `Up late, ${USER_NAME}?`
 }
-
-const categories: Category[] = [
-  {
-    id: 'build-apis',
-    icon: BracketsCurlyIcon,
-    title: 'Build APIs',
-    description: 'Design typed REST endpoints with validation and auth.',
-    example: 'Add a paginated GET /projects endpoint with validation',
-  },
-  {
-    id: 'fix-bugs',
-    icon: BugIcon,
-    title: 'Fix Bugs',
-    description: 'Trace errors, find root causes, apply safe fixes.',
-    example: 'The sidebar collapse button stops working after a resize',
-  },
-  {
-    id: 'refactor-code',
-    icon: ArrowsClockwiseIcon,
-    title: 'Refactor Code',
-    description: 'Improve structure without changing behavior.',
-    example: 'Split TaskItem into smaller, testable pieces',
-  },
-  {
-    id: 'explain-concepts',
-    icon: BookOpenIcon,
-    title: 'Explain Concepts',
-    description: 'Understand code, patterns, and frameworks.',
-    example: 'Explain how this app manages task state',
-  },
-]
-
-const capabilities = ['Plans the work', 'Writes the code', 'Shows every diff']
 
 export default function AgentView() {
   const [prompt, setPrompt] = useState('')
+  const [mode, setMode] = useState<'chat' | 'cowork'>('chat')
   const [submitted, setSubmitted] = useState<{ prompt: string; time: string } | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  const applyExample = (example: string) => {
-    setPrompt(example)
-    textareaRef.current?.focus()
-  }
 
   const submit = () => {
     const trimmed = prompt.trim()
@@ -78,71 +42,85 @@ export default function AgentView() {
 
   return (
     <main className="agent-view">
-      <div className="agent-view__inner">
-        <span className="agent-view__badge">
-          <SparkleIcon size={12} weight="fill" />
-          Agent
-        </span>
-
-        <h1 className="agent-view__headline">
-          What should we <span className="agent-view__headline-accent">build today?</span>
+      <div className="agent-view__center">
+        <h1 className="agent-view__greeting">
+          <SparkleIcon size={28} weight="fill" className="agent-view__greeting-icon" />
+          {getGreeting()}
         </h1>
-
-        <div className="agent-view__capabilities">
-          {capabilities.map((label, i) => (
-            <span key={label} className="agent-view__capability-group">
-              <span className="agent-view__chip">{label}</span>
-              {i < capabilities.length - 1 && (
-                <CaretRightIcon size={12} className="agent-view__capability-sep" />
-              )}
-            </span>
-          ))}
-        </div>
 
         <div className="agent-view__prompt-card">
           <textarea
-            ref={textareaRef}
             className="agent-view__prompt-input"
-            placeholder="e.g. Add a dark mode toggle to the sidebar…"
+            placeholder="How can I help you today?"
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
             }}
             rows={1}
+            autoFocus
           />
-          <button
-            className="agent-view__submit-btn"
-            onClick={submit}
-            disabled={!prompt.trim()}
-            aria-label="Run"
-            type="button"
-          >
-            <PaperPlaneTiltIcon size={16} weight="fill" />
-          </button>
-        </div>
 
-        <div className="agent-view__grid">
-          {categories.map(cat => {
-            const Icon = cat.icon
-            return (
+          <div className="agent-view__toolbar">
+            <button
+              className="agent-view__tool-btn"
+              disabled
+              title="Demo only — not wired to a real agent"
+              aria-label="Add attachment"
+              type="button"
+            >
+              <PlusIcon size={16} />
+            </button>
+
+            <div className="agent-view__mode-toggle">
               <button
-                key={cat.id}
-                className="agent-view__card"
-                onClick={() => applyExample(cat.example)}
+                className={`agent-view__mode-btn ${mode === 'chat' ? 'agent-view__mode-btn--active' : ''}`}
+                onClick={() => setMode('chat')}
                 type="button"
               >
-                <span className="agent-view__card-icon">
-                  <Icon size={18} />
-                </span>
-                <span className="agent-view__card-body">
-                  <span className="agent-view__card-title">{cat.title}</span>
-                  <span className="agent-view__card-description">{cat.description}</span>
-                </span>
-                <ArrowRightIcon size={16} className="agent-view__card-arrow" />
+                Chat
               </button>
-            )
-          })}
+              <button
+                className={`agent-view__mode-btn ${mode === 'cowork' ? 'agent-view__mode-btn--active' : ''}`}
+                onClick={() => setMode('cowork')}
+                type="button"
+              >
+                Cowork
+              </button>
+            </div>
+
+            <span className="agent-view__toolbar-spacer" />
+
+            <button
+              className="agent-view__model-select"
+              disabled
+              title="Demo only — not wired to a real agent"
+              type="button"
+            >
+              Agent <span className="agent-view__model-tier">High</span>
+              <CaretDownIcon size={11} weight="bold" />
+            </button>
+
+            <button
+              className="agent-view__tool-btn"
+              disabled
+              title="Demo only — not wired to a real agent"
+              aria-label="Voice input"
+              type="button"
+            >
+              <MicrophoneIcon size={16} />
+            </button>
+
+            <button
+              className="agent-view__submit-btn"
+              onClick={submit}
+              disabled={!prompt.trim()}
+              aria-label="Run"
+              type="button"
+            >
+              {prompt.trim() ? <PaperPlaneTiltIcon size={15} weight="fill" /> : <WaveformIcon size={16} />}
+            </button>
+          </div>
         </div>
       </div>
     </main>
