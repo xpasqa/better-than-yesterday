@@ -1,17 +1,20 @@
+/* Anchored near the top and tall, like Todoist's own detail panel — not a
+   small box that centers and shrinks to fit whatever content is in it. */
 .task-modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 5vh;
   z-index: 1000;
 }
 
 .task-modal {
   width: 100%;
   max-width: 800px;
-  max-height: 85vh;
+  height: 88vh;
   background: var(--bg-raised);
   border-radius: 12px;
   box-shadow: var(--shadow-raised-2);
