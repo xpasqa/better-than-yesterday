@@ -116,7 +116,7 @@ function OutlineNodeRow({
   return (
     <div
       className={`outline-node ${node.isCompleted ? 'outline-node--completed' : ''}`}
-      style={{ paddingLeft: `${depth * 24 + 8}px` }}
+      style={{ paddingLeft: `${depth * 20 + 4}px` }}
     >
       {/* Collapse toggle — only visible when node has children */}
       <button
