@@ -2,10 +2,20 @@ import { useState } from 'react'
 import {
   CaretDownIcon, MicrophoneIcon, PaperPlaneTiltIcon, PlusIcon, SparkleIcon, WaveformIcon,
 } from '@phosphor-icons/react'
-import AgentResult from './AgentResult'
+import AgentChat from './AgentChat'
 import './AgentView.css'
 
 const USER_NAME = 'Pasqa'
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'agent'
+  content: string
+  time: string
+}
+
+const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
+  + 'In a working version, this is where an actual answer would go.'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -16,26 +26,38 @@ function getGreeting(): string {
   return `Up late, ${USER_NAME}?`
 }
 
+function generateId() {
+  return Math.random().toString(36).slice(2, 9)
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 export default function AgentView() {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<'chat' | 'cowork'>('chat')
-  const [submitted, setSubmitted] = useState<{ prompt: string; time: string } | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
 
-  const submit = () => {
+  const send = () => {
     const trimmed = prompt.trim()
     if (!trimmed) return
-    setSubmitted({
-      prompt: trimmed,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    })
+    setMessages(prev => [
+      ...prev,
+      { id: generateId(), role: 'user', content: trimmed, time: timeNow() },
+      { id: generateId(), role: 'agent', content: AGENT_REPLY, time: timeNow() },
+    ])
+    setPrompt('')
   }
 
-  if (submitted) {
+  if (messages.length > 0) {
     return (
-      <AgentResult
-        prompt={submitted.prompt}
-        time={submitted.time}
-        onBack={() => { setSubmitted(null); setPrompt('') }}
+      <AgentChat
+        messages={messages}
+        prompt={prompt}
+        onPromptChange={setPrompt}
+        onSend={send}
+        onBack={() => { setMessages([]); setPrompt('') }}
       />
     )
   }
@@ -55,7 +77,7 @@ export default function AgentView() {
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
             }}
             rows={1}
             autoFocus
@@ -113,7 +135,7 @@ export default function AgentView() {
 
             <button
               className="agent-view__submit-btn"
-              onClick={submit}
+              onClick={send}
               disabled={!prompt.trim()}
               aria-label="Run"
               type="button"
