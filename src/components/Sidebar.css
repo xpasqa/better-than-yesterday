@@ -19,8 +19,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px 4px 12px;
-  height: 44px;
+  padding: 14px 12px 6px;
+  height: 52px;
   flex-shrink: 0;
 }
 
@@ -124,7 +124,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 4px 0 16px;
+  padding: 12px 0 16px;
 }
 
 .sidebar__nav-list {
@@ -230,9 +230,9 @@
   font-weight: 400;
 }
 
-/* Sections */
+/* Sections — a clear break separates the nav list from My Projects */
 .sidebar__section {
-  margin-top: 4px;
+  margin-top: 16px;
 }
 
 /* Not uppercase and not grey — it reads as a normal dark 13px label */
@@ -303,6 +303,10 @@
   color: var(--brand-red-idle);
   text-align: left;
   transition: background 0.08s;
+}
+
+.sidebar__add-task {
+  margin-bottom: 4px;
 }
 
 .sidebar__add-task:hover {

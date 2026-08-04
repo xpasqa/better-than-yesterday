@@ -13,9 +13,11 @@ interface SidebarProps {
   onToggleCollapse: () => void
 }
 
+/* All nav glyphs are outlines, matching Todoist's stroked icon set */
 const InboxIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12h-4c0 1.66-1.34 3-3 3s-3-1.34-3-3H5V5h14v10z"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <path d="M4 5.5h16v9a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-9z" strokeLinejoin="round" />
+    <path d="M4 13h4a4 4 0 0 0 8 0h4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -27,36 +29,53 @@ const TodayIcon = () => (
   </svg>
 )
 
+/* Calendar frame filled with a grid of dots */
 const UpcomingIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <rect x="3" y="5" width="18" height="16" rx="2.5" />
+    <line x1="3" y1="9.5" x2="21" y2="9.5" />
+    <g fill="currentColor" stroke="none">
+      <circle cx="7.5" cy="13" r="1" />
+      <circle cx="12" cy="13" r="1" />
+      <circle cx="16.5" cy="13" r="1" />
+      <circle cx="7.5" cy="17" r="1" />
+      <circle cx="12" cy="17" r="1" />
+      <circle cx="16.5" cy="17" r="1" />
+    </g>
   </svg>
 )
 
+/* Four rounded squares, not a funnel */
 const FiltersIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39A.998.998 0 0 0 18.95 4H5.04a1 1 0 0 0-.79 1.61z"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.8" />
+    <rect x="13.5" y="3.5" width="7" height="7" rx="1.8" />
+    <rect x="3.5" y="13.5" width="7" height="7" rx="1.8" />
+    <rect x="13.5" y="13.5" width="7" height="7" rx="1.8" />
   </svg>
 )
 
 const SearchIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <line x1="15.5" y1="15.5" x2="20.5" y2="20.5" strokeLinecap="round" />
   </svg>
 )
 
+/* Trend line inside a framed card */
 const ReportingIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <path d="M6.5 14.5l3-3.5 2.5 2.5 2.5-4 3 3.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
 const ChevronDown = ({ open }: { open: boolean }) => (
   <svg
-    width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+    width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}
   >
-    <path d="M7 10l5 5 5-5z"/>
+    <path d="M6 9.5l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -82,8 +101,8 @@ const BellIcon = () => (
 )
 
 const SmallChevron = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 10l5 5 5-5z"/>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M6 9.5l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -92,13 +111,11 @@ export default function Sidebar({
   onViewChange, onProjectChange, onToggleCollapse
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
-  const [favoritesExpanded, setFavoritesExpanded] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
   const todayCount = tasks.filter(t => !t.isCompleted && t.dueDate === today).length
   const inboxCount = tasks.filter(t => !t.isCompleted && t.projectId === 'inbox').length
 
-  const favoriteProjects = projects.filter(p => p.isFavorite)
   const allProjects = projects.filter(p => p.id !== 'inbox')
 
   const getProjectTaskCount = (id: string) =>
@@ -198,41 +215,6 @@ export default function Sidebar({
             </button>
           </li>
         </ul>
-
-        {/* Favorites */}
-        {favoriteProjects.length > 0 && (
-          <div className="sidebar__section">
-            <div className="sidebar__section-header">
-              <span className="sidebar__section-title">Favorites</span>
-              <button
-                className="sidebar__section-chevron"
-                onClick={() => setFavoritesExpanded(e => !e)}
-                title={favoritesExpanded ? 'Collapse' : 'Expand'}
-                type="button"
-              >
-                <ChevronDown open={favoritesExpanded} />
-              </button>
-            </div>
-            {favoritesExpanded && (
-              <ul className="sidebar__nav-list">
-                {favoriteProjects.map(project => (
-                  <li key={project.id}>
-                    <button
-                      className={`sidebar__nav-item ${activeProjectId === project.id ? 'sidebar__nav-item--active' : ''}`}
-                      onClick={() => onProjectChange(project.id)}
-                    >
-                      <span className="sidebar__project-hash" style={{ color: project.color }}>#</span>
-                      <span className="sidebar__nav-label">{project.name}</span>
-                      {getProjectTaskCount(project.id) > 0 && (
-                        <span className="sidebar__nav-count">{getProjectTaskCount(project.id)}</span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
 
         {/* Projects */}
         <div className="sidebar__section">
