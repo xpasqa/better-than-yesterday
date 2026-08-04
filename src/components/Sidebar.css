@@ -181,6 +181,8 @@
   color: var(--brand-red-idle);
 }
 
+.sidebar__nav-icon--outline svg { color: #52ccb8; }
+
 /* Today's icon carries the current date inside the calendar glyph */
 .sidebar__nav-icon--today {
   position: relative;

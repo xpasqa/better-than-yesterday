@@ -7,9 +7,10 @@ interface TaskListProps {
   tasks: Task[]
   onToggleComplete: (id: string) => void
   onDeleteTask: (id: string) => void
+  onOpenTask: (id: string) => void
 }
 
-export default function TaskList({ tasks, onToggleComplete, onDeleteTask }: TaskListProps) {
+export default function TaskList({ tasks, onToggleComplete, onDeleteTask, onOpenTask }: TaskListProps) {
   if (tasks.length === 0) return null
 
   return (
@@ -20,6 +21,7 @@ export default function TaskList({ tasks, onToggleComplete, onDeleteTask }: Task
           task={task}
           onToggleComplete={onToggleComplete}
           onDeleteTask={onDeleteTask}
+          onOpenTask={onOpenTask}
         />
       ))}
     </ul>

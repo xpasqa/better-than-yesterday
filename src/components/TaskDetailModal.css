@@ -1,0 +1,197 @@
+.task-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.task-modal {
+  width: 100%;
+  max-width: 800px;
+  height: 560px;
+  max-height: 85vh;
+  background: var(--bg-raised);
+  border-radius: 12px;
+  box-shadow: var(--shadow-raised-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.task-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--divider-primary);
+  flex-shrink: 0;
+}
+
+.task-modal__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.task-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+
+.task-modal__close:hover {
+  background: var(--bg-highlight);
+}
+
+.task-modal__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.task-modal__main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px;
+  overflow-y: auto;
+}
+
+.task-modal__title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.task-modal__checkbox {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #d3d3d3;
+  margin-top: 3px;
+}
+
+.task-modal__checkbox--p1 { border-color: var(--priority-p1); }
+.task-modal__checkbox--p2 { border-color: var(--priority-p2); }
+.task-modal__checkbox--p3 { border-color: var(--priority-p3); }
+
+.task-modal__title-input {
+  flex: 1;
+  font-size: 20px;
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+  line-height: 28px;
+}
+
+.task-modal__description-placeholder {
+  display: block;
+  margin-top: 8px;
+  margin-left: 34px;
+  font-size: var(--font-size-normal);
+  color: var(--text-tertiary);
+}
+
+.task-modal__description-input {
+  display: block;
+  width: calc(100% - 34px);
+  margin-top: 8px;
+  margin-left: 34px;
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  line-height: 20px;
+  resize: none;
+  min-height: 40px;
+}
+
+.task-modal__properties {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-tertiary);
+  border-left: 1px solid var(--divider-primary);
+  padding: 20px 20px 0;
+  overflow-y: auto;
+}
+
+.task-modal__field {
+  position: relative;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.task-modal__field-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.task-modal__field-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-small);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.task-modal__field-value:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+label.task-modal__field-value input[type='date'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.task-modal__dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 170px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-idle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-raised-2);
+  padding: 4px;
+  z-index: 10;
+}
+
+.task-modal__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-small);
+  text-align: left;
+  transition: background 0.08s;
+}
+
+.task-modal__dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.task-modal__dropdown-item--active {
+  background: var(--bg-selected);
+}

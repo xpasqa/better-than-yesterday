@@ -8,6 +8,7 @@ interface TaskItemProps {
   task: Task
   onToggleComplete: (id: string) => void
   onDeleteTask: (id: string) => void
+  onOpenTask: (id: string) => void
 }
 
 const priorityColors: Record<Priority, string> = {
@@ -45,7 +46,7 @@ const FlagIcon = ({ priority }: { priority: Priority }) => (
   <PhFlagIcon size={12} weight="fill" color={priorityColors[priority]} />
 )
 
-export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskItemProps) {
+export default function TaskItem({ task, onToggleComplete, onDeleteTask, onOpenTask }: TaskItemProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
@@ -72,8 +73,8 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask }: TaskI
         )}
       </button>
 
-      {/* Content */}
-      <div className="task-item__content">
+      {/* Content — clicking here opens the detail modal; checkbox/actions have their own handlers */}
+      <div className="task-item__content" onClick={() => onOpenTask(task.id)}>
         <p className="task-item__title">{task.content}</p>
         {task.description && (
           <p className="task-item__description">{task.description}</p>

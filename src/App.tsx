@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
+import TaskDetailModal from './components/TaskDetailModal'
+import OutlineView from './components/OutlineView'
 import type { ViewType } from './types'
 import { tasks as initialTasks } from './data/mockData'
 import type { Task } from './types'
@@ -13,6 +15,7 @@ function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null)
 
   const handleToggleComplete = (taskId: string) => {
     setTasks(prev =>
@@ -34,6 +37,12 @@ function App() {
     setTasks(prev => prev.filter(t => t.id !== taskId))
   }
 
+  const handleUpdateTask = (taskId: string, patch: Partial<Task>) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...patch } : t))
+  }
+
+  const openTask = tasks.find(t => t.id === openTaskId) ?? null
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -45,14 +54,27 @@ function App() {
         onProjectChange={(id) => { setActiveProjectId(id); setActiveView('project') }}
         onToggleCollapse={() => setSidebarCollapsed(c => !c)}
       />
-      <MainContent
-        activeView={activeView}
-        activeProjectId={activeProjectId}
-        tasks={tasks}
-        onToggleComplete={handleToggleComplete}
-        onAddTask={handleAddTask}
-        onDeleteTask={handleDeleteTask}
-      />
+      {activeView === 'outline' ? (
+        <OutlineView />
+      ) : (
+        <MainContent
+          activeView={activeView}
+          activeProjectId={activeProjectId}
+          tasks={tasks}
+          onToggleComplete={handleToggleComplete}
+          onAddTask={handleAddTask}
+          onDeleteTask={handleDeleteTask}
+          onOpenTask={setOpenTaskId}
+        />
+      )}
+      {openTask && (
+        <TaskDetailModal
+          task={openTask}
+          onClose={() => setOpenTaskId(null)}
+          onToggleComplete={handleToggleComplete}
+          onUpdateTask={handleUpdateTask}
+        />
+      )}
     </div>
   )
 }

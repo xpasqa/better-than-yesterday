@@ -13,6 +13,7 @@ interface MainContentProps {
   onToggleComplete: (id: string) => void
   onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
   onDeleteTask: (id: string) => void
+  onOpenTask: (id: string) => void
 }
 
 function getViewTitle(view: ViewType, projectId: string | null): string {
@@ -55,7 +56,7 @@ function filterTasks(tasks: Task[], view: ViewType, projectId: string | null): T
 
 export default function MainContent({
   activeView, activeProjectId, tasks,
-  onToggleComplete, onAddTask, onDeleteTask
+  onToggleComplete, onAddTask, onDeleteTask, onOpenTask
 }: MainContentProps) {
   const [showAddTask, setShowAddTask] = useState(false)
 
@@ -99,6 +100,7 @@ export default function MainContent({
               tasks={overdueTasks}
               onToggleComplete={onToggleComplete}
               onDeleteTask={onDeleteTask}
+              onOpenTask={onOpenTask}
             />
           </div>
         )}
@@ -114,6 +116,7 @@ export default function MainContent({
               tasks={todayTasks}
               onToggleComplete={onToggleComplete}
               onDeleteTask={onDeleteTask}
+              onOpenTask={onOpenTask}
             />
           </div>
         )}
@@ -125,6 +128,7 @@ export default function MainContent({
               tasks={todayTasks}
               onToggleComplete={onToggleComplete}
               onDeleteTask={onDeleteTask}
+              onOpenTask={onOpenTask}
             />
           </div>
         )}
@@ -150,6 +154,7 @@ export default function MainContent({
             tasks={completedTasks}
             onToggleComplete={onToggleComplete}
             onDeleteTask={onDeleteTask}
+            onOpenTask={onOpenTask}
           />
         )}
       </div>
@@ -157,10 +162,11 @@ export default function MainContent({
   )
 }
 
-function CompletedSection({ tasks, onToggleComplete, onDeleteTask }: {
+function CompletedSection({ tasks, onToggleComplete, onDeleteTask, onOpenTask }: {
   tasks: Task[]
   onToggleComplete: (id: string) => void
   onDeleteTask: (id: string) => void
+  onOpenTask: (id: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   return (
@@ -182,6 +188,7 @@ function CompletedSection({ tasks, onToggleComplete, onDeleteTask }: {
           tasks={tasks}
           onToggleComplete={onToggleComplete}
           onDeleteTask={onDeleteTask}
+          onOpenTask={onOpenTask}
         />
       )}
     </div>
