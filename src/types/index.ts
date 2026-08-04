@@ -25,6 +25,12 @@ export interface Project {
   taskCount?: number
 }
 
+export interface SubTask {
+  id: string
+  content: string
+  isCompleted: boolean
+}
+
 export interface Task {
   id: string
   content: string
@@ -34,7 +40,7 @@ export interface Task {
   dueDate?: string
   labels: string[]
   isCompleted: boolean
-  subTasks?: Task[]
+  subTasks?: SubTask[]
   createdAt: string
   order: number
 }

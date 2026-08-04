@@ -11,7 +11,6 @@
 .task-modal {
   width: 100%;
   max-width: 800px;
-  height: 560px;
   max-height: 85vh;
   background: var(--bg-raised);
   border-radius: 12px;
@@ -95,24 +94,147 @@
   line-height: 28px;
 }
 
-.task-modal__description-placeholder {
-  display: block;
-  margin-top: 8px;
-  margin-left: 34px;
-  font-size: var(--font-size-normal);
-  color: var(--text-tertiary);
-}
-
+/* Always an editable textarea — no click-to-reveal step in the way */
 .task-modal__description-input {
   display: block;
   width: calc(100% - 34px);
   margin-top: 8px;
   margin-left: 34px;
+  padding: 3px 4px;
+  border-radius: 4px;
   font-size: var(--font-size-normal);
   color: var(--text-primary);
   line-height: 20px;
   resize: none;
-  min-height: 40px;
+  transition: background 0.1s;
+}
+
+.task-modal__description-input:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.task-modal__description-input:focus {
+  background: rgba(0, 0, 0, 0.03);
+  outline: none;
+}
+
+.task-modal__description-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Sub-tasks */
+.task-modal__subtasks-section {
+  margin-top: 4px;
+  margin-left: 34px;
+}
+
+.task-modal__subtasks {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-modal__subtask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 0;
+  border-radius: 4px;
+}
+
+.task-modal__subtask-checkbox {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  border-radius: 50%;
+  border: 1.5px solid #d3d3d3;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.task-modal__subtask-checkbox:hover {
+  border-color: var(--brand-red-idle);
+  background: rgba(211, 51, 34, 0.08);
+}
+
+.task-modal__subtask-checkbox--done {
+  border-color: #d3d3d3;
+  background: #d3d3d3;
+}
+
+.task-modal__subtask-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 18px;
+  padding: 2px 4px;
+  margin-left: -4px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.task-modal__subtask-input:hover,
+.task-modal__subtask-input:focus {
+  background: rgba(0, 0, 0, 0.03);
+  outline: none;
+}
+
+.task-modal__subtask-input--done {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: #ccc;
+}
+
+.task-modal__subtask-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s, color 0.1s;
+}
+
+.task-modal__subtask:hover .task-modal__subtask-delete {
+  opacity: 1;
+}
+
+.task-modal__subtask-delete:hover {
+  background: rgba(211, 51, 34, 0.08);
+  color: var(--brand-red-idle);
+}
+
+.task-modal__add-subtask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+
+.task-modal__add-subtask:hover {
+  color: var(--brand-red-idle);
+}
+
+.task-modal__subtask-new-input {
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 18px;
+  padding: 5px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.task-modal__subtask-new-input::placeholder {
+  color: var(--text-tertiary);
 }
 
 .task-modal__properties {
@@ -155,13 +277,6 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-label.task-modal__field-value input[type='date'] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
 .task-modal__dropdown {
   position: absolute;
   top: calc(100% + 2px);
@@ -194,4 +309,59 @@ label.task-modal__field-value input[type='date'] {
 
 .task-modal__dropdown-item--active {
   background: var(--bg-selected);
+}
+
+.task-modal__dropdown-item--danger {
+  color: var(--brand-red-idle);
+}
+
+/*
+ * react-day-picker theming (daypicker.dev): the library exposes its whole
+ * look as CSS custom properties on .rdp-root, so re-pointing a handful of
+ * them at our own tokens is enough to make it feel native to the app
+ * instead of pasting in its default blue.
+ */
+.task-modal__dropdown--calendar {
+  padding: 10px 10px 4px;
+  min-width: 0;
+  /* Portaled to <body>, so it needs to clear the overlay's own z-index */
+  z-index: 1100;
+}
+
+.task-modal__dropdown--calendar .rdp-root {
+  --rdp-accent-color: var(--brand-red-idle);
+  --rdp-accent-background-color: var(--bg-selected);
+  --rdp-today-color: var(--brand-red-idle);
+  --rdp-day-width: 32px;
+  --rdp-day-height: 32px;
+  --rdp-day_button-width: 30px;
+  --rdp-day_button-height: 30px;
+  --rdp-nav-height: 32px;
+  --rdp-nav_button-width: 26px;
+  --rdp-nav_button-height: 26px;
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.task-modal__dropdown--calendar .rdp-month_caption {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+}
+
+.task-modal__dropdown--calendar .rdp-weekday {
+  font-weight: var(--font-weight-regular);
+  color: var(--text-secondary);
+}
+
+.task-modal__dropdown--calendar .rdp-day_button:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.task-modal__clear-date {
+  width: calc(100% - 20px);
+  margin: 4px 10px 6px;
+  border-top: 1px solid var(--divider-primary);
+  padding-top: 8px;
+  justify-content: center;
 }
