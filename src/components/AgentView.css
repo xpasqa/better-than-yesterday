@@ -73,13 +73,18 @@
   flex-shrink: 0;
 }
 
-/* Prompt card — same rounded-card + chip language as AddTaskForm */
+/* Prompt bar — single row, input + send, same rounded-card language as
+   AddTaskForm but compact instead of a tall block. */
 .agent-view__prompt-card {
   width: 100%;
-  margin-top: 28px;
+  max-width: 520px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--border-idle);
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 24px;
+  padding: 6px 6px 6px 16px;
   background: var(--bg-primary);
   transition: border-color 0.1s;
 }
@@ -89,21 +94,17 @@
 }
 
 .agent-view__prompt-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   resize: none;
-  font-size: var(--font-size-content);
+  font-size: var(--font-size-normal);
   color: var(--text-primary);
-  line-height: 22px;
+  line-height: 20px;
+  padding: 6px 0;
 }
 
 .agent-view__prompt-input::placeholder {
   color: var(--text-tertiary);
-}
-
-.agent-view__prompt-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
 }
 
 /* Identical to .add-task-form__submit-btn */
@@ -115,7 +116,7 @@
   height: 32px;
   background: var(--brand-red-idle);
   color: #fff;
-  border-radius: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 

@@ -85,19 +85,17 @@ export default function AgentView() {
             placeholder="e.g. Add a dark mode toggle to the sidebar…"
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            rows={3}
+            rows={1}
           />
-          <div className="agent-view__prompt-footer">
-            <button
-              className="agent-view__submit-btn"
-              disabled
-              title="Demo only — not wired to a real agent"
-              aria-label="Run"
-              type="button"
-            >
-              <PaperPlaneTiltIcon size={16} weight="fill" />
-            </button>
-          </div>
+          <button
+            className="agent-view__submit-btn"
+            disabled
+            title="Demo only — not wired to a real agent"
+            aria-label="Run"
+            type="button"
+          >
+            <PaperPlaneTiltIcon size={16} weight="fill" />
+          </button>
         </div>
 
         <div className="agent-view__grid">
