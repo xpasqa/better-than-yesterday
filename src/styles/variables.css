@@ -1,0 +1,127 @@
+/* Todoist Design Tokens - extracted from app.todoist.com */
+:root {
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-size-tiny: 8px;
+  --font-size-xsmall: 10px;
+  --font-size-small: 11px;
+  --font-size-compact: 12px;
+  --font-size-normal: 13px;
+  --font-size-content: 14px;
+  --font-size-content-large: 16px;
+  --font-size-header: 20px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 600;
+  --font-weight-strong: 700;
+
+  /* Spacing */
+  --spacing-xsmall: 4px;
+  --spacing-small: 8px;
+  --spacing-medium: 12px;
+  --spacing-large: 16px;
+  --spacing-xlarge: 24px;
+  --spacing-xxlarge: 32px;
+
+  /* Border radius */
+  --border-radius-small: 5px;
+  --border-radius-large: 10px;
+
+  /* Background colors */
+  --bg-primary: #fff;
+  --bg-secondary: #fcfaf8;
+  --bg-tertiary: #f8f5f2;
+  --bg-grouped-secondary: #faf7f4;
+  --bg-raised: #fff;
+  --bg-sidebar: #fcfaf8;
+  --bg-highlight: rgba(0, 0, 0, 0.04);
+  --bg-selected: #ffefe5;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+
+  /* Text colors */
+  --text-primary: #202020;
+  --text-secondary: #666;
+  --text-tertiary: #999;
+  --text-placeholder: #999;
+
+  /* Brand / Accent */
+  --brand-red: #dc4c3e;
+  --brand-red-hover: #c3392c;
+  --brand-red-idle: #d33322;
+
+  /* Dividers */
+  --divider-primary: #eee;
+  --divider-secondary: #f5f5f5;
+  --divider-tertiary: #d3d3d3;
+
+  /* Borders */
+  --border-idle: #e6e6e6;
+  --border-hover: #ccc;
+  --border-focus: #b8b8b8;
+
+  /* Priority colors */
+  --priority-p1: #d1453b;
+  --priority-p1-bg: #ffd6d3;
+  --priority-p2: #eb8909;
+  --priority-p2-bg: #fbe7ce;
+  --priority-p3: #246fe0;
+  --priority-p3-bg: #dde6f9;
+  --priority-p4: #666;
+  --priority-p4-bg: #f2efed;
+
+  /* Actionable */
+  --action-primary-idle: #d33322;
+  --action-primary-hover: #c3392c;
+  --action-quaternary-idle: #666;
+  --action-quaternary-hover: rgba(0, 0, 0, 0.04);
+
+  /* Positive / Negative */
+  --color-positive: #058527;
+  --color-danger: #dc4c3e;
+  --color-warning: #eb8909;
+  --color-info: #316fea;
+
+  /* Shadows */
+  --shadow-raised-1: 0px 4px 10px 0px rgba(0, 0, 0, 0.1), 0px 8px 18px 4px rgba(0, 0, 0, 0.05);
+  --shadow-raised-2: 0px 8px 32px 2px rgba(0, 0, 0, 0.14), 0px 4px 7px 6px rgba(0, 0, 0, 0.09);
+
+  /* Layout */
+  --sidebar-width: 220px;
+  --topbar-height: 40px;
+  --editor-max-width: 800px;
+  --task-detail-width: 864px;
+
+  /* Animations */
+  --animation-short: 0.25s;
+  --animation-standard: 0.3s;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Scrollbar */
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #848484;
+  --scrollbar-track: #fafafa;
+
+  /* Focus */
+  --focus-shadow: 0 0 0 1px #1f60c2, 0 0 0 4px #dceaff;
+
+  /* Meta colors (project/label colors) */
+  --meta-berry: #b8255f;
+  --meta-red: #dc4c3e;
+  --meta-orange: #f48318;
+  --meta-yellow: #fecf05;
+  --meta-olive: #aeb83a;
+  --meta-lime: #7ecc48;
+  --meta-green: #369307;
+  --meta-mint: #52ccb8;
+  --meta-teal: #148fad;
+  --meta-sky: #3ab9e2;
+  --meta-light-blue: #96c3eb;
+  --meta-blue: #2a67e2;
+  --meta-grape: #692ec2;
+  --meta-violet: #ac30cc;
+  --meta-lavender: #eb96c8;
+  --meta-magenta: #e05095;
+  --meta-salmon: #c9766f;
+  --meta-charcoal: #808080;
+  --meta-grey: #999;
+  --meta-taupe: #ccae96;
+}
