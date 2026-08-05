@@ -22,7 +22,7 @@ dan dihapus.
 | **1** | Todo — paritas Todoist | [1.todo](1.todo/spec.md) | Dogfood: dua minggu tanpa membuka Todoist |
 | **2** | Outline — Workflowy + `@task` | [2.outline](2.outline/spec.md) | Catatan harian pindah ke sini, dan barisnya bisa naik jadi task |
 | **3** | Agent — AI via openagentic.id, kontrol penuh atas Todo | [3.agent](3.agent/spec.md) | Asisten membaca memorinya, menambah subtask, menyusun time-blocking, memberi rekomendasi |
-| **4** | Storage — drive di iDrive e2 | *menyusul* | Lampiran task, file outline, dan file agent punya rumah |
+| **4** | Storage — drive di iDrive e2 | [4.storage](4.storage/spec.md) — spec + todo ada | Lampiran task, file outline, dan file agent punya rumah |
 | **5** | Mail — IMAP/SMTP | *menyusul* | `pasqa@publion.org` terbaca dan terkirim dari sini |
 
 Tiap fase selesai dan **dipakai** sebelum fase berikutnya dimulai. Urutan ini

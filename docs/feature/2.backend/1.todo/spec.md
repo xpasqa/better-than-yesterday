@@ -73,6 +73,7 @@ CREATE TABLE node (
   label_ids     TEXT[] NOT NULL DEFAULT '{}',     -- id dari tabel label
   color         TEXT,                             -- bermakna di kind='project'
   is_favorite   BOOLEAN NOT NULL DEFAULT false,   -- project & filter & label
+  is_inbox      BOOLEAN NOT NULL DEFAULT false,   -- bermakna di kind='project'; §3.1a
   collapsed     BOOLEAN NOT NULL DEFAULT false,
 
   completed_at  TIMESTAMPTZ,                      -- NULL = belum selesai
@@ -88,6 +89,10 @@ CREATE INDEX node_user_parent ON node (user_id, parent_id);
 CREATE INDEX node_user_seq    ON node (user_id, seq);
 CREATE INDEX node_due_open    ON node (user_id, due_date)
   WHERE completed_at IS NULL AND deleted_at IS NULL;
+
+-- Tepat satu Inbox per user. Partial unique index, bukan kolom ROOT_INBOX_ID
+-- bersama — lihat §3.1a untuk kenapa id tunggal lintas-user tidak bisa dipakai.
+CREATE UNIQUE INDEX node_one_inbox_per_user ON node (user_id) WHERE is_inbox;
 ```
 
 Tiga hal yang dikunci di database, bukan di ingatan UI: jam tanpa tanggal
@@ -107,6 +112,18 @@ hierarki di sidebar.
 sebelumnya meniru batas itu agar subtask tidak bersaing dengan outline. Di
 sini justru sebaliknya — subtask *adalah* outline, jadi batasan itu kehilangan
 alasannya.
+
+#### 3.1a Inbox: `is_inbox`, bukan id bersama
+
+`node.id` adalah primary key **global** — tidak digabung dengan `user_id`.
+Itu berarti sebuah konstanta id Inbox yang sama untuk semua user (ide yang
+sempat tertulis dalam ringkasan percakapan sebelum spec ini) akan langsung
+tabrakan begitu user kedua dibuat: dua baris berbeda tidak boleh berbagi satu
+primary key. Root Inbox tetap **UUIDv7 biasa, dibuat `user add` seperti root
+lainnya** — yang membedakannya hanyalah `is_inbox = true`, ditegakkan tepat
+satu per user oleh index unik parsial di atas. Klien menemukan "Inbox milikku"
+lewat filter atas pohon yang sudah tersinkron (`nodes.find(n => n.isInbox)`),
+bukan lewat id yang ditebak.
 
 ### 3.2 `label`
 

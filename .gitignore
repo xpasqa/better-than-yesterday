@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Backend — real secrets never committed; .env.example holds names only
+.env
+.env.*
+!.env.example
 
 # Font source dropbox — served copies live in public/fonts, which are tracked
 better-font
