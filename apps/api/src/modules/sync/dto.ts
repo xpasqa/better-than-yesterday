@@ -30,12 +30,26 @@ export const nodeDto = z.object({
 })
 export type NodeDto = z.infer<typeof nodeDto>
 
+// name has no spaces — it's the literal $name token (1.todo/spec.md §3.2).
+export const labelDto = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1).max(60).regex(/^\S+$/),
+  color: z.string(),
+  isFavorite: z.boolean(),
+  rank: z.string().min(1),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable(),
+})
+export type LabelDto = z.infer<typeof labelDto>
+
 const MAX_BATCH = 500
 
 export const syncRequest = z.object({
   cursor: z.string().regex(/^\d+$/),
   changes: z.object({
     nodes: z.array(nodeDto).max(MAX_BATCH).default([]),
+    labels: z.array(labelDto).max(MAX_BATCH).default([]),
   }),
 })
 export type SyncRequest = z.infer<typeof syncRequest>

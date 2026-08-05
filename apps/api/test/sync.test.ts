@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -14,11 +14,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes } }),
+    body: JSON.stringify({ cursor, changes: { nodes, labels } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -147,5 +147,50 @@ describe('POST /api/sync — last-write-wins', () => {
       makeNodeDto({ id: taskId, content: 'updated', updatedAt: new Date().toISOString() }),
     ])
     expect(BigInt(second.body.cursor)).toBeGreaterThan(BigInt(first.body.cursor))
+  })
+})
+
+describe('POST /api/sync — labels', () => {
+  it('a created label round-trips with the same field values', async () => {
+    await createTestUser('label@example.com')
+    const cookie = await loginCookie('label@example.com')
+    const labelId = uuidv7()
+    const { status, body } = await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'penting', color: 'red' })])
+    expect(status).toBe(200)
+    const [returned] = body.changes.labels
+    expect(returned.id).toBe(labelId)
+    expect(returned.name).toBe('penting')
+    expect(returned.color).toBe('red')
+  })
+
+  it('nodes and labels share one cursor — pulling after a label-only write also advances past it', async () => {
+    await createTestUser('shared-cursor@example.com')
+    const cookie = await loginCookie('shared-cursor@example.com')
+    const boot = await sync(cookie, '0')
+    const withLabel = await sync(cookie, boot.body.cursor, [], [makeLabelDto({ id: uuidv7() })])
+    expect(BigInt(withLabel.body.cursor)).toBeGreaterThan(BigInt(boot.body.cursor))
+    const idle = await sync(cookie, withLabel.body.cursor)
+    expect(idle.body.changes.nodes).toEqual([])
+    expect(idle.body.changes.labels).toEqual([])
+  })
+
+  it('an older incoming label update loses to what is already stored', async () => {
+    await createTestUser('label-lww@example.com')
+    const cookie = await loginCookie('label-lww@example.com')
+    const labelId = uuidv7()
+    const t1 = new Date(Date.now() - 10_000).toISOString()
+    const t2 = new Date().toISOString()
+    await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'kedua', updatedAt: t2 })])
+    const stale = await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'basi', updatedAt: t1 })])
+    const finalRow = stale.body.changes.labels.find((l: { id: string }) => l.id === labelId)
+    expect(finalRow.name).toBe('kedua')
+  })
+
+  it('rejects a label name containing a space (the $name token cannot have one)', async () => {
+    await createTestUser('label-shape@example.com')
+    const cookie = await loginCookie('label-shape@example.com')
+    const { status, body } = await sync(cookie, '0', [], [makeLabelDto({ id: uuidv7(), name: 'dua kata' })])
+    expect(status).toBe(422)
+    expect(body.error.code).toBe('VALIDATION_ERROR')
   })
 })

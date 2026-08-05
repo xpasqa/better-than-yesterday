@@ -1,10 +1,10 @@
 // The most important test in this repository (infra spec §8): every phase
-// that adds a table must add its own case here. Today that's just `node`
-// via /api/sync, since that's the only synced entity phase 1 wired up.
+// that adds a table must add its own case here. Covers `node` and `label`
+// via /api/sync, the two synced entities phase 1 wired up.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -17,11 +17,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes } }),
+    body: JSON.stringify({ cursor, changes: { nodes, labels } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -95,6 +95,38 @@ describe('cross-user isolation', () => {
     const checkA = await sync(cookieA, '0')
     const row = checkA.body.changes.nodes.find((n: { id: string }) => n.id === sharedId)
     expect(row.content).toBe("victim's task")
+  })
+
+  it("user B's sync bootstrap never includes user A's labels", async () => {
+    await createTestUser('labelA@example.com')
+    await createTestUser('labelB@example.com')
+    const cookieA = await loginCookie('labelA@example.com')
+    const cookieB = await loginCookie('labelB@example.com')
+
+    await sync(cookieA, '0', [], [makeLabelDto({ id: uuidv7(), name: "A's-secret-label" })])
+
+    const bootB = await sync(cookieB, '0')
+    expect(bootB.body.changes.labels).toEqual([])
+  })
+
+  it("user B cannot overwrite user A's label by reusing its id", async () => {
+    await createTestUser('label-victim@example.com')
+    await createTestUser('label-attacker@example.com')
+    const cookieA = await loginCookie('label-victim@example.com')
+    const cookieB = await loginCookie('label-attacker@example.com')
+
+    const sharedId = uuidv7()
+    await sync(cookieA, '0', [], [makeLabelDto({ id: sharedId, name: 'asli' })])
+
+    const hijack = await sync(cookieB, '0', [], [
+      makeLabelDto({ id: sharedId, name: 'hijacked', updatedAt: new Date().toISOString() }),
+    ])
+    expect(hijack.status).toBe(200)
+    expect(hijack.body.changes.labels.find((l: { id: string }) => l.id === sharedId)).toBeUndefined()
+
+    const checkA = await sync(cookieA, '0')
+    const row = checkA.body.changes.labels.find((l: { id: string }) => l.id === sharedId)
+    expect(row.name).toBe('asli')
   })
 
   it('a session for one user never authorizes as a different userId', async () => {

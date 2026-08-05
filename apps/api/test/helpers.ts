@@ -87,3 +87,17 @@ export function makeNodeDto(overrides: Record<string, unknown> & { id: string })
     ...overrides,
   }
 }
+
+export function makeLabelDto(overrides: Record<string, unknown> & { id: string }) {
+  const now = new Date().toISOString()
+  return {
+    name: 'untitled',
+    color: 'grey',
+    isFavorite: false,
+    rank: 'a0',
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    ...overrides,
+  }
+}

@@ -1,4 +1,5 @@
-.today-real {
+/* Shared page chrome for every store-backed view: Today, Inbox, Upcoming, Project. */
+.real-view {
   flex: 1;
   min-width: 0;
   padding: var(--spacing-xlarge);
@@ -6,21 +7,21 @@
   background: var(--bg-primary);
 }
 
-.today-real__header {
+.real-view__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: var(--spacing-large);
 }
 
-.today-real__header h1 {
+.real-view__header h1 {
   font-size: var(--font-size-header);
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
   margin: 0;
 }
 
-.today-real__status {
+.real-view__status {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xsmall);
@@ -28,13 +29,13 @@
   color: var(--text-secondary);
 }
 
-.today-real__quick-add {
+.real-view__quick-add {
   display: flex;
   gap: var(--spacing-small);
   margin-bottom: var(--spacing-xlarge);
 }
 
-.today-real__quick-add input {
+.real-view__quick-add input {
   flex: 1;
   font-size: var(--font-size-normal);
   padding: var(--spacing-small) var(--spacing-medium);
@@ -44,7 +45,7 @@
   color: var(--text-primary);
 }
 
-.today-real__quick-add button {
+.real-view__quick-add button {
   font-size: var(--font-size-normal);
   font-weight: var(--font-weight-medium);
   padding: var(--spacing-small) var(--spacing-large);
@@ -55,7 +56,7 @@
   cursor: pointer;
 }
 
-.today-real__group-label {
+.real-view__group-label {
   font-size: var(--font-size-xsmall);
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
@@ -64,80 +65,13 @@
   margin: var(--spacing-large) 0 var(--spacing-small);
 }
 
-.today-real__list {
+.real-view__list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.today-real__row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-small);
-  height: 44px;
-  padding: 0 var(--spacing-small);
-  border-radius: var(--border-radius-small);
-}
-
-.today-real__row:hover {
-  background: var(--bg-hover);
-}
-
-.today-real__check {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.today-real__row--done .today-real__check {
-  color: #2e8b57;
-}
-
-.today-real__content {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--font-size-content);
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.today-real__row--done .today-real__content {
-  color: var(--text-secondary);
-  text-decoration: line-through;
-}
-
-.today-real__time {
-  font-size: var(--font-size-xsmall);
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.today-real__priority {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.today-real__priority--1 {
-  background: #d1453b;
-}
-
-.today-real__priority--2 {
-  background: #eb8909;
-}
-
-.today-real__priority--3 {
-  background: #246fe0;
-}
-
-.today-real__empty {
+.real-view__empty {
   font-size: var(--font-size-normal);
   color: var(--text-secondary);
   padding: var(--spacing-medium) 0;
