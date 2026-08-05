@@ -3,6 +3,9 @@ import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
+import { todayInTimezone } from '@better/core/date'
+import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
+import { findInbox, type Node } from '@better/core/node'
 import type { ViewType, Task } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import { projects } from '../data/mockData'
@@ -19,6 +22,14 @@ interface SidebarProps {
   theme: Theme
   onToggleTheme: () => void
   tasks: Task[]
+  /**
+   * The real (store-backed) tree, once one exists — counts and the project
+   * list below add these in alongside the mock data rather than replacing
+   * it, since only Today/Inbox/Upcoming/Project are migrated so far
+   * (docs/feature/2.backend/1.todo/todo.md blocks C–J).
+   */
+  realNodes?: Node[]
+  timezone?: string
   onViewChange: (view: ViewType) => void
   onProjectChange: (id: string) => void
   onToggleCollapse: () => void
@@ -41,17 +52,26 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 
 export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
-  theme, onToggleTheme, tasks,
+  theme, onToggleTheme, tasks, realNodes = [], timezone = 'Asia/Jakarta',
   onViewChange, onProjectChange, onToggleCollapse
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [chatsExpanded, setChatsExpanded] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
-  const todayCount = tasks.filter(t => !t.isCompleted && t.dueDate === today).length
-  const inboxCount = tasks.filter(t => !t.isCompleted && t.projectId === 'inbox').length
+  const realTodayStr = todayInTimezone(timezone)
+  const realToday = computeToday(realNodes, realTodayStr)
+  const todayCount =
+    tasks.filter(t => !t.isCompleted && t.dueDate === today).length +
+    realToday.overdue.length + realToday.today.length
+  const inboxCount =
+    tasks.filter(t => !t.isCompleted && t.projectId === 'inbox').length +
+    computeInbox(realNodes).length
 
   const allProjects = projects.filter(p => p.id !== 'inbox')
+  const realProjects = realNodes.filter(
+    (n) => n.kind === 'project' && n.deletedAt === null && n.id !== findInbox(realNodes)?.id,
+  )
 
   const getProjectTaskCount = (id: string) =>
     tasks.filter(t => !t.isCompleted && t.projectId === id).length
@@ -222,6 +242,20 @@ export default function Sidebar({
           </div>
           {projectsExpanded && (
             <ul className="sidebar__nav-list">
+              {realProjects.map(project => (
+                <li key={project.id}>
+                  <button
+                    className={`sidebar__nav-item ${activeProjectId === project.id ? 'sidebar__nav-item--active' : ''}`}
+                    onClick={() => onProjectChange(project.id)}
+                  >
+                    <span className="sidebar__project-hash" style={{ color: project.color ?? undefined }}>#</span>
+                    <span className="sidebar__nav-label">{project.content}</span>
+                    {computeProject(realNodes, project.id).length > 0 && (
+                      <span className="sidebar__nav-count">{computeProject(realNodes, project.id).length}</span>
+                    )}
+                  </button>
+                </li>
+              ))}
               {allProjects.map(project => (
                 <li key={project.id}>
                   <button

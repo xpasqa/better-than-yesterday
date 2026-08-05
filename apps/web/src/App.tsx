@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { BellIcon, ListIcon } from '@phosphor-icons/react'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import { useTheme } from './hooks/useTheme'
@@ -12,12 +13,16 @@ import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
 import Login from './components/Login'
 import TodayReal from './components/TodayReal'
-import type { ViewType } from './types'
+import InboxReal from './components/InboxReal'
+import UpcomingReal from './components/UpcomingReal'
+import ProjectReal from './components/ProjectReal'
+import { pathForView, deriveViewFromPathname } from './routes'
 import { tasks as initialTasks, sections as initialSections } from './data/mockData'
 import type { Task, Section } from './types'
 import { fetchMe, logout, type AuthUser } from './store/auth-api'
 import { clearLocalStore } from './store/db'
 import { startSyncLoop } from './store/sync-client'
+import { useAllNodes } from './store/use-nodes'
 import './styles/variables.css'
 import './styles/global.css'
 import './App.css'
@@ -57,8 +62,10 @@ function useAuthGate() {
 
 function App() {
   const { user, handleLoggedIn, handleLogout } = useAuthGate()
-  const [activeView, setActiveView] = useState<ViewType>('today')
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { view: activeView, projectId: activeProjectId } = deriveViewFromPathname(location.pathname)
+  const realNodes = useAllNodes()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [sections, setSections] = useState<Section[]>(initialSections)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -196,8 +203,10 @@ function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           tasks={tasks}
-          onViewChange={(view) => { setActiveView(view); setActiveProjectId(null); setDrawerOpen(false) }}
-          onProjectChange={(id) => { setActiveProjectId(id); setActiveView('project'); setDrawerOpen(false) }}
+          realNodes={realNodes}
+          timezone={user.timezone}
+          onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
+          onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
         />
         {isCompact && drawerOpen && (
@@ -213,6 +222,12 @@ function App() {
           <AgentView />
         ) : activeView === 'today' ? (
           <TodayReal user={user} />
+        ) : activeView === 'inbox' ? (
+          <InboxReal user={user} />
+        ) : activeView === 'upcoming' ? (
+          <UpcomingReal user={user} />
+        ) : activeView === 'project' && activeProjectId ? (
+          <ProjectReal user={user} projectId={activeProjectId} />
         ) : (
           <MainContent
             activeView={activeView}
