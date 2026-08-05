@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import AgentChat from './AgentChat'
+import { FILE_CREATION_SCHEDULE, MOCK_FILES } from '../agent/mockFiles'
+import type { AgentFile } from '../agent/mockFiles'
 import './AgentView.css'
 
 const USER_NAME = 'Pasqa'
@@ -11,6 +13,8 @@ export type ChatMessage =
 
 const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
   + 'In a working version, this is where an actual answer would go.'
+
+const AGENT_REPLY_WITH_FILE = 'Here\'s what I put together — you can review it in the file panel.'
 
 const EXAMPLES = [
   'Summarise what I finished this week',
@@ -40,15 +44,59 @@ export default function AgentView() {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<'chat' | 'cowork'>('chat')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [files, setFiles] = useState<AgentFile[]>([])
+  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [unseenPaths, setUnseenPaths] = useState<Set<string>>(new Set())
+  const [replyCount, setReplyCount] = useState(0)
+
+  const selectFile = (path: string) => {
+    setSelectedPath(path)
+    setUnseenPaths(prev => {
+      if (!prev.has(path)) return prev
+      const next = new Set(prev)
+      next.delete(path)
+      return next
+    })
+  }
 
   const sendText = (text: string) => {
     const trimmed = text.trim()
     if (!trimmed) return
-    setMessages(prev => [
-      ...prev,
-      { id: generateId(), role: 'user', content: trimmed, time: timeNow() },
-      { id: generateId(), role: 'agent', content: AGENT_REPLY, time: timeNow() },
-    ])
+
+    const nextReplyIndex = replyCount + 1
+    const fileToCreate = FILE_CREATION_SCHEDULE[nextReplyIndex]
+    const newFile = fileToCreate !== undefined ? MOCK_FILES[fileToCreate] : null
+
+    setMessages(prev => {
+      const next: ChatMessage[] = [
+        ...prev,
+        { id: generateId(), role: 'user', kind: 'text', content: trimmed, time: timeNow() },
+        {
+          id: generateId(),
+          role: 'agent',
+          kind: 'text',
+          content: newFile ? AGENT_REPLY_WITH_FILE : AGENT_REPLY,
+          time: timeNow(),
+        },
+      ]
+      if (newFile) {
+        next.push({ id: generateId(), role: 'agent', kind: 'file', path: newFile.path, time: timeNow() })
+      }
+      return next
+    })
+
+    if (newFile) {
+      const isFirstFile = files.length === 0
+      setFiles(prev => [...prev, newFile])
+      setUnseenPaths(prev => new Set(prev).add(newFile.path))
+      if (isFirstFile) {
+        setPanelOpen(true)
+        selectFile(newFile.path)
+      }
+    }
+
+    setReplyCount(nextReplyIndex)
     setPrompt('')
   }
 
@@ -59,7 +107,22 @@ export default function AgentView() {
         prompt={prompt}
         onPromptChange={setPrompt}
         onSend={() => sendText(prompt)}
-        onBack={() => { setMessages([]); setPrompt('') }}
+        onBack={() => {
+          setMessages([])
+          setPrompt('')
+          setFiles([])
+          setSelectedPath(null)
+          setPanelOpen(false)
+          setUnseenPaths(new Set())
+          setReplyCount(0)
+        }}
+        files={files}
+        panelOpen={panelOpen}
+        selectedPath={selectedPath}
+        unseenPaths={unseenPaths}
+        onSelectFile={selectFile}
+        onOpenPanel={() => setPanelOpen(true)}
+        onClosePanel={() => setPanelOpen(false)}
       />
     )
   }
