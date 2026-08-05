@@ -5,23 +5,31 @@ sync sudah hidup). **Tidak ada migrasi database di seluruh fase ini.**
 
 ## A. Router untuk seluruh aplikasi
 
-- [ ] Pasang router; ganti `useState<ViewType>` di `App.tsx`
-- [ ] Rute: `/today` `/upcoming` `/inbox` `/project/:id` `/label/:name`
-      `/filter/:id` `/outline` `/outline/:nodeId` `/storage` `/agent`
-      `/mail` `/settings`
-- [ ] Notifikasi push fase 1 membuka rute yang tepat saat diklik
-- [ ] **Verifikasi:** tiap view punya URL; back/forward bekerja; muat ulang di
-      URL dalam tetap mendarat di tempat yang sama
+- [x] Pasang router; ganti `useState<ViewType>` di `App.tsx`
+- [x] Rute: `/today` `/upcoming` `/inbox` `/project/:id` `/outline`
+      `/storage` `/agent` `/mail` (`apps/web/src/routes.ts`). **Not yet
+      routed:** `/label/:name`, `/filter/:id`, `/outline/:nodeId` (zoom —
+      needs section D), `/settings`
+- [ ] Notifikasi push fase 1 membuka rute yang tepat saat diklik — push
+      notifications themselves aren't built yet
+- [x] **Verifikasi:** tiap view (yang sudah dirutekan) punya URL; back/forward
+      bekerja; muat ulang di URL dalam tetap mendarat di tempat yang sama
 
 ## B. Outline di atas store
 
-- [ ] `initialOutline` dihapus; `OutlineView` membaca pohon dari store
-- [ ] Pohon bersarang di state → datar `parent_id`; `isCompleted` →
+- [x] `initialOutline` dihapus; `OutlineView` membaca pohon dari store
+- [x] Pohon bersarang di state → datar `parent_id`; `isCompleted` →
       `completed_at`
-- [ ] Lima operasi keyboard existing dipetakan ke `core/tree.ts`
-- [ ] Simpan saat blur + debounce 500 ms
-- [ ] **Verifikasi:** ketik → Tab → muat ulang → struktur utuh; edit di
-      outline langsung terlihat di Today/Board tanpa muat ulang
+- [x] Lima operasi keyboard existing dipetakan ke `core/tree.ts`
+      (`indentNode`/`outdentNode`/`createSiblingNode` in
+      `apps/web/src/store/outline-actions.ts`; arrow nav and delete are
+      client-only, no core/tree.ts op needed)
+- [x] Simpan saat blur + debounce 500 ms (`apps/web/src/components/OutlineView.tsx`)
+- [x] **Verifikasi:** ketik → Tab → muat ulang → struktur utuh (dites manual
+      di browser: "baca laporan McKinsey" diketik, Enter, Tab, reload —
+      struktur nested tetap ada); edit di outline (centang selesai) langsung
+      terlihat di Today tanpa muat ulang (dites: centang di Outline →
+      hilang dari Today list & badge count di sidebar seketika)
 
 ## C. Keyboard lengkap & catatan
 

@@ -1,171 +1,151 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from 'react'
 import { CaretDownIcon } from '@phosphor-icons/react'
-import type { OutlineNode } from '../types'
+import type { Node } from '@better/core/node'
+import { useAllNodes } from '../store/use-nodes'
+import { toggleTaskComplete, deleteTask } from '../store/node-actions'
+import { patchNode, createSiblingNode, createRootNode, indentNode, outdentNode } from '../store/outline-actions'
 import './OutlineView.css'
 
-// --- Sample data ---
-const createNode = (id: string, content: string, children: OutlineNode[] = []): OutlineNode => ({
-  id, content, children, isCollapsed: false, isCompleted: false,
-})
+/*
+ * Wired to the same node tree Todo reads (2.outline/spec.md §12: no new
+ * table, no migration — parentId/rank/content/collapsed/completedAt already
+ * exist). This covers section B of that spec's todo: store-backed tree,
+ * the five existing keyboard ops mapped onto core/tree.ts, and debounced
+ * save. Mention chips, progress, backlinks, zoom routing, and the iPad
+ * toolbar (sections C–I) are intentionally not built yet — this proves the
+ * structural half of "one tree" first.
+ */
 
-const initialOutline: OutlineNode[] = [
-  createNode('1', 'Product roadmap Q3 2026', [
-    createNode('1-1', 'Design system overhaul', [
-      createNode('1-1-1', 'Audit existing components'),
-      createNode('1-1-2', 'Define new token structure'),
-      createNode('1-1-3', 'Migrate Sidebar and TaskItem'),
-    ]),
-    createNode('1-2', 'Outline feature', [
-      createNode('1-2-1', 'Nested bullet editing'),
-      createNode('1-2-2', 'Collapse / expand nodes'),
-      createNode('1-2-3', 'Keyboard navigation'),
-    ]),
-    createNode('1-3', 'API integration'),
-  ]),
-  createNode('2', 'Meeting notes', [
-    createNode('2-1', 'Weekly sync 4 Aug', [
-      createNode('2-1-1', 'Review sprint progress'),
-      createNode('2-1-2', 'Blockers: design handoff delayed'),
-    ]),
-    createNode('2-2', 'Design review 5 Aug'),
-  ]),
-  createNode('3', 'Reading list'),
-  createNode('4', 'Ideas & scratch'),
-]
-
-// --- Helpers ---
-function generateId() {
-  return Math.random().toString(36).slice(2, 9)
+function byRank(a: Node, b: Node): number {
+  return a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0
 }
 
-function findAndUpdate(
-  nodes: OutlineNode[],
-  id: string,
-  updater: (node: OutlineNode) => OutlineNode,
-): OutlineNode[] {
-  return nodes.map(n => {
-    if (n.id === id) return updater(n)
-    return { ...n, children: findAndUpdate(n.children, id, updater) }
-  })
+function childrenOf(nodes: Node[], parentId: string | null): Node[] {
+  return nodes.filter((n) => n.parentId === parentId).sort(byRank)
 }
 
-function findAndDelete(nodes: OutlineNode[], id: string): OutlineNode[] {
-  return nodes
-    .filter(n => n.id !== id)
-    .map(n => ({ ...n, children: findAndDelete(n.children, id) }))
-}
-
-function insertAfter(nodes: OutlineNode[], id: string, newNode: OutlineNode): OutlineNode[] {
-  const result: OutlineNode[] = []
-  for (const n of nodes) {
-    result.push({ ...n, children: insertAfter(n.children, id, newNode) })
-    if (n.id === id) result.push(newNode)
-  }
-  return result
-}
-
-function flattenVisible(nodes: OutlineNode[], depth = 0): { node: OutlineNode; depth: number }[] {
-  const result: { node: OutlineNode; depth: number }[] = []
-  for (const n of nodes) {
+function flattenVisible(nodes: Node[], parentId: string | null = null, depth = 0): { node: Node; depth: number }[] {
+  const result: { node: Node; depth: number }[] = []
+  for (const n of childrenOf(nodes, parentId)) {
     result.push({ node: n, depth })
-    if (!n.isCollapsed && n.children.length > 0) {
-      result.push(...flattenVisible(n.children, depth + 1))
-    }
+    if (!n.collapsed) result.push(...flattenVisible(nodes, n.id, depth + 1))
   }
   return result
 }
 
-// --- Node component ---
-interface OutlineNodeRowProps {
-  node: OutlineNode
+interface RowProps {
+  node: Node
+  allNodes: Node[]
   focusedId: string | null
   onFocus: (id: string) => void
-  onChange: (id: string, content: string) => void
-  onToggleCollapse: (id: string) => void
-  onToggleComplete: (id: string) => void
-  onEnter: (id: string) => void
-  onDelete: (id: string) => void
-  onIndent: (id: string) => void
-  onOutdent: (id: string) => void
+  onDelete: (node: Node) => void
+  onEnter: (node: Node) => void
+  onIndent: (node: Node) => void
+  onOutdent: (node: Node) => void
   onArrowUp: (id: string) => void
   onArrowDown: (id: string) => void
 }
 
-/*
- * Renders itself, then recurses into its own children inside a wrapper div.
- * The wrapper's border-left IS the WorkFlowy-style guide line — nesting the
- * DOM this way means the line's height falls out of the box model for free,
- * instead of us computing pixel heights from the flattened row count.
- */
-function OutlineNodeRow(props: OutlineNodeRowProps) {
-  const {
-    node, focusedId, onFocus, onChange, onToggleCollapse, onToggleComplete,
-    onEnter, onDelete, onIndent, onOutdent, onArrowUp, onArrowDown,
-  } = props
-  const hasChildren = node.children.length > 0
+/** One node = one row (§6). Content edits debounce 500ms and flush on blur so closing a tab never loses the last sentence. */
+function OutlineNodeRow(props: RowProps) {
+  const { node, allNodes, focusedId, onFocus, onDelete, onEnter, onIndent, onOutdent, onArrowUp, onArrowDown } = props
+  const kids = childrenOf(allNodes, node.id)
+  const hasChildren = kids.length > 0
   const isFocused = focusedId === node.id
   const inputRef = useRef<HTMLInputElement>(null)
+  const [text, setText] = useState(node.content)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Pick up remote/other-tab edits, but never clobber what's being typed right now.
+  useEffect(() => {
+    if (!isFocused) setText(node.content)
+  }, [node.content, isFocused])
 
   useEffect(() => {
     if (isFocused) inputRef.current?.focus()
   }, [isFocused])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); onEnter(node.id) }
-    else if (e.key === 'Backspace' && node.content === '') { e.preventDefault(); onDelete(node.id) }
-    else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); onIndent(node.id) }
-    else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); onOutdent(node.id) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); onArrowUp(node.id) }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); onArrowDown(node.id) }
+  const flush = useCallback(
+    (value: string) => {
+      clearTimeout(debounceRef.current)
+      if (value !== node.content) void patchNode(node, { content: value })
+    },
+    [node],
+  )
+
+  const handleChange = (value: string) => {
+    setText(value)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => flush(value), 500)
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      flush(text)
+      onEnter(node)
+    } else if (e.key === 'Backspace' && text === '' && !hasChildren) {
+      e.preventDefault()
+      onDelete(node)
+    } else if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault()
+      onIndent(node)
+    } else if (e.key === 'Tab' && e.shiftKey) {
+      e.preventDefault()
+      onOutdent(node)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      flush(text)
+      onArrowUp(node.id)
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      flush(text)
+      onArrowDown(node.id)
+    }
   }
 
   return (
     <div>
-      <div className={`outline-node ${node.isCompleted ? 'outline-node--completed' : ''}`}>
-        {/* Collapse toggle — only visible when node has children */}
+      <div className={`outline-node ${node.completedAt ? 'outline-node--completed' : ''}`}>
         <button
           className={`outline-node__collapse ${hasChildren ? 'outline-node__collapse--visible' : ''}`}
-          onClick={() => hasChildren && onToggleCollapse(node.id)}
+          onClick={() => hasChildren && void patchNode(node, { collapsed: !node.collapsed })}
           tabIndex={-1}
-          aria-label={node.isCollapsed ? 'Expand' : 'Collapse'}
+          aria-label={node.collapsed ? 'Expand' : 'Collapse'}
         >
           <CaretDownIcon
             size={13}
             weight="bold"
-            style={{ transform: node.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+            style={{ transform: node.collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
           />
         </button>
 
-        {/* Bullet */}
         <button
           className="outline-node__bullet"
-          onClick={() => onToggleComplete(node.id)}
+          onClick={() => void toggleTaskComplete(node)}
           tabIndex={-1}
           aria-label="Toggle complete"
         >
           <span className="outline-node__bullet-dot" />
         </button>
 
-        {/* Content input */}
         <input
           ref={inputRef}
           className="outline-node__input"
-          value={node.content}
+          value={text}
           placeholder="Type something…"
-          onChange={e => onChange(node.id, e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={() => flush(text)}
           onKeyDown={handleKeyDown}
           onFocus={() => onFocus(node.id)}
         />
 
-        {/* Child count badge when collapsed */}
-        {node.isCollapsed && hasChildren && (
-          <span className="outline-node__child-count">{node.children.length}</span>
-        )}
+        {node.collapsed && hasChildren && <span className="outline-node__child-count">{kids.length}</span>}
       </div>
 
-      {hasChildren && !node.isCollapsed && (
+      {hasChildren && !node.collapsed && (
         <div className="outline-node__children">
-          {node.children.map(child => (
+          {kids.map((child) => (
             <OutlineNodeRow key={child.id} {...props} node={child} />
           ))}
         </div>
@@ -174,103 +154,58 @@ function OutlineNodeRow(props: OutlineNodeRowProps) {
   )
 }
 
-// --- Main OutlineView ---
 export default function OutlineView() {
-  const [nodes, setNodes] = useState<OutlineNode[]>(initialOutline)
+  const nodes = useAllNodes()
   const [focusedId, setFocusedId] = useState<string | null>(null)
-
+  const roots = childrenOf(nodes, null)
   const flat = flattenVisible(nodes)
 
-  const handleChange = useCallback((id: string, content: string) => {
-    setNodes(prev => findAndUpdate(prev, id, n => ({ ...n, content })))
-  }, [])
+  const handleEnter = useCallback(
+    (node: Node) => {
+      void createSiblingNode(node, nodes).then((created) => setFocusedId(created.id))
+    },
+    [nodes],
+  )
 
-  const handleToggleCollapse = useCallback((id: string) => {
-    setNodes(prev => findAndUpdate(prev, id, n => ({ ...n, isCollapsed: !n.isCollapsed })))
-  }, [])
+  const handleDelete = useCallback(
+    (node: Node) => {
+      const idx = flat.findIndex((f) => f.node.id === node.id)
+      const prevId = idx > 0 ? flat[idx - 1]!.node.id : null
+      void deleteTask(node)
+      if (prevId) setFocusedId(prevId)
+    },
+    [flat],
+  )
 
-  const handleToggleComplete = useCallback((id: string) => {
-    setNodes(prev => findAndUpdate(prev, id, n => ({ ...n, isCompleted: !n.isCompleted })))
-  }, [])
+  const handleIndent = useCallback(
+    (node: Node) => {
+      void indentNode(node, nodes).then(() => setFocusedId(node.id))
+    },
+    [nodes],
+  )
 
-  const handleEnter = useCallback((id: string) => {
-    const newNode = createNode(generateId(), '')
-    setNodes(prev => insertAfter(prev, id, newNode))
-    setFocusedId(newNode.id)
-  }, [])
+  const handleOutdent = useCallback(
+    (node: Node) => {
+      void outdentNode(node, nodes).then(() => setFocusedId(node.id))
+    },
+    [nodes],
+  )
 
-  const handleDelete = useCallback((id: string) => {
-    const flatIdx = flat.findIndex(f => f.node.id === id)
-    const prevId = flatIdx > 0 ? flat[flatIdx - 1].node.id : null
-    setNodes(prev => findAndDelete(prev, id))
-    if (prevId) setFocusedId(prevId)
-  }, [flat])
+  const handleArrowUp = useCallback(
+    (id: string) => {
+      const idx = flat.findIndex((f) => f.node.id === id)
+      if (idx > 0) setFocusedId(flat[idx - 1]!.node.id)
+    },
+    [flat],
+  )
 
-  // Tab: make node a child of previous sibling
-  const handleIndent = useCallback((id: string) => {
-    const flatIdx = flat.findIndex(f => f.node.id === id)
-    if (flatIdx <= 0) return
-    const prevNode = flat[flatIdx - 1].node
-    const target = (nodes: OutlineNode[]) => {
-      // Remove from current position
-      let removed: OutlineNode | null = null
-      const without = (ns: OutlineNode[]): OutlineNode[] =>
-        ns.reduce<OutlineNode[]>((acc, n) => {
-          if (n.id === id) { removed = n; return acc }
-          return [...acc, { ...n, children: without(n.children) }]
-        }, [])
-      const pruned = without(nodes)
-      if (!removed) return nodes
-      // Append to prev sibling's children
-      return findAndUpdate(pruned, prevNode.id, n => ({
-        ...n,
-        isCollapsed: false,
-        children: [...n.children, removed!],
-      }))
-    }
-    setNodes(prev => target(prev))
-    setFocusedId(id)
-  }, [flat, nodes])
-
-  // Shift+Tab: move node up one level
-  const handleOutdent = useCallback((id: string) => {
-    // Find parent
-    const findParent = (ns: OutlineNode[], _parentId: string | null): string | null => {
-      for (const n of ns) {
-        if (n.children.some(c => c.id === id)) return n.id
-        const found = findParent(n.children, n.id)
-        if (found) return found
-      }
-      return null
-    }
-    const parentId = findParent(nodes, null)
-    if (!parentId) return
-
-    let moved: OutlineNode | null = null
-    const removeFromParent = (ns: OutlineNode[]): OutlineNode[] =>
-      ns.map(n => {
-        if (n.id === parentId) {
-          moved = n.children.find(c => c.id === id) ?? null
-          return { ...n, children: n.children.filter(c => c.id !== id) }
-        }
-        return { ...n, children: removeFromParent(n.children) }
-      })
-
-    const pruned = removeFromParent(nodes)
-    if (!moved) return
-    setNodes(insertAfter(pruned, parentId, moved))
-    setFocusedId(id)
-  }, [nodes])
-
-  const handleArrowUp = useCallback((id: string) => {
-    const idx = flat.findIndex(f => f.node.id === id)
-    if (idx > 0) setFocusedId(flat[idx - 1].node.id)
-  }, [flat])
-
-  const handleArrowDown = useCallback((id: string) => {
-    const idx = flat.findIndex(f => f.node.id === id)
-    if (idx < flat.length - 1) setFocusedId(flat[idx + 1].node.id)
-  }, [flat])
+  const handleArrowDown = useCallback(
+    (id: string) => {
+      const idx = flat.findIndex((f) => f.node.id === id)
+      if (idx >= 0 && idx < flat.length - 1) setFocusedId(flat[idx + 1]!.node.id)
+    },
+    [flat],
+  )
 
   return (
     <main className="outline-view">
@@ -281,17 +216,15 @@ export default function OutlineView() {
         </div>
 
         <div className="outline-view__body">
-          {nodes.map(node => (
+          {roots.map((node) => (
             <OutlineNodeRow
               key={node.id}
               node={node}
+              allNodes={nodes}
               focusedId={focusedId}
               onFocus={setFocusedId}
-              onChange={handleChange}
-              onToggleCollapse={handleToggleCollapse}
-              onToggleComplete={handleToggleComplete}
-              onEnter={handleEnter}
               onDelete={handleDelete}
+              onEnter={handleEnter}
               onIndent={handleIndent}
               onOutdent={handleOutdent}
               onArrowUp={handleArrowUp}
@@ -299,14 +232,9 @@ export default function OutlineView() {
             />
           ))}
 
-          {/* Add root node */}
           <button
             className="outline-view__add-root"
-            onClick={() => {
-              const n = createNode(generateId(), '')
-              setNodes(prev => [...prev, n])
-              setFocusedId(n.id)
-            }}
+            onClick={() => void createRootNode(nodes).then((created) => setFocusedId(created.id))}
           >
             <span className="outline-view__add-icon">+</span>
             Add item
