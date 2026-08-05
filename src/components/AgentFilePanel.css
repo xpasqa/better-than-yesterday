@@ -1,0 +1,59 @@
+.agent-file-panel {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  flex-shrink: 0;
+  height: 100vh;
+  border-left: 1px solid var(--divider-primary);
+  background: var(--bg-secondary);
+}
+
+.agent-file-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.agent-file-panel__title {
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+}
+
+.agent-file-panel__count {
+  font-size: var(--font-size-small);
+  color: var(--text-tertiary);
+}
+
+.agent-file-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  color: var(--text-secondary);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.agent-file-panel__close:hover {
+  background: var(--bg-hover);
+}
+
+.agent-file-panel__tree {
+  flex-shrink: 0;
+  max-height: 40%;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.agent-file-panel__viewer {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+}
