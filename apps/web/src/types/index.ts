@@ -2,15 +2,6 @@ export type Priority = 1 | 2 | 3 | 4
 
 export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline' | 'mail' | 'storage' | 'agent'
 
-export interface OutlineNode {
-  id: string
-  content: string
-  children: OutlineNode[]
-  isCollapsed: boolean
-  isCompleted: boolean
-  note?: string
-}
-
 export interface Label {
   id: string
   name: string

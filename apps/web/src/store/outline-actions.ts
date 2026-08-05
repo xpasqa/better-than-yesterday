@@ -1,0 +1,87 @@
+// Outline writes through the same node table Todo uses (spec induk §2.1) —
+// this file only adds the operations Outline needs that Todo doesn't:
+// arbitrary content edits, collapse state, and the structural moves that
+// back Tab/Shift+Tab. Reparenting itself is core/tree.ts (2.outline/spec.md
+// §7, §12) — this is just the Dexie-write wrapper around it, mirroring
+// node-actions.ts's enqueue pattern.
+import { uuidv7 } from '@better/core/id'
+import { between } from '@better/core/rank'
+import { indent as treeIndent, outdent as treeOutdent } from '@better/core/tree'
+import type { Node } from '@better/core/node'
+import { db } from './db.ts'
+import { triggerSync } from './sync-client.ts'
+
+async function enqueueNode(node: Node): Promise<void> {
+  await db.transaction('rw', db.nodes, db.outbox, async () => {
+    await db.nodes.put(node)
+    await db.outbox.put({ key: `node:${node.id}`, entityType: 'node', payload: node })
+  })
+  triggerSync()
+}
+
+export async function patchNode(node: Node, patch: Partial<Node>): Promise<void> {
+  await enqueueNode({ ...node, ...patch, updatedAt: new Date().toISOString() })
+}
+
+function blankNode(parentId: string | null, rank: string): Node {
+  const now = new Date().toISOString()
+  return {
+    id: uuidv7(),
+    userId: '',
+    parentId,
+    kind: 'item',
+    rank,
+    content: '',
+    note: null,
+    dueDate: null,
+    dueTime: null,
+    durationMin: null,
+    recurrence: null,
+    priority: null,
+    labelIds: [],
+    color: null,
+    isFavorite: false,
+    isInbox: false,
+    collapsed: false,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    seq: 0,
+  }
+}
+
+/** Enter: a new empty sibling right after `after`, same parent — 2.outline/spec.md §7. */
+export async function createSiblingNode(after: Node, allNodes: Node[]): Promise<Node> {
+  const next = allNodes
+    .filter((n) => n.parentId === after.parentId && n.rank > after.rank)
+    .reduce<Node | null>((min, n) => (min === null || n.rank < min.rank ? n : min), null)
+  const node = blankNode(after.parentId, between(after.rank, next?.rank ?? null))
+  await enqueueNode(node)
+  return node
+}
+
+/** "Add item" at the root level — a plain note document, not a Todo project (§9). */
+export async function createRootNode(allNodes: Node[]): Promise<Node> {
+  const roots = allNodes.filter((n) => n.parentId === null)
+  const lastRank = roots.length > 0 ? roots.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+  const node = blankNode(null, between(lastRank, null))
+  await enqueueNode(node)
+  return node
+}
+
+/** Tab. Returns false on the documented no-op (no previous sibling) so the caller can leave focus alone. */
+export async function indentNode(node: Node, allNodes: Node[]): Promise<boolean> {
+  const result = treeIndent(allNodes, node.id)
+  if (!result) return false
+  await patchNode(node, result)
+  return true
+}
+
+/** Shift+Tab. Returns false on the documented no-op (already top-level). */
+export async function outdentNode(node: Node, allNodes: Node[]): Promise<boolean> {
+  const result = treeOutdent(allNodes, node.id)
+  if (!result) return false
+  await patchNode(node, result)
+  return true
+}
