@@ -5,12 +5,9 @@ import './AgentView.css'
 
 const USER_NAME = 'Pasqa'
 
-export interface ChatMessage {
-  id: string
-  role: 'user' | 'agent'
-  content: string
-  time: string
-}
+export type ChatMessage =
+  | { id: string; role: 'user' | 'agent'; kind: 'text'; content: string; time: string }
+  | { id: string; role: 'agent'; kind: 'file'; path: string; time: string }
 
 const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
   + 'In a working version, this is where an actual answer would go.'
