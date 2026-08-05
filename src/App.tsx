@@ -6,8 +6,8 @@ import OutlineView from './components/OutlineView'
 import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
 import type { ViewType } from './types'
-import { tasks as initialTasks } from './data/mockData'
-import type { Task } from './types'
+import { tasks as initialTasks, sections as initialSections } from './data/mockData'
+import type { Task, Section } from './types'
 import './styles/variables.css'
 import './styles/global.css'
 import './App.css'
@@ -16,6 +16,7 @@ function App() {
   const [activeView, setActiveView] = useState<ViewType>('today')
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [sections, setSections] = useState<Section[]>(initialSections)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
 
@@ -43,6 +44,24 @@ function App() {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...patch } : t))
   }
 
+  const handleAddSection = (projectId: string, name: string, beforeSectionId?: string) => {
+    const newSection: Section = { id: Date.now().toString(), name, projectId }
+    setSections(prev => {
+      const index = beforeSectionId ? prev.findIndex(s => s.id === beforeSectionId) : -1
+      if (index === -1) return [...prev, newSection]
+      return [...prev.slice(0, index), newSection, ...prev.slice(index)]
+    })
+  }
+
+  const handleRenameSection = (sectionId: string, name: string) => {
+    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, name } : s))
+  }
+
+  const handleDeleteSection = (sectionId: string) => {
+    setSections(prev => prev.filter(s => s.id !== sectionId))
+    setTasks(prev => prev.map(t => t.sectionId === sectionId ? { ...t, sectionId: undefined } : t))
+  }
+
   const openTask = tasks.find(t => t.id === openTaskId) ?? null
 
   return (
@@ -67,10 +86,14 @@ function App() {
           activeView={activeView}
           activeProjectId={activeProjectId}
           tasks={tasks}
+          sections={sections}
           onToggleComplete={handleToggleComplete}
           onAddTask={handleAddTask}
           onDeleteTask={handleDeleteTask}
           onOpenTask={setOpenTaskId}
+          onAddSection={handleAddSection}
+          onRenameSection={handleRenameSection}
+          onDeleteSection={handleDeleteSection}
         />
       )}
       {openTask && (

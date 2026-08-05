@@ -36,6 +36,7 @@ export interface Task {
   content: string
   description?: string
   projectId: string
+  sectionId?: string
   priority: Priority
   dueDate?: string
   labels: string[]
@@ -49,7 +50,6 @@ export interface Section {
   id: string
   name: string
   projectId: string
-  tasks: Task[]
 }
 
 export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'

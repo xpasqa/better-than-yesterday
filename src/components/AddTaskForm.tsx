@@ -9,6 +9,7 @@ import './AddTaskForm.css'
 interface AddTaskFormProps {
   defaultProjectId: string
   defaultDueDate?: string
+  defaultSectionId?: string
   onAdd: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
   onCancel: () => void
 }
@@ -20,7 +21,7 @@ const priorities: { value: Priority; label: string; color: string }[] = [
   { value: 4, label: 'Priority 4', color: 'var(--text-tertiary)' },
 ]
 
-export default function AddTaskForm({ defaultProjectId, defaultDueDate, onAdd, onCancel }: AddTaskFormProps) {
+export default function AddTaskForm({ defaultProjectId, defaultDueDate, defaultSectionId, onAdd, onCancel }: AddTaskFormProps) {
   const [content, setContent] = useState('')
   const [description, setDescription] = useState('')
   const [showDescription, setShowDescription] = useState(false)
@@ -39,6 +40,7 @@ export default function AddTaskForm({ defaultProjectId, defaultDueDate, onAdd, o
       content: content.trim(),
       description: description.trim() || undefined,
       projectId,
+      sectionId: defaultSectionId,
       priority,
       dueDate: dueDate || undefined,
       labels: [],

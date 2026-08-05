@@ -13,9 +13,23 @@
   padding: 56px 0 100px;
 }
 
+/* Board needs the full width to lay out columns, not the 800px editor column */
+.main-content__inner--board {
+  max-width: none;
+  margin: 0;
+  padding: 40px 40px 100px;
+}
+
 /* Header */
 .main-content__header {
   margin-bottom: 24px;
+}
+
+.main-content__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .main-content__title {
@@ -84,6 +98,128 @@
   color: var(--text-secondary);
   font-weight: var(--font-weight-regular);
   margin-left: 2px;
+}
+
+/* "(No Section)" label — same row style, but not interactive */
+.main-content__section-header--plain {
+  color: var(--text-secondary);
+}
+
+/* Named section group: its own header + tasks + "+ Add task", stacked */
+.main-content__section-group {
+  margin-top: 4px;
+}
+
+.main-content__section-group .main-content__section-header {
+  margin-top: 12px;
+}
+
+.main-content__section-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.main-content__section-rename-input {
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+  border: 1px solid var(--brand-red-idle);
+  border-radius: 4px;
+  padding: 1px 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.main-content__section-menu-wrapper {
+  position: relative;
+  margin-left: auto;
+}
+
+.main-content__section-menu-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: background 0.1s, color 0.1s;
+  cursor: pointer;
+}
+
+.main-content__section-menu-btn:hover {
+  background: rgba(0,0,0,0.07);
+  color: #444;
+}
+
+.main-content__section-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0px 8px 32px 2px rgba(0,0,0,0.12), 0px 4px 7px 6px rgba(0,0,0,0.06);
+  min-width: 170px;
+  z-index: 200;
+  padding: 4px;
+}
+
+.main-content__section-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #202020;
+  border-radius: 5px;
+  transition: background 0.08s;
+  text-align: left;
+  cursor: pointer;
+}
+
+.main-content__section-dropdown-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.main-content__section-dropdown-item--danger {
+  color: #db4035;
+}
+
+/* "+ Add section" — a lighter-weight variant of the "+ Add task" row */
+.main-content__add-section-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0;
+  margin-top: 8px;
+  font-size: var(--font-size-content);
+  color: var(--text-secondary);
+  border-radius: 5px;
+  transition: color 0.1s;
+  text-align: left;
+  cursor: pointer;
+}
+
+.main-content__add-section-btn:hover {
+  color: var(--text-primary);
+}
+
+.main-content__add-section-input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: var(--font-size-content);
+  border: 1px solid var(--brand-red-idle);
+  border-radius: 5px;
 }
 
 /* Add task button */

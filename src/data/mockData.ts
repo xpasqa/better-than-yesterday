@@ -1,4 +1,4 @@
-import type { Task, Project, Label } from '../types'
+import type { Task, Project, Label, Section } from '../types'
 
 export const projects: Project[] = [
   { id: 'inbox', name: 'Inbox', color: '#246fe0', taskCount: 3 },
@@ -6,6 +6,13 @@ export const projects: Project[] = [
   { id: 'work', name: 'Work', color: '#dc4c3e', taskCount: 8, isFavorite: true },
   { id: 'shopping', name: 'Shopping', color: '#eb8909', taskCount: 2 },
   { id: 'health', name: 'Health & Fitness', color: '#692ec2', taskCount: 4, isFavorite: true },
+]
+
+export const sections: Section[] = [
+  { id: 'wishlist', name: 'Wishlist', projectId: 'personal' },
+  { id: 'home', name: 'Home', projectId: 'personal' },
+  { id: 'clients', name: 'Clients', projectId: 'work' },
+  { id: 'planning', name: 'Planning', projectId: 'work' },
 ]
 
 export const labels: Label[] = [
@@ -59,6 +66,7 @@ export const tasks: Task[] = [
     id: '4',
     content: 'Reply to client emails',
     projectId: 'work',
+    sectionId: 'clients',
     priority: 2,
     dueDate: today,
     labels: ['email'],
@@ -81,6 +89,7 @@ export const tasks: Task[] = [
     id: '6',
     content: 'Update project roadmap for Q4',
     projectId: 'work',
+    sectionId: 'planning',
     priority: 1,
     dueDate: yesterday,
     labels: ['important'],
@@ -92,6 +101,7 @@ export const tasks: Task[] = [
     id: '7',
     content: 'Read "Atomic Habits" - Chapter 5',
     projectId: 'personal',
+    sectionId: 'wishlist',
     priority: 4,
     dueDate: tomorrow,
     labels: [],
@@ -103,6 +113,7 @@ export const tasks: Task[] = [
     id: '8',
     content: 'Set up team weekly sync',
     projectId: 'work',
+    sectionId: 'planning',
     priority: 3,
     dueDate: tomorrow,
     labels: ['email'],
@@ -114,6 +125,7 @@ export const tasks: Task[] = [
     id: '9',
     content: 'Pay utility bills',
     projectId: 'personal',
+    sectionId: 'home',
     priority: 2,
     dueDate: today,
     labels: [],
@@ -125,6 +137,7 @@ export const tasks: Task[] = [
     id: '10',
     content: 'Clean up home office desk',
     projectId: 'personal',
+    sectionId: 'home',
     priority: 4,
     dueDate: undefined,
     labels: [],
