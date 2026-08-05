@@ -1,5 +1,13 @@
+.agent-chat-row {
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
 .agent-chat {
   flex: 1;
+  min-width: 0;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -146,4 +154,80 @@
 .agent-chat__send-btn:disabled {
   background: #f4b8b4;
   cursor: not-allowed;
+}
+
+.agent-chat__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.agent-chat__files-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: var(--font-size-normal);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-idle);
+  border-radius: 6px;
+  transition: background 0.1s, color 0.1s;
+  cursor: pointer;
+}
+
+.agent-chat__files-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* New task now sits inside .agent-chat__header-actions, which owns the
+   margin-left:auto that used to live on .agent-chat__new directly */
+.agent-chat__header-actions .agent-chat__new {
+  margin-left: 0;
+}
+
+.agent-chat__file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-idle);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  transition: border-color 0.1s, background 0.1s;
+  cursor: pointer;
+  max-width: 320px;
+}
+
+.agent-chat__file-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+}
+
+.agent-chat__file-card-icon {
+  flex-shrink: 0;
+  color: var(--meta-blue);
+}
+
+.agent-chat__file-card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.agent-chat__file-card-name {
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.agent-chat__file-card-meta {
+  font-size: var(--font-size-small);
+  color: var(--text-tertiary);
 }
