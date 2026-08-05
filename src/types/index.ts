@@ -22,7 +22,6 @@ export interface Project {
   name: string
   color: string
   isFavorite?: boolean
-  taskCount?: number
 }
 
 export interface SubTask {
@@ -39,7 +38,7 @@ export interface Task {
   sectionId?: string
   priority: Priority
   dueDate?: string
-  labels: string[]
+  labelIds: string[]
   isCompleted: boolean
   subTasks?: SubTask[]
   createdAt: string
@@ -81,6 +80,6 @@ export interface StorageFile {
   name: string
   parentId: string | null
   type: StorageFileType
-  size: string
+  sizeBytes: number
   modifiedAt: string
 }

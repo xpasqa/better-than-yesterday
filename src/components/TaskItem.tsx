@@ -61,7 +61,7 @@ export default function TaskItem({
   const [showMenu, setShowMenu] = useState(false)
 
   const project = projects.find(p => p.id === task.projectId)
-  const taskLabels = labels.filter(l => task.labels.includes(l.id))
+  const taskLabels = labels.filter(l => task.labelIds.includes(l.id))
   const dueInfo = task.dueDate ? formatDueDate(task.dueDate) : null
   const sortable = !!dragListeners
 

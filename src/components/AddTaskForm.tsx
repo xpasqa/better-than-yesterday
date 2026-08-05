@@ -43,7 +43,7 @@ export default function AddTaskForm({ defaultProjectId, defaultDueDate, defaultS
       sectionId: defaultSectionId,
       priority,
       dueDate: dueDate || undefined,
-      labels: [],
+      labelIds: [],
       isCompleted: false,
     })
   }

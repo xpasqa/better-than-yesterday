@@ -85,14 +85,14 @@ export default function TaskDetailModal({ task, onClose, onToggleComplete, onUpd
 
   const project = projects.find(p => p.id === task.projectId)
   const priority = priorities.find(p => p.value === task.priority)
-  const taskLabels = labels.filter(l => task.labels.includes(l.id))
+  const taskLabels = labels.filter(l => task.labelIds.includes(l.id))
   const subTasks = task.subTasks ?? []
 
   const toggleLabel = (labelId: string) => {
-    const next = task.labels.includes(labelId)
-      ? task.labels.filter(l => l !== labelId)
-      : [...task.labels, labelId]
-    onUpdateTask(task.id, { labels: next })
+    const next = task.labelIds.includes(labelId)
+      ? task.labelIds.filter(l => l !== labelId)
+      : [...task.labelIds, labelId]
+    onUpdateTask(task.id, { labelIds: next })
   }
 
   const updateSubTasks = (next: SubTask[]) => onUpdateTask(task.id, { subTasks: next })
@@ -322,7 +322,7 @@ export default function TaskDetailModal({ task, onClose, onToggleComplete, onUpd
                   {labels.map(l => (
                     <button
                       key={l.id}
-                      className={`task-modal__dropdown-item ${task.labels.includes(l.id) ? 'task-modal__dropdown-item--active' : ''}`}
+                      className={`task-modal__dropdown-item ${task.labelIds.includes(l.id) ? 'task-modal__dropdown-item--active' : ''}`}
                       onClick={() => toggleLabel(l.id)}
                       type="button"
                     >

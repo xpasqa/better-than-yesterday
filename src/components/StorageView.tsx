@@ -9,6 +9,23 @@ function generateId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ['KB', 'MB', 'GB']
+  let value = bytes / 1024
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex++
+  }
+  const rounded = value >= 100 ? Math.round(value) : Math.round(value * 10) / 10
+  return `${rounded} ${units[unitIndex]}`
+}
+
+function formatModifiedDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+}
+
 /** A folder and every folder nested under it, including itself. */
 function collectFolderAndDescendants(folders: StorageFolder[], id: string): string[] {
   const children = folders.filter(f => f.parentId === id)
@@ -123,7 +140,7 @@ export default function StorageView() {
               key={file.id}
               kind="file"
               name={file.name}
-              meta={`${file.size} · ${file.modifiedAt}`}
+              meta={`${formatBytes(file.sizeBytes)} · ${formatModifiedDate(file.modifiedAt)}`}
               fileType={file.type}
               isRenaming={renamingId === file.id}
               onStartRename={() => setRenamingId(file.id)}

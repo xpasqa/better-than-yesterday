@@ -53,7 +53,9 @@ export default function AgentChat({
 
             {messages.map(m => {
               if (m.kind === 'file') {
-                const fileName = m.path.split('/').pop() ?? m.path
+                const file = files.find(f => f.id === m.fileId)
+                if (!file) return null
+                const fileName = file.path.split('/').pop() ?? file.path
                 return (
                   <div key={m.id} className="agent-chat__turn">
                     <div className="agent-chat__turn-head">
@@ -62,7 +64,7 @@ export default function AgentChat({
                     </div>
                     <button
                       className="agent-chat__file-card"
-                      onClick={() => { onSelectFile(m.path); onOpenPanel() }}
+                      onClick={() => { onSelectFile(file.path); onOpenPanel() }}
                       type="button"
                     >
                       <FileMdIcon size={20} className="agent-chat__file-card-icon" />
