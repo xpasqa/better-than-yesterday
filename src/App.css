@@ -1,6 +1,76 @@
+/*
+ * Shell is a column so a top bar can sit above the sidebar+view row on
+ * compact screens. On desktop the top bar isn't rendered at all and the
+ * column collapses to a single full-height row.
+ */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
 .app-layout {
   display: flex;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   background: var(--bg-primary);
+}
+
+/* Compact-only chrome — the hamburger's only home */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 52px;
+  padding: 0 8px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.app-topbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+
+.app-topbar__btn:active {
+  background: rgba(var(--overlay-rgb), 0.06);
+}
+
+.app-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.app-topbar__bell {
+  position: relative;
+}
+
+.app-topbar__bell-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--meta-orange);
+  border: 1.5px solid var(--bg-sidebar);
+}
+
+/* Dims the view behind the sidebar drawer */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: var(--scrim);
 }

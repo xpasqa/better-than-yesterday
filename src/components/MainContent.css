@@ -1,8 +1,9 @@
 .main-content {
   flex: 1;
-  height: 100vh;
+  min-width: 0;
+  height: 100%;
   overflow-y: auto;
-  background: #fff;
+  background: var(--bg-primary);
   position: relative;
 }
 
@@ -23,7 +24,7 @@
   max-width: none;
   margin: 0;
   padding: 40px 40px 24px;
-  min-height: 100vh;
+  min-height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -106,7 +107,7 @@
 }
 
 .main-content__reschedule-btn:hover {
-  background: rgba(211,51,34,0.08);
+  background: var(--brand-red-tint);
 }
 
 .main-content__section-count {
@@ -140,12 +141,12 @@
 
 /* Floating ghost rendered in DragOverlay while a section is being dragged */
 .main-content__section-drag-overlay {
-  background: #fff;
+  background: var(--bg-raised);
   border: 1px solid var(--divider-primary);
   border-radius: 8px;
   padding: 8px 16px;
   margin: 0;
-  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-drag);
   cursor: grabbing;
   width: 320px;
 }
@@ -202,18 +203,18 @@
 }
 
 .main-content__section-menu-btn:hover {
-  background: rgba(0,0,0,0.07);
-  color: #444;
+  background: rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-hover);
 }
 
 .main-content__section-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
-  background: #fff;
-  border: 1px solid #e6e6e6;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-idle);
   border-radius: 8px;
-  box-shadow: 0px 8px 32px 2px rgba(0,0,0,0.12), 0px 4px 7px 6px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-dropdown);
   min-width: 170px;
   z-index: 200;
   padding: 4px;
@@ -226,7 +227,7 @@
   width: 100%;
   padding: 6px 10px;
   font-size: 14px;
-  color: #202020;
+  color: var(--text-primary);
   border-radius: 5px;
   transition: background 0.08s;
   text-align: left;
@@ -234,11 +235,11 @@
 }
 
 .main-content__section-dropdown-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .main-content__section-dropdown-item--danger {
-  color: #db4035;
+  color: var(--text-danger);
 }
 
 /*
@@ -365,7 +366,7 @@
 
 .main-content__add-task-btn:hover .main-content__add-task-icon {
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
 }
 
 /* Completed section */
@@ -378,7 +379,7 @@
   align-items: center;
   gap: 4px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
   padding: 6px 0;
   transition: color 0.1s;
@@ -386,5 +387,61 @@
 }
 
 .main-content__completed-toggle:hover {
-  color: #202020;
+  color: var(--text-primary);
+}
+
+/* ── Tablet ─────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .main-content__inner {
+    padding: 40px 32px 100px;
+  }
+
+  .main-content__inner--board {
+    padding: 24px 24px 20px;
+  }
+}
+
+/* ── Phone ──────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .main-content__inner {
+    padding: 24px 16px 88px;
+  }
+
+  .main-content__inner--board {
+    padding: 16px 0 16px 16px;
+  }
+
+  .main-content__inner--board .main-content__header,
+  .main-content__inner--board .board-view__toolbar {
+    padding-right: 16px;
+  }
+
+  .main-content__title {
+    font-size: 22px;
+    line-height: 30px;
+  }
+
+  .main-content__header {
+    margin-bottom: 16px;
+  }
+
+  /* The title and the List/Board toggle stop fitting on one line */
+  .main-content__header-row {
+    flex-wrap: wrap;
+  }
+
+  /*
+   * The section gap is a hover-only affordance with no touch equivalent —
+   * on a phone the explicit "Add section" button is the way in.
+   */
+  .main-content__section-gap:not(.main-content__section-gap--adding) {
+    display: none;
+  }
+}
+
+@media (hover: none) {
+  .main-content__section-menu-btn {
+    width: 32px;
+    height: 32px;
+  }
 }

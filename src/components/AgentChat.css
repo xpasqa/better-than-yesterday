@@ -1,6 +1,6 @@
 .agent-chat-row {
   flex: 1;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   display: flex;
 }
@@ -8,11 +8,11 @@
 .agent-chat {
   flex: 1;
   min-width: 0;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-primary);
 }
 
 .agent-chat__thread {
@@ -65,7 +65,7 @@
 }
 
 .agent-chat__new:hover {
-  background: rgba(211,51,34,0.08);
+  background: var(--brand-red-tint);
 }
 
 /* One turn = a labelled block, split by the same hairline the task list uses */
@@ -149,7 +149,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
   transition: background 0.15s;
   cursor: pointer;
 }
@@ -159,7 +159,7 @@
 }
 
 .agent-chat__send-btn:disabled {
-  background: #f4b8b4;
+  background: var(--brand-red-disabled);
   cursor: not-allowed;
 }
 
@@ -248,7 +248,28 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 19;
-    background: rgba(0,0,0,0.2);
+    z-index: 69;
+    background: var(--scrim-soft);
+  }
+}
+
+@media (max-width: 767px) {
+  .agent-chat__thread .agent-chat__inner {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .agent-chat__inner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .agent-chat__title {
+    font-size: 22px;
+    line-height: 30px;
+  }
+
+  .agent-chat__composer {
+    padding-bottom: 16px;
   }
 }

@@ -1,8 +1,9 @@
 .agent-view {
   flex: 1;
-  height: 100vh;
+  min-width: 0;
+  height: 100%;
   overflow-y: auto;
-  background: #fff;
+  background: var(--bg-primary);
 }
 
 /* Same 800px column, same padding, as every other main-content view */
@@ -68,7 +69,7 @@
   gap: 2px;
   padding: 2px;
   border-radius: 7px;
-  background: rgba(0,0,0,0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .agent-view__mode-btn {
@@ -86,9 +87,9 @@
 }
 
 .agent-view__mode-btn--active {
-  background: #fff;
+  background: var(--bg-raised);
   color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-toggle);
 }
 
 .agent-view__send-btn {
@@ -101,7 +102,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
   transition: background 0.15s;
   cursor: pointer;
 }
@@ -111,7 +112,7 @@
 }
 
 .agent-view__send-btn:disabled {
-  background: #f4b8b4;
+  background: var(--brand-red-disabled);
   cursor: not-allowed;
 }
 
@@ -142,4 +143,21 @@
 
 .agent-view__example:hover {
   color: var(--brand-red-idle);
+}
+
+@media (max-width: 1023px) {
+  .agent-view__inner {
+    padding: 40px 32px 100px;
+  }
+}
+
+@media (max-width: 767px) {
+  .agent-view__inner {
+    padding: 24px 16px 88px;
+  }
+
+  .agent-view__title {
+    font-size: 22px;
+    line-height: 30px;
+  }
 }

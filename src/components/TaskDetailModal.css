@@ -3,7 +3,7 @@
 .task-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--scrim);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -81,7 +81,7 @@
   height: 22px;
   min-width: 22px;
   border-radius: 50%;
-  border: 1.5px solid #d3d3d3;
+  border: 1.5px solid var(--control-border);
   margin-top: 3px;
 }
 
@@ -118,11 +118,11 @@
 }
 
 .task-modal__description-input:hover {
-  background: #f1ece6;
+  background: var(--bg-input-hover);
 }
 
 .task-modal__description-input:focus {
-  background: #fff;
+  background: var(--bg-primary);
   box-shadow: inset 0 0 0 1.5px var(--border-focus);
   outline: none;
 }
@@ -155,18 +155,18 @@
   height: 15px;
   min-width: 15px;
   border-radius: 50%;
-  border: 1.5px solid #d3d3d3;
+  border: 1.5px solid var(--control-border);
   transition: border-color 0.15s, background 0.15s;
 }
 
 .task-modal__subtask-checkbox:hover {
   border-color: var(--brand-red-idle);
-  background: rgba(211, 51, 34, 0.08);
+  background: var(--brand-red-tint);
 }
 
 .task-modal__subtask-checkbox--done {
-  border-color: #d3d3d3;
-  background: #d3d3d3;
+  border-color: var(--control-border);
+  background: var(--control-border);
 }
 
 .task-modal__subtask-input {
@@ -183,14 +183,14 @@
 
 .task-modal__subtask-input:hover,
 .task-modal__subtask-input:focus {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   outline: none;
 }
 
 .task-modal__subtask-input--done {
   color: var(--text-tertiary);
   text-decoration: line-through;
-  text-decoration-color: #ccc;
+  text-decoration-color: var(--strike-color);
 }
 
 .task-modal__subtask-delete {
@@ -211,7 +211,7 @@
 }
 
 .task-modal__subtask-delete:hover {
-  background: rgba(211, 51, 34, 0.08);
+  background: var(--brand-red-tint);
   color: var(--brand-red-idle);
 }
 
@@ -239,7 +239,7 @@
   line-height: 18px;
   padding: 5px 4px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
 }
 
 .task-modal__subtask-new-input::placeholder {
@@ -283,7 +283,7 @@
 }
 
 .task-modal__field-value:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .task-modal__dropdown {
@@ -313,7 +313,7 @@
 }
 
 .task-modal__dropdown-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .task-modal__dropdown-item--active {
@@ -368,7 +368,7 @@
 }
 
 .task-modal__dropdown--calendar .rdp-day_button:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 /* The base stylesheet bumps the selected day to bold/large — flatten that
@@ -389,4 +389,56 @@
   border-top: 1px solid var(--divider-primary);
   padding-top: 8px;
   justify-content: center;
+}
+
+/* The 800px card would otherwise butt straight against both screen edges */
+@media (max-width: 900px) {
+  .task-modal-overlay {
+    padding: 4vh 24px 0;
+  }
+}
+
+/* Phone: a full-screen sheet, with the properties pane stacked underneath */
+@media (max-width: 767px) {
+  .task-modal-overlay {
+    padding: 0;
+  }
+
+  .task-modal {
+    max-width: none;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .task-modal__body {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .task-modal__main {
+    flex: 0 0 auto;
+    padding: 20px 16px;
+    overflow: visible;
+  }
+
+  /* flex-grow so the tinted panel runs to the bottom edge on a short task */
+  .task-modal__properties {
+    flex: 1 0 auto;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--divider-primary);
+    padding: 16px 16px 24px;
+    overflow: visible;
+  }
+
+  .task-modal__title-input {
+    font-size: 19px;
+    line-height: 26px;
+  }
+}
+
+@media (hover: none) {
+  .task-modal__subtask-delete {
+    opacity: 1;
+  }
 }

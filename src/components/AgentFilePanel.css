@@ -3,7 +3,7 @@
   flex-direction: column;
   width: 420px;
   flex-shrink: 0;
-  height: 100vh;
+  height: 100%;
   border-left: 1px solid var(--divider-primary);
   background: var(--bg-secondary);
 }
@@ -55,7 +55,7 @@
 .agent-file-panel__viewer {
   flex: 1;
   min-height: 0;
-  background: #fff;
+  background: var(--bg-primary);
 }
 
 @media (max-width: 1100px) {
@@ -63,7 +63,21 @@
     position: fixed;
     top: 0;
     right: 0;
-    z-index: 20;
+    bottom: 0;
+    height: auto;
+    z-index: 70;
     box-shadow: var(--shadow-raised-2);
+  }
+}
+
+/* No room to leave a strip of chat visible behind it — take the screen */
+@media (max-width: 767px) {
+  .agent-file-panel {
+    width: 100%;
+    left: 0;
+  }
+
+  .agent-file-panel__tree {
+    max-height: 34%;
   }
 }

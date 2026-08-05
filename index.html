@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>better</title>
+    <script>
+      /* Blocking on purpose: without it every dark-mode load flashes white
+         while React boots. Mirrors resolveTheme() in src/hooks/useTheme.ts. */
+      (function () {
+        var stored = localStorage.getItem('better:theme')
+        var theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

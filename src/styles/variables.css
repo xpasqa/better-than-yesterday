@@ -1,4 +1,10 @@
-/* Todoist Design Tokens - extracted from app.todoist.com */
+/*
+ * Todoist Design Tokens - extracted from app.todoist.com
+ *
+ * :root is the light theme. Dark overrides live in the block at the bottom,
+ * keyed on [data-theme="dark"] — set on <html> by the inline script in
+ * index.html before first paint, then maintained by useTheme().
+ */
 :root {
   /* Typography */
   --font-family: 'Better', -apple-system, "system-ui", "Segoe UI", "Noto Sans", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -36,17 +42,38 @@
   --bg-highlight: rgba(0, 0, 0, 0.04);
   --bg-selected: #ffefe5;
   --bg-hover: rgba(0, 0, 0, 0.04);
+  /* Board columns, and the description field's hover fill */
+  --bg-board-column: #fafafa;
+  --bg-input-hover: #f1ece6;
+
+  /*
+   * Base channel for every hover / press scrim in the app. Each rule keeps
+   * its own hand-tuned alpha via rgba(var(--overlay-rgb), 0.05) — only the
+   * colour flips per theme, so a black tint never lands on a black surface.
+   */
+  --overlay-rgb: 0, 0, 0;
+  --scrim: rgba(0, 0, 0, 0.35);
+  --scrim-soft: rgba(0, 0, 0, 0.2);
 
   /* Text colors */
   --text-primary: #202020;
   --text-secondary: #666;
   --text-tertiary: #999;
   --text-placeholder: #999;
+  /* Icon buttons darken past --text-secondary on hover */
+  --text-hover: #444;
+  --text-danger: #db4035;
+  --strike-color: #bbb;
 
   /* Brand / Accent */
   --brand-red: #dc4c3e;
   --brand-red-hover: #c3392c;
   --brand-red-idle: #d33322;
+  --brand-red-tint: rgba(211, 51, 34, 0.08);
+  --brand-red-disabled: #f4b8b4;
+  /* Ink on a filled brand-red surface */
+  --on-brand: #fff;
+  --avatar-bg: #4a4a4a;
 
   /* Dividers */
   --divider-primary: #eee;
@@ -57,14 +84,19 @@
   --border-idle: #e6e6e6;
   --border-hover: #ccc;
   --border-focus: #b8b8b8;
+  /* Checkbox rings, and any other 1px control outline */
+  --control-border: #d3d3d3;
 
   /* Priority colors */
   --priority-p1: #d1453b;
   --priority-p1-bg: #ffd6d3;
+  --priority-p1-tint: rgba(209, 69, 59, 0.12);
   --priority-p2: #eb8909;
   --priority-p2-bg: #fbe7ce;
+  --priority-p2-tint: rgba(235, 137, 9, 0.12);
   --priority-p3: #246fe0;
   --priority-p3-bg: #dde6f9;
+  --priority-p3-tint: rgba(36, 111, 224, 0.12);
   --priority-p4: #666;
   --priority-p4-bg: #f2efed;
 
@@ -83,6 +115,10 @@
   /* Shadows */
   --shadow-raised-1: 0px 4px 10px 0px rgba(0, 0, 0, 0.1), 0px 8px 18px 4px rgba(0, 0, 0, 0.05);
   --shadow-raised-2: 0px 8px 32px 2px rgba(0, 0, 0, 0.14), 0px 4px 7px 6px rgba(0, 0, 0, 0.09);
+  --shadow-dropdown: 0px 8px 32px 2px rgba(0, 0, 0, 0.12), 0px 4px 7px 6px rgba(0, 0, 0, 0.06);
+  --shadow-drag: 0px 12px 28px rgba(0, 0, 0, 0.16), 0px 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-toggle: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 1px 4px rgba(0, 0, 0, 0.08);
 
   /* Layout — verified from live Todoist DOM (4 Aug 2026) */
   --sidebar-width: 280px;
@@ -128,4 +164,121 @@
   --meta-charcoal: #808080;
   --meta-grey: #999;
   --meta-taupe: #ccae96;
+}
+
+/*
+ * Dark theme.
+ *
+ * The light palette is deliberately warm (#fcfaf8 sidebar, #ffefe5 selection),
+ * so the dark one keeps that bias rather than going blue-grey — surfaces are
+ * warm near-blacks and the selected row is a deep brown, not a navy.
+ *
+ * Accents are lifted, not reused: #d33322 on #1c1b1a is roughly 4:1, under the
+ * bar for the 14px labels it carries. Elevation reads through surface
+ * lightness plus a visible border, with shadow only reinforcing it.
+ */
+:root[data-theme="dark"] {
+  /* Surfaces */
+  --bg-primary: #1c1b1a;
+  --bg-secondary: #211f1e;
+  /*
+   * Recessed, so on dark it has to be *darker* than the surface it sits on
+   * — the description field and the properties pane both live inside a
+   * --bg-raised modal, and matching it would flatten them out of existence.
+   */
+  --bg-tertiary: #201e1d;
+  --bg-grouped-secondary: #211f1e;
+  --bg-raised: #272423;
+  --bg-sidebar: #171615;
+  --bg-highlight: rgba(255, 255, 255, 0.06);
+  --bg-selected: #3d2a20;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-board-column: #211f1e;
+  --bg-input-hover: #282524;
+
+  --overlay-rgb: 255, 255, 255;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --scrim-soft: rgba(0, 0, 0, 0.45);
+
+  /* Text */
+  --text-primary: #eceae8;
+  --text-secondary: #a5a09b;
+  --text-tertiary: #7a7570;
+  --text-placeholder: #7a7570;
+  --text-hover: #d8d4d0;
+  --text-danger: #ef6f5c;
+  --strike-color: #6a6560;
+
+  /* Brand */
+  --brand-red: #e8604c;
+  --brand-red-hover: #f0765f;
+  --brand-red-idle: #e8604c;
+  --brand-red-tint: rgba(232, 96, 76, 0.16);
+  --brand-red-disabled: #6b332b;
+  --avatar-bg: #5a5551;
+
+  /* Dividers & borders */
+  --divider-primary: #2e2b29;
+  --divider-secondary: #262322;
+  --divider-tertiary: #3d3936;
+  --border-idle: #37332f;
+  --border-hover: #4b4642;
+  --border-focus: #635d58;
+  --control-border: #4b4642;
+
+  /* Priority */
+  --priority-p1: #e8635a;
+  --priority-p1-bg: #4a2724;
+  --priority-p1-tint: rgba(232, 99, 90, 0.16);
+  --priority-p2: #f0a03b;
+  --priority-p2-bg: #453320;
+  --priority-p2-tint: rgba(240, 160, 59, 0.16);
+  --priority-p3: #5a94ec;
+  --priority-p3-bg: #22314a;
+  --priority-p3-tint: rgba(90, 148, 236, 0.16);
+  --priority-p4: #a5a09b;
+  --priority-p4-bg: #2b2827;
+
+  /* Actionable */
+  --action-primary-idle: #e8604c;
+  --action-primary-hover: #f0765f;
+  --action-quaternary-idle: #a5a09b;
+  --action-quaternary-hover: rgba(255, 255, 255, 0.06);
+
+  /* Positive / Negative */
+  --color-positive: #4fb35f;
+  --color-danger: #e8604c;
+  --color-warning: #f0a03b;
+  --color-info: #5a94ec;
+
+  /* Shadows deepen — a 12%-black shadow does nothing over #1c1b1a */
+  --shadow-raised-1: 0px 4px 10px 0px rgba(0, 0, 0, 0.4), 0px 8px 18px 4px rgba(0, 0, 0, 0.28);
+  --shadow-raised-2: 0px 8px 32px 2px rgba(0, 0, 0, 0.55), 0px 4px 7px 6px rgba(0, 0, 0, 0.35);
+  --shadow-dropdown: 0px 8px 32px 2px rgba(0, 0, 0, 0.5), 0px 4px 7px 6px rgba(0, 0, 0, 0.3);
+  --shadow-drag: 0px 12px 28px rgba(0, 0, 0, 0.55), 0px 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-toggle: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 1px 4px rgba(0, 0, 0, 0.4);
+
+  --scrollbar-thumb: #46413d;
+  --scrollbar-thumb-hover: #5c5751;
+  --scrollbar-track: transparent;
+
+  --focus-shadow: 0 0 0 1px #5a94ec, 0 0 0 4px rgba(90, 148, 236, 0.25);
+
+  /* Meta colours used by chrome (file icons, flags, the bell dot) */
+  --meta-blue: #5a94ec;
+  --meta-orange: #f0a03b;
+  --meta-charcoal: #9a948e;
+  --meta-grey: #a5a09b;
+}
+
+/*
+ * Project and label colours come from data, not CSS, so no token can reach
+ * them — several (#058527, #692ec2) are too dark to read on #1c1b1a. The
+ * glyph is small and decorative, so brightening it in place is enough.
+ */
+:root[data-theme="dark"] .sidebar__project-hash,
+:root[data-theme="dark"] .task-item__project-hash,
+:root[data-theme="dark"] .add-task-form__project-hash {
+  filter: brightness(1.45) saturate(0.85);
 }

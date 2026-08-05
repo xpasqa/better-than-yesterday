@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(0,0,0,0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   border-radius: 7px;
   padding: 2px;
 }
@@ -28,9 +28,9 @@
 }
 
 .board-view__grouping-btn--active {
-  background: #fff;
+  background: var(--bg-raised);
   color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-toggle);
 }
 
 .board-view__columns {
@@ -51,7 +51,7 @@
 .board-column {
   flex: 0 0 300px;
   width: 300px;
-  background: #fafafa;
+  background: var(--bg-board-column);
   border-radius: 8px;
   padding: 10px;
   display: flex;
@@ -108,13 +108,13 @@
   align-items: center;
   gap: 4px;
   white-space: nowrap;
-  background: #fff;
+  background: var(--bg-raised);
   padding: 5px 10px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: var(--font-weight-strong);
   color: var(--brand-red-idle);
-  box-shadow: 0px 8px 32px 2px rgba(0,0,0,0.12), 0px 4px 7px 6px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-dropdown);
 }
 
 .board-gap:hover .board-gap__label {
@@ -134,7 +134,7 @@
   font-size: 14px;
   border: 1px solid var(--brand-red-idle);
   border-radius: 6px;
-  background: #fff;
+  background: var(--bg-primary);
 }
 
 .board-column__header {
@@ -162,11 +162,11 @@
 
 /* Floating ghost rendered in DragOverlay while a section column is being dragged */
 .board-column__drag-overlay {
-  background: #fff;
+  background: var(--bg-raised);
   border: 1px solid var(--divider-primary);
   border-radius: 8px;
   padding: 8px 10px;
-  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-drag);
   cursor: grabbing;
   width: 300px;
 }
@@ -206,18 +206,18 @@
 }
 
 .board-column__menu-btn:hover {
-  background: rgba(0,0,0,0.07);
-  color: #444;
+  background: rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-hover);
 }
 
 .board-column__dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
-  background: #fff;
-  border: 1px solid #e6e6e6;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-idle);
   border-radius: 8px;
-  box-shadow: 0px 8px 32px 2px rgba(0,0,0,0.12), 0px 4px 7px 6px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-dropdown);
   min-width: 170px;
   z-index: 200;
   padding: 4px;
@@ -230,7 +230,7 @@
   width: 100%;
   padding: 6px 10px;
   font-size: 14px;
-  color: #202020;
+  color: var(--text-primary);
   border-radius: 5px;
   transition: background 0.08s;
   text-align: left;
@@ -238,11 +238,11 @@
 }
 
 .board-column__dropdown-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .board-column__dropdown-item--danger {
-  color: #db4035;
+  color: var(--text-danger);
 }
 
 .board-column__body {
@@ -255,7 +255,7 @@
 }
 
 .board-column__body--overlay .task-card {
-  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-drag);
   cursor: grabbing;
 }
 
@@ -275,5 +275,34 @@
 
 .board-column__add-btn:hover {
   color: var(--brand-red-idle);
-  background: rgba(0,0,0,0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
+}
+
+/*
+ * The board keeps scrolling horizontally on a small screen — that is the
+ * correct behaviour for a board, not something to fix. Columns just narrow
+ * enough that the next one peeks in and advertises the scroll.
+ */
+@media (max-width: 767px) {
+  .board-column {
+    flex: 0 0 272px;
+    width: 272px;
+  }
+
+  .board-column__drag-overlay {
+    width: 272px;
+  }
+
+  /* No hover on touch, so this strip can never be discovered */
+  .board-gap:not(.board-gap--adding) {
+    flex-basis: 12px;
+    width: 12px;
+  }
+}
+
+@media (hover: none) {
+  .board-column__menu-btn {
+    width: 30px;
+    height: 30px;
+  }
 }

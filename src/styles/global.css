@@ -9,6 +9,11 @@ html, body, #root {
   overflow: hidden;
 }
 
+html {
+  /* iOS Safari otherwise inflates body text when the phone turns landscape */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-family);
   /* Todoist's base is 13px; 14px is only the task-title size */

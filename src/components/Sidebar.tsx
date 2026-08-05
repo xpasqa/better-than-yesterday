@@ -1,16 +1,23 @@
 import { useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
-  ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon,
+  ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
+import type { Theme } from '../hooks/useTheme'
 import { projects } from '../data/mockData'
+import ThemeToggle from './ThemeToggle'
 import './Sidebar.css'
 
 interface SidebarProps {
   activeView: ViewType
   activeProjectId: string | null
   collapsed: boolean
+  /* Below 1024px the sidebar is an off-canvas drawer instead of a docked column */
+  drawer?: boolean
+  drawerOpen?: boolean
+  theme: Theme
+  onToggleTheme: () => void
   tasks: Task[]
   onViewChange: (view: ViewType) => void
   onProjectChange: (id: string) => void
@@ -33,7 +40,8 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 )
 
 export default function Sidebar({
-  activeView, activeProjectId, collapsed, tasks,
+  activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
+  theme, onToggleTheme, tasks,
   onViewChange, onProjectChange, onToggleCollapse
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
@@ -58,8 +66,14 @@ export default function Sidebar({
     )
   }
 
+  const rootClass = [
+    'sidebar',
+    drawer ? 'sidebar--drawer' : '',
+    drawer && drawerOpen ? 'sidebar--drawer-open' : '',
+  ].filter(Boolean).join(' ')
+
   return (
-    <aside className="sidebar">
+    <aside className={rootClass}>
       <div className="sidebar__header">
         <button className="sidebar__workspace" type="button">
           <div className="sidebar__avatar">P</div>
@@ -67,12 +81,23 @@ export default function Sidebar({
           <span className="sidebar__workspace-chevron"><CaretDownIcon size={14} weight="bold" /></span>
         </button>
         <div className="sidebar__header-actions">
-          <button className="sidebar__bell" title="Notifications" type="button">
-            <BellIcon size={19} />
-            <span className="sidebar__bell-dot" />
-          </button>
-          <button className="sidebar__collapse-btn" onClick={onToggleCollapse} title="Collapse sidebar">
-            <SidebarSimpleIcon size={20} />
+          {/* The drawer already has the top bar's controls above it — one set is enough */}
+          {!drawer && (
+            <>
+              <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+              <button className="sidebar__bell" title="Notifications" type="button">
+                <BellIcon size={19} />
+                <span className="sidebar__bell-dot" />
+              </button>
+            </>
+          )}
+          <button
+            className="sidebar__collapse-btn"
+            onClick={onToggleCollapse}
+            title={drawer ? 'Close menu' : 'Collapse sidebar'}
+            type="button"
+          >
+            {drawer ? <XIcon size={19} /> : <SidebarSimpleIcon size={20} />}
           </button>
         </div>
       </div>

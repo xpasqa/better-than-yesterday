@@ -1,0 +1,25 @@
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--text-hover);
+}
+
+.theme-toggle--small {
+  width: 28px;
+  height: 28px;
+}
+
+.theme-toggle--large {
+  width: 40px;
+  height: 40px;
+}

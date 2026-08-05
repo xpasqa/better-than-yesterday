@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  ArchiveIcon, ArrowBendUpLeftIcon, ArrowBendUpRightIcon, EnvelopeSimpleIcon,
+  ArchiveIcon, ArrowBendUpLeftIcon, ArrowBendUpRightIcon, ArrowLeftIcon, EnvelopeSimpleIcon,
   EnvelopeSimpleOpenIcon, FlagIcon, MagnifyingGlassIcon, NotePencilIcon,
   PaperPlaneTiltIcon, TrashIcon, WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -104,8 +104,16 @@ export default function MailView() {
     body: `\n\n--- Forwarded message ---\nFrom: ${m.sender} <${m.senderEmail}>\nSubject: ${m.subject}\n\n${m.body}`,
   })
 
+  /*
+   * On a phone the three panes become a two-level drill-down: the list, then
+   * whatever the reading pane is showing. Which of the two is on screen is
+   * fully determined by whether anything is open, so it needs no state of its
+   * own — just a class the stylesheet can key off.
+   */
+  const isReading = Boolean(composing || activeMessage)
+
   return (
-    <main className="mail-view">
+    <main className={`mail-view ${isReading ? 'mail-view--reading' : ''}`}>
       {/* Folders */}
       <aside className="mail-view__folders">
         <button
@@ -191,6 +199,14 @@ export default function MailView() {
         ) : activeMessage ? (
           <>
             <div className="mail-view__toolbar">
+              {/* Phone-only — the list is off screen while a message is open */}
+              <button
+                className="mail-view__back"
+                onClick={() => setActiveMessageId(null)}
+                aria-label="Back to list"
+              >
+                <ArrowLeftIcon size={18} />
+              </button>
               <button onClick={() => replyTo(activeMessage)} title="Reply">
                 <ArrowBendUpLeftIcon size={17} />
               </button>

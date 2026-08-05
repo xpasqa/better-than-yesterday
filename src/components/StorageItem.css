@@ -19,7 +19,7 @@
 }
 
 .storage-item:hover::before {
-  background: rgba(0, 0, 0, 0.018);
+  background: rgba(var(--overlay-rgb), 0.018);
 }
 
 .storage-item > * {
@@ -64,7 +64,7 @@
   padding: 1px 4px;
   margin: -1px -4px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
 }
 
 .storage-item__meta {
@@ -100,18 +100,18 @@
 }
 
 .storage-item__action-btn:hover {
-  background: rgba(0, 0, 0, 0.07);
-  color: #444;
+  background: rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-hover);
 }
 
 .storage-item__dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
-  background: #fff;
-  border: 1px solid #e6e6e6;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-idle);
   border-radius: 8px;
-  box-shadow: 0px 8px 32px 2px rgba(0, 0, 0, 0.12), 0px 4px 7px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-dropdown);
   min-width: 170px;
   z-index: 200;
   padding: 4px;
@@ -124,7 +124,7 @@
   width: 100%;
   padding: 6px 10px;
   font-size: 14px;
-  color: #202020;
+  color: var(--text-primary);
   border-radius: 5px;
   transition: background 0.08s;
   text-align: left;
@@ -132,9 +132,9 @@
 }
 
 .storage-item__dropdown-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .storage-item__dropdown-item--danger {
-  color: #db4035;
+  color: var(--text-danger);
 }

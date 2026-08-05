@@ -1,8 +1,9 @@
 .storage-view {
   flex: 1;
-  height: 100vh;
+  min-width: 0;
+  height: 100%;
   overflow-y: auto;
-  background: #fff;
+  background: var(--bg-primary);
   position: relative;
 }
 
@@ -114,7 +115,7 @@
   padding: 1px 4px;
   margin: -1px -4px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
 }
 
 .storage-view__new-folder-input::placeholder {
@@ -158,5 +159,22 @@
 
 .storage-view__add-folder-btn:hover .storage-view__add-folder-icon {
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
+}
+
+@media (max-width: 1023px) {
+  .storage-view__inner {
+    padding: 40px 32px 100px;
+  }
+}
+
+@media (max-width: 767px) {
+  .storage-view__inner {
+    padding: 24px 16px 88px;
+  }
+
+  .storage-view__title {
+    font-size: 22px;
+    line-height: 30px;
+  }
 }

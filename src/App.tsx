@@ -1,5 +1,9 @@
 import { useState } from 'react'
+import { BellIcon, ListIcon } from '@phosphor-icons/react'
+import { useMediaQuery } from './hooks/useMediaQuery'
+import { useTheme } from './hooks/useTheme'
 import Sidebar from './components/Sidebar'
+import ThemeToggle from './components/ThemeToggle'
 import MainContent from './components/MainContent'
 import TaskDetailModal from './components/TaskDetailModal'
 import OutlineView from './components/OutlineView'
@@ -20,6 +24,17 @@ function App() {
   const [sections, setSections] = useState<Section[]>(initialSections)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
+
+  /*
+   * Below 1024px the sidebar stops being a docked column and becomes an
+   * off-canvas drawer, so it needs its own open/closed state — the desktop
+   * collapse-to-rail state means nothing there. 1024px is iPad landscape,
+   * which is wide enough to keep the full desktop layout.
+   */
+  const isCompact = useMediaQuery('(max-width: 1023px)')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const { theme, toggleTheme } = useTheme()
 
   const handleToggleComplete = (taskId: string) => {
     setTasks(prev =>
@@ -102,41 +117,69 @@ function App() {
   const openTask = tasks.find(t => t.id === openTaskId) ?? null
 
   return (
-    <div className="app-layout">
-      <Sidebar
-        activeView={activeView}
-        activeProjectId={activeProjectId}
-        collapsed={sidebarCollapsed}
-        tasks={tasks}
-        onViewChange={(view) => { setActiveView(view); setActiveProjectId(null) }}
-        onProjectChange={(id) => { setActiveProjectId(id); setActiveView('project') }}
-        onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-      />
-      {activeView === 'outline' ? (
-        <OutlineView />
-      ) : activeView === 'mail' ? (
-        <MailView />
-      ) : activeView === 'storage' ? (
-        <StorageView />
-      ) : activeView === 'agent' ? (
-        <AgentView />
-      ) : (
-        <MainContent
+    <div className="app-shell">
+      {isCompact && (
+        <header className="app-topbar">
+          <button
+            className="app-topbar__btn"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+            type="button"
+          >
+            <ListIcon size={21} />
+          </button>
+          <div className="app-topbar__actions">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} size="large" />
+            <button className="app-topbar__btn app-topbar__bell" aria-label="Notifications" type="button">
+              <BellIcon size={20} />
+              <span className="app-topbar__bell-dot" />
+            </button>
+          </div>
+        </header>
+      )}
+      <div className="app-layout">
+        <Sidebar
           activeView={activeView}
           activeProjectId={activeProjectId}
+          collapsed={!isCompact && sidebarCollapsed}
+          drawer={isCompact}
+          drawerOpen={drawerOpen}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           tasks={tasks}
-          sections={sections}
-          onToggleComplete={handleToggleComplete}
-          onAddTask={handleAddTask}
-          onDeleteTask={handleDeleteTask}
-          onOpenTask={setOpenTaskId}
-          onAddSection={handleAddSection}
-          onRenameSection={handleRenameSection}
-          onDeleteSection={handleDeleteSection}
-          onReorderSections={handleReorderSections}
-          onMoveTask={handleMoveTask}
+          onViewChange={(view) => { setActiveView(view); setActiveProjectId(null); setDrawerOpen(false) }}
+          onProjectChange={(id) => { setActiveProjectId(id); setActiveView('project'); setDrawerOpen(false) }}
+          onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
         />
-      )}
+        {isCompact && drawerOpen && (
+          <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
+        )}
+        {activeView === 'outline' ? (
+          <OutlineView />
+        ) : activeView === 'mail' ? (
+          <MailView />
+        ) : activeView === 'storage' ? (
+          <StorageView />
+        ) : activeView === 'agent' ? (
+          <AgentView />
+        ) : (
+          <MainContent
+            activeView={activeView}
+            activeProjectId={activeProjectId}
+            tasks={tasks}
+            sections={sections}
+            onToggleComplete={handleToggleComplete}
+            onAddTask={handleAddTask}
+            onDeleteTask={handleDeleteTask}
+            onOpenTask={setOpenTaskId}
+            onAddSection={handleAddSection}
+            onRenameSection={handleRenameSection}
+            onDeleteSection={handleDeleteSection}
+            onReorderSections={handleReorderSections}
+            onMoveTask={handleMoveTask}
+          />
+        )}
+      </div>
       {openTask && (
         <TaskDetailModal
           task={openTask}

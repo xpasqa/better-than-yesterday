@@ -1,10 +1,16 @@
 /* Three columns, Apple Mail's structure — but styled like the rest of this app */
 .mail-view {
   flex: 1;
-  height: 100vh;
+  min-width: 0;
+  height: 100%;
   display: flex;
-  background: #fff;
+  background: var(--bg-primary);
   overflow: hidden;
+}
+
+/* Only ever visible on a phone, where the list is off screen */
+.mail-view__back {
+  display: none;
 }
 
 /* Folder column */
@@ -33,7 +39,7 @@
 }
 
 .mail-view__compose-btn:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .mail-view__compose-icon {
@@ -44,7 +50,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
   flex-shrink: 0;
 }
 
@@ -69,7 +75,7 @@
 }
 
 .mail-view__folder:hover {
-  background: rgba(0,0,0,0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .mail-view__folder--active {
@@ -165,7 +171,7 @@
 }
 
 .mail-item:hover {
-  background: rgba(0,0,0,0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .mail-item--active {
@@ -275,7 +281,7 @@
 }
 
 .mail-view__toolbar button:hover:not(:disabled) {
-  background: rgba(0,0,0,0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--text-primary);
 }
 
@@ -344,4 +350,151 @@
   gap: 10px;
   color: var(--text-tertiary);
   font-size: var(--font-size-content);
+}
+
+/* ── Tablet: folder column collapses to an icon rail, still three panes ── */
+@media (max-width: 1023px) {
+  .mail-view__folders {
+    flex: 0 0 60px;
+    padding: 20px 8px;
+  }
+
+  .mail-view__compose-btn,
+  .mail-view__folder {
+    justify-content: center;
+    padding: 8px 0;
+    gap: 0;
+  }
+
+  /* Everything but the icon goes; the count would have nowhere to sit */
+  .mail-view__compose-btn > span:not(.mail-view__compose-icon),
+  .mail-view__folder > span {
+    display: none;
+  }
+
+  .mail-view__list-col {
+    flex: 0 0 290px;
+  }
+
+  .mail-view__message {
+    padding: 24px 24px 60px;
+  }
+
+  .mail-view__toolbar {
+    padding: 10px 12px;
+  }
+}
+
+/* ── Phone: two-level drill-down, folders become a chip strip ─────────── */
+@media (max-width: 767px) {
+  .mail-view {
+    flex-direction: column;
+  }
+
+  .mail-view__folders {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--divider-primary);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .mail-view__folders::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mail-view__folder-list {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* Chips, not rows — labels come back because there's horizontal room to scroll */
+  .mail-view__compose-btn,
+  .mail-view__folder {
+    width: auto;
+    flex-shrink: 0;
+    gap: 6px;
+    margin: 0;
+    padding: 7px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .mail-view__compose-btn {
+    background: var(--bg-selected);
+  }
+
+  .mail-view__compose-btn > span:not(.mail-view__compose-icon),
+  .mail-view__folder > span {
+    display: inline;
+  }
+
+  .mail-view__folder:not(.mail-view__folder--active) {
+    background: rgba(var(--overlay-rgb), 0.04);
+  }
+
+  .mail-view__list-col {
+    flex: 1;
+    border-right: none;
+  }
+
+  .mail-view__list-header {
+    padding: 14px 16px 10px;
+  }
+
+  /* Reading pane replaces the list rather than sitting beside it */
+  .mail-view__reading {
+    display: none;
+  }
+
+  .mail-view--reading .mail-view__folders,
+  .mail-view--reading .mail-view__list-col {
+    display: none;
+  }
+
+  .mail-view--reading .mail-view__reading {
+    display: flex;
+    flex: 1;
+  }
+
+  .mail-view__back {
+    display: flex;
+    margin-right: 4px;
+  }
+
+  .mail-view__message {
+    padding: 20px 16px 48px;
+  }
+
+  .mail-view__message-subject {
+    font-size: 19px;
+    line-height: 26px;
+  }
+
+  /* Wraps to its own line instead of being pushed off the right edge */
+  .mail-view__message-date {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .mail-view__toolbar {
+    padding: 8px 10px;
+  }
+}
+
+@media (hover: none) {
+  .mail-item {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .mail-view__toolbar button {
+    width: 38px;
+    height: 38px;
+  }
 }

@@ -1,12 +1,42 @@
 .sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
-  height: 100vh;
+  height: 100%;
   background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+/*
+ * Drawer mode (below 1024px). Off-canvas rather than display:none so the
+ * slide is animatable, and pinned to the viewport rather than the row so it
+ * covers the full height including the top bar.
+ */
+.sidebar--drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: auto;
+  z-index: 60;
+  transform: translateX(-100%);
+  transition: transform var(--animation-short) var(--ease-in-out);
+  box-shadow: none;
+}
+
+.sidebar--drawer-open {
+  transform: translateX(0);
+  box-shadow: var(--shadow-raised-2);
+}
+
+/* One notch narrower than a 320px phone so the view behind stays visible */
+@media (max-width: 380px) {
+  .sidebar--drawer {
+    width: 260px;
+    min-width: 260px;
+  }
 }
 
 .sidebar--collapsed {
@@ -38,8 +68,8 @@
   height: 26px;
   min-width: 26px;
   border-radius: 50%;
-  background: #4a4a4a;
-  color: #fff;
+  background: var(--avatar-bg);
+  color: var(--on-brand);
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -83,7 +113,7 @@
 }
 
 .sidebar__bell:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 .sidebar__bell-dot {
@@ -110,8 +140,8 @@
 }
 
 .sidebar__collapse-btn:hover {
-  background: rgba(0,0,0,0.06);
-  color: #444;
+  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--text-hover);
 }
 
 .sidebar--collapsed .sidebar__collapse-btn {
@@ -150,7 +180,7 @@
 }
 
 .sidebar__nav-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .sidebar__nav-item--active {
@@ -256,7 +286,7 @@
 }
 
 .sidebar__section-header:hover {
-  background: rgba(0,0,0,0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .sidebar__section-title {
@@ -278,7 +308,7 @@
 }
 
 .sidebar__section-chevron:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 /* Primary "Add task" action — red, and the first thing in the nav */
@@ -302,7 +332,7 @@
 }
 
 .sidebar__add-task:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .sidebar__add-task-icon {
@@ -313,7 +343,7 @@
   height: 22px;
   border-radius: 50%;
   background: var(--brand-red-idle);
-  color: #fff;
+  color: var(--on-brand);
   flex-shrink: 0;
 }
 
@@ -324,7 +354,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #808080;
+  color: var(--meta-charcoal);
   opacity: 0;
   transition: opacity 0.1s, background 0.1s;
   margin-left: auto;
@@ -335,6 +365,26 @@
 }
 
 .sidebar__section-add:hover {
-  background: rgba(0,0,0,0.06);
-  color: #444;
+  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--text-hover);
+}
+
+/*
+ * Touch input: hover-revealed controls never appear, and 34px rows are below
+ * the comfortable tap target. Keyed on the input device, not the viewport —
+ * a touchscreen laptop deserves the same treatment.
+ */
+@media (hover: none) {
+  .sidebar__section-add {
+    opacity: 1;
+  }
+
+  .sidebar__nav-item,
+  .sidebar__add-task {
+    height: 42px;
+  }
+
+  .sidebar__section-header {
+    height: 42px;
+  }
 }
