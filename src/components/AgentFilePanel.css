@@ -57,3 +57,13 @@
   min-height: 0;
   background: #fff;
 }
+
+@media (max-width: 1100px) {
+  .agent-file-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 20;
+    box-shadow: var(--shadow-raised-2);
+  }
+}

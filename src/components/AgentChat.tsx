@@ -116,13 +116,16 @@ export default function AgentChat({
       </main>
 
       {panelOpen && (
-        <AgentFilePanel
-          files={files}
-          selectedPath={selectedPath}
-          unseenPaths={unseenPaths}
-          onSelect={onSelectFile}
-          onClose={onClosePanel}
-        />
+        <>
+          <div className="agent-chat__panel-backdrop" onClick={onClosePanel} />
+          <AgentFilePanel
+            files={files}
+            selectedPath={selectedPath}
+            unseenPaths={unseenPaths}
+            onSelect={onSelectFile}
+            onClose={onClosePanel}
+          />
+        </>
       )}
     </div>
   )
