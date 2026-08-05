@@ -15,29 +15,37 @@
   overflow-y: auto;
 }
 
-/* Compose lives as a quiet icon in the list header, not a heavy filled block */
-.mail-view__title-row {
+/* Primary action, styled exactly like the app sidebar's own "Add task" row */
+.mail-view__compose-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.mail-view__compose-btn {
-  margin-left: auto;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  border-radius: 5px;
-  transition: background 0.1s, color 0.1s;
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-medium);
+  color: var(--brand-red-idle);
+  border-radius: var(--border-radius-small);
+  transition: background 0.08s;
+  text-align: left;
   cursor: pointer;
 }
 
 .mail-view__compose-btn:hover {
-  background: rgba(0,0,0,0.06);
-  color: var(--brand-red-idle);
+  background: rgba(0,0,0,0.05);
+}
+
+.mail-view__compose-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand-red-idle);
+  color: #fff;
+  flex-shrink: 0;
 }
 
 .mail-view__folder-list {
@@ -87,6 +95,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .mail-view__list-header {

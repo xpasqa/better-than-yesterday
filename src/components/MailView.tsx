@@ -108,6 +108,15 @@ export default function MailView() {
     <main className="mail-view">
       {/* Folders */}
       <aside className="mail-view__folders">
+        <button
+          className="mail-view__compose-btn"
+          onClick={() => setComposing({ to: '', subject: '', body: '' })}
+        >
+          <span className="mail-view__compose-icon">
+            <NotePencilIcon size={13} weight="bold" />
+          </span>
+          <span>New Message</span>
+        </button>
         <ul className="mail-view__folder-list">
           {FOLDERS.map(f => {
             const Icon = f.icon
@@ -132,16 +141,7 @@ export default function MailView() {
       {/* Message list */}
       <section className="mail-view__list-col">
         <div className="mail-view__list-header">
-          <div className="mail-view__title-row">
-            <h1 className="mail-view__title">{FOLDERS.find(f => f.id === activeFolder)?.name}</h1>
-            <button
-              className="mail-view__compose-btn"
-              onClick={() => setComposing({ to: '', subject: '', body: '' })}
-              title="New Message"
-            >
-              <NotePencilIcon size={17} />
-            </button>
-          </div>
+          <h1 className="mail-view__title">{FOLDERS.find(f => f.id === activeFolder)?.name}</h1>
           <p className="mail-view__subtitle">
             {visible.length} {visible.length === 1 ? 'message' : 'messages'}
           </p>
