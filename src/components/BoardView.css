@@ -15,7 +15,7 @@
 
 .board-view__grouping-btn {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
   border-radius: 5px;
@@ -36,8 +36,11 @@
 .board-view__columns {
   display: flex;
   align-items: flex-start;
+  flex: 1;
+  min-height: 0;
   overflow-x: auto;
-  padding-bottom: 24px;
+  overflow-y: visible;
+  padding-bottom: 12px;
 }
 
 .board-view__column-slot {
@@ -95,7 +98,7 @@
   background: #fff;
   padding: 5px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: var(--font-weight-strong);
   color: var(--brand-red-idle);
   box-shadow: 0px 8px 32px 2px rgba(0,0,0,0.12), 0px 4px 7px 6px rgba(0,0,0,0.06);
@@ -115,7 +118,7 @@
 .board-gap__input {
   width: 100%;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid var(--brand-red-idle);
   border-radius: 6px;
   background: #fff;
@@ -125,7 +128,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
   padding: 4px 4px 10px;
@@ -138,7 +141,7 @@
 }
 
 .board-column__rename-input {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
   border: 1px solid var(--brand-red-idle);
@@ -149,7 +152,7 @@
 }
 
 .board-column__count {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   font-weight: var(--font-weight-regular);
 }
@@ -195,7 +198,7 @@
   gap: 10px;
   width: 100%;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: #202020;
   border-radius: 5px;
   transition: background 0.08s;
@@ -221,7 +224,7 @@
   gap: 8px;
   width: 100%;
   padding: 7px 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   border-radius: 5px;
   transition: color 0.1s, background 0.1s;

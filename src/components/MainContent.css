@@ -13,11 +13,27 @@
   padding: 56px 0 100px;
 }
 
-/* Board needs the full width to lay out columns, not the 800px editor column */
+/*
+ * Board needs the full width to lay out columns, not the 800px editor column.
+ * It also stretches to the full viewport height (flex column) so the
+ * horizontal scrollbar for the columns sits at the very bottom of the
+ * screen instead of hugging the bottom of whatever the tallest column is.
+ */
 .main-content__inner--board {
   max-width: none;
   margin: 0;
-  padding: 40px 40px 100px;
+  padding: 40px 40px 24px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content__inner--board .board-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -94,7 +110,7 @@
 }
 
 .main-content__section-count {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   font-weight: var(--font-weight-regular);
   margin-left: 2px;
@@ -177,7 +193,7 @@
   gap: 10px;
   width: 100%;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: #202020;
   border-radius: 5px;
   transition: background 0.08s;
@@ -191,6 +207,63 @@
 
 .main-content__section-dropdown-item--danger {
   color: #db4035;
+}
+
+/*
+ * Divider between two section groups — invisible until hovered, matching real
+ * Todoist: the gap between sections is plain empty space at rest, and only
+ * reveals the insert-here affordance while the mouse is over that strip.
+ */
+.main-content__section-gap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% + 32px);
+  margin: 0 -16px;
+  padding: 3px 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.main-content__section-gap-line {
+  flex: 1;
+  height: 1px;
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.main-content__section-gap:hover .main-content__section-gap-line {
+  background: var(--brand-red-idle);
+}
+
+.main-content__section-gap-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-strong);
+  color: transparent;
+  transition: color 0.1s;
+}
+
+.main-content__section-gap:hover .main-content__section-gap-label {
+  color: var(--brand-red-idle);
+}
+
+.main-content__section-gap--adding {
+  width: calc(100% + 32px);
+  margin: 4px -16px;
+  padding: 4px 0;
+}
+
+.main-content__section-gap-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: var(--font-size-content);
+  border: 1px solid var(--brand-red-idle);
+  border-radius: 5px;
 }
 
 /* "+ Add section" — a lighter-weight variant of the "+ Add task" row */
@@ -250,7 +323,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 300;
   line-height: 1;
   color: var(--brand-red-idle);
@@ -272,7 +345,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
   font-weight: 500;
   padding: 6px 0;

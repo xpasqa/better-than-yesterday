@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 30px;
+  font-size: 31px;
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
 }
@@ -53,7 +53,7 @@
 .agent-view__prompt-input {
   width: 100%;
   resize: none;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-primary);
   line-height: 22px;
   padding: 0 4px;
@@ -105,7 +105,7 @@
 .agent-view__mode-btn {
   padding: 4px 12px;
   border-radius: 14px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   transition: background 0.1s, color 0.1s;
 }
@@ -123,7 +123,7 @@
   gap: 5px;
   padding: 4px 4px 4px 10px;
   border-radius: 14px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
   transition: background 0.1s;

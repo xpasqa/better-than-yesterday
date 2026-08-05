@@ -54,7 +54,7 @@
 }
 
 .task-card__title {
-  font-size: 13px;
+  font-size: 14px;
   color: #202020;
   line-height: 18px;
   word-break: break-word;
@@ -62,7 +62,7 @@
 }
 
 .task-card__description {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin-top: 2px;
   line-height: 16px;
@@ -75,7 +75,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   line-height: 16px;
   margin-top: 6px;

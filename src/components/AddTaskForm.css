@@ -194,7 +194,7 @@ label.add-task-form__chip input[type='date'] {
 }
 
 .add-task-form__project-hash {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   flex-shrink: 0;
 }

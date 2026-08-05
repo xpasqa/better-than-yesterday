@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import { CaretDownIcon, CheckCircleIcon, DotsThreeIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
 import type { ViewType, Task, Section } from '../types'
 import { projects } from '../data/mockData'
@@ -174,19 +174,27 @@ export default function MainContent({
                     />
                   </>
                 )}
-                {projectSections.map(section => (
-                  <SectionGroup
-                    key={section.id}
-                    section={section}
-                    tasks={todayTasks.filter(t => t.sectionId === section.id)}
-                    defaultProjectId={defaultProjectId}
-                    onToggleComplete={onToggleComplete}
-                    onDeleteTask={onDeleteTask}
-                    onOpenTask={onOpenTask}
-                    onAddTask={onAddTask}
-                    onRename={name => onRenameSection(section.id, name)}
-                    onDelete={() => onDeleteSection(section.id)}
-                  />
+                {projectSections.map((section, i) => (
+                  <Fragment key={section.id}>
+                    {(i > 0 || unsectionedTasks.length > 0) && (
+                      <SectionGapRow
+                        projectId={defaultProjectId}
+                        beforeSectionId={section.id}
+                        onAdd={onAddSection}
+                      />
+                    )}
+                    <SectionGroup
+                      section={section}
+                      tasks={todayTasks.filter(t => t.sectionId === section.id)}
+                      defaultProjectId={defaultProjectId}
+                      onToggleComplete={onToggleComplete}
+                      onDeleteTask={onDeleteTask}
+                      onOpenTask={onOpenTask}
+                      onAddTask={onAddTask}
+                      onRename={name => onRenameSection(section.id, name)}
+                      onDelete={() => onDeleteSection(section.id)}
+                    />
+                  </Fragment>
                 ))}
                 <AddSectionRow projectId={defaultProjectId} onAdd={onAddSection} />
               </div>
@@ -383,6 +391,59 @@ function SectionGroup({
         </>
       )}
     </div>
+  )
+}
+
+/* Hover-revealed horizontal divider between two section groups, for inserting a new section at that exact position */
+function SectionGapRow({ projectId, beforeSectionId, onAdd }: {
+  projectId: string
+  beforeSectionId: string
+  onAdd: (projectId: string, name: string, beforeSectionId?: string) => void
+}) {
+  const [adding, setAdding] = useState(false)
+  const [name, setName] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const start = () => {
+    setAdding(true)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+
+  const commit = () => {
+    const trimmed = name.trim()
+    if (trimmed) onAdd(projectId, trimmed, beforeSectionId)
+    setName('')
+    setAdding(false)
+  }
+
+  if (adding) {
+    return (
+      <div className="main-content__section-gap main-content__section-gap--adding">
+        <input
+          ref={inputRef}
+          className="main-content__section-gap-input"
+          placeholder="Section name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); commit() }
+            if (e.key === 'Escape') { e.preventDefault(); setName(''); setAdding(false) }
+          }}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <button className="main-content__section-gap" onClick={start} aria-label="Add section here">
+      <span className="main-content__section-gap-line" />
+      <span className="main-content__section-gap-label">
+        <PlusIcon size={13} weight="bold" />
+        Add section
+      </span>
+      <span className="main-content__section-gap-line" />
+    </button>
   )
 }
 

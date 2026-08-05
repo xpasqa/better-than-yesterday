@@ -40,7 +40,7 @@
   border-radius: 50%;
   background: #4a4a4a;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -48,7 +48,7 @@
 }
 
 .sidebar__workspace-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
   white-space: nowrap;
@@ -193,7 +193,7 @@
   right: 0;
   transform: translateY(-42%);
   text-align: center;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: var(--font-weight-strong);
   line-height: 1;
   letter-spacing: -0.3px;
@@ -204,11 +204,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .sidebar__nav-count {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--meta-charcoal);
   font-weight: 400;
 }
@@ -225,7 +225,7 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
   font-weight: 400;
 }

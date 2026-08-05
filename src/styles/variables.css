@@ -2,14 +2,14 @@
 :root {
   /* Typography */
   --font-family: 'Better', -apple-system, "system-ui", "Segoe UI", "Noto Sans", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-size-tiny: 8px;
-  --font-size-xsmall: 10px;
-  --font-size-small: 11px;
-  --font-size-compact: 12px;
-  --font-size-normal: 13px;
-  --font-size-content: 14px;
-  --font-size-content-large: 16px;
-  --font-size-header: 26px;
+  --font-size-tiny: 9px;
+  --font-size-xsmall: 11px;
+  --font-size-small: 12px;
+  --font-size-compact: 13px;
+  --font-size-normal: 14px;
+  --font-size-content: 15px;
+  --font-size-content-large: 17px;
+  --font-size-header: 27px;
   --font-weight-regular: 400;
   --font-weight-medium: 600;
   --font-weight-strong: 700;
