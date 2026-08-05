@@ -10,7 +10,7 @@ interface AddTaskFormProps {
   defaultProjectId: string
   defaultDueDate?: string
   defaultSectionId?: string
-  onAdd: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
+  onAdd: (task: Omit<Task, 'id' | 'createdAt'>) => void
   onCancel: () => void
 }
 

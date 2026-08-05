@@ -1,4 +1,6 @@
+import type { CSSProperties } from 'react'
 import { CalendarBlankIcon } from '@phosphor-icons/react'
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import type { Task, Priority } from '../types'
 import './TaskCard.css'
 
@@ -6,6 +8,11 @@ interface TaskCardProps {
   task: Task
   onToggleComplete: (id: string) => void
   onOpenTask: (id: string) => void
+  dragAttributes?: DraggableAttributes
+  dragListeners?: DraggableSyntheticListeners
+  sortableRef?: (node: HTMLElement | null) => void
+  sortableStyle?: CSSProperties
+  isDropTarget?: boolean
 }
 
 function formatDueDate(date: string): { text: string; overdue: boolean; isToday: boolean } {
@@ -21,11 +28,25 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
   }
 }
 
-export default function TaskCard({ task, onToggleComplete, onOpenTask }: TaskCardProps) {
+export default function TaskCard({
+  task, onToggleComplete, onOpenTask, dragAttributes, dragListeners, sortableRef, sortableStyle, isDropTarget,
+}: TaskCardProps) {
   const dueInfo = task.dueDate ? formatDueDate(task.dueDate) : null
+  const sortable = !!dragListeners
 
   return (
-    <div className={`task-card ${task.isCompleted ? 'task-card--completed' : ''}`}>
+    <div
+      ref={sortableRef}
+      style={sortableStyle}
+      className={[
+        'task-card',
+        task.isCompleted && 'task-card--completed',
+        sortable && 'task-card--sortable',
+        isDropTarget && 'task-card--drop-before',
+      ].filter(Boolean).join(' ')}
+      {...dragAttributes}
+      {...dragListeners}
+    >
       <button
         className={`task-card__checkbox task-card__checkbox--p${task.priority as Priority}`}
         onClick={() => onToggleComplete(task.id)}

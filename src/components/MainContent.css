@@ -124,10 +124,42 @@
 /* Named section group: its own header + tasks + "+ Add task", stacked */
 .main-content__section-group {
   margin-top: 4px;
+  position: relative;
 }
 
 .main-content__section-group .main-content__section-header {
   margin-top: 12px;
+}
+
+/* The whole header is the drag source when sortable — no separate handle */
+.main-content__section-header--sortable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Floating ghost rendered in DragOverlay while a section is being dragged */
+.main-content__section-drag-overlay {
+  background: #fff;
+  border: 1px solid var(--divider-primary);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin: 0;
+  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  cursor: grabbing;
+  width: 320px;
+}
+
+/* Red insertion line — shown above the section currently being dragged over */
+.main-content__section-group--drop-before::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -16px;
+  right: -16px;
+  height: 2px;
+  background: var(--brand-red-idle);
+  border-radius: 1px;
 }
 
 .main-content__section-collapse {

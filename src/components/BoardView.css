@@ -56,6 +56,19 @@
   padding: 10px;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Red insertion line — shown to the left of the column currently being dragged over */
+.board-column--drop-before::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -7px;
+  width: 3px;
+  background: var(--brand-red-idle);
+  border-radius: 1.5px;
 }
 
 /* The hover-revealed strip between two columns for inserting a section there */
@@ -140,6 +153,24 @@
   white-space: nowrap;
 }
 
+/* The whole header is the drag source when it wraps a real section — no separate handle */
+.board-column__header--sortable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Floating ghost rendered in DragOverlay while a section column is being dragged */
+.board-column__drag-overlay {
+  background: #fff;
+  border: 1px solid var(--divider-primary);
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  cursor: grabbing;
+  width: 300px;
+}
+
 .board-column__rename-input {
   font-size: 14px;
   font-weight: var(--font-weight-strong);
@@ -215,7 +246,17 @@
 }
 
 .board-column__body {
-  min-height: 4px;
+  min-height: 24px;
+}
+
+.board-column__body--overlay {
+  min-height: 0;
+  cursor: grabbing;
+}
+
+.board-column__body--overlay .task-card {
+  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  cursor: grabbing;
 }
 
 .board-column__add-btn {

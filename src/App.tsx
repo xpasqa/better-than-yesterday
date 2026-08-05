@@ -26,12 +26,11 @@ function App() {
     )
   }
 
-  const handleAddTask = (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => {
+  const handleAddTask = (task: Omit<Task, 'id' | 'createdAt'>) => {
     const newTask: Task = {
       ...task,
       id: Date.now().toString(),
       createdAt: new Date().toISOString().split('T')[0],
-      order: tasks.length + 1,
     }
     setTasks(prev => [...prev, newTask])
   }
@@ -60,6 +59,43 @@ function App() {
   const handleDeleteSection = (sectionId: string) => {
     setSections(prev => prev.filter(s => s.id !== sectionId))
     setTasks(prev => prev.map(t => t.sectionId === sectionId ? { ...t, sectionId: undefined } : t))
+  }
+
+  /*
+   * Reorders only this project's own slots in the array — every other
+   * project's sections keep their original position, since `sections` is
+   * one flat array shared across all projects.
+   */
+  const handleReorderSections = (projectId: string, orderedSectionIds: string[]) => {
+    setSections(prev => {
+      const byId = new Map(prev.filter(s => s.projectId === projectId).map(s => [s.id, s]))
+      let cursor = 0
+      return prev.map(s => {
+        if (s.projectId !== projectId) return s
+        return byId.get(orderedSectionIds[cursor++])!
+      })
+    })
+  }
+
+  /*
+   * sectionId has three meanings: omitted = don't touch it (flat/reorder-only
+   * drags), null = clear it ("No Section"), a string = set it to that section.
+   * beforeTaskId re-inserts immediately before that task's position in the
+   * array (after the dragged task is removed); omitted appends to the end.
+   */
+  const handleMoveTask = (taskId: string, beforeTaskId?: string, sectionId?: string | null) => {
+    setTasks(prev => {
+      const task = prev.find(t => t.id === taskId)
+      if (!task) return prev
+      const rest = prev.filter(t => t.id !== taskId)
+      const movedTask: Task = sectionId === undefined
+        ? task
+        : { ...task, sectionId: sectionId === null ? undefined : sectionId }
+
+      const targetIndex = beforeTaskId ? rest.findIndex(t => t.id === beforeTaskId) : -1
+      if (targetIndex === -1) return [...rest, movedTask]
+      return [...rest.slice(0, targetIndex), movedTask, ...rest.slice(targetIndex)]
+    })
   }
 
   const openTask = tasks.find(t => t.id === openTaskId) ?? null
@@ -94,6 +130,8 @@ function App() {
           onAddSection={handleAddSection}
           onRenameSection={handleRenameSection}
           onDeleteSection={handleDeleteSection}
+          onReorderSections={handleReorderSections}
+          onMoveTask={handleMoveTask}
         />
       )}
       {openTask && (

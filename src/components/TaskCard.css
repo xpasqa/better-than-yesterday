@@ -8,12 +8,32 @@
   padding: 10px;
   margin-bottom: 8px;
   cursor: pointer;
+  position: relative;
   transition: box-shadow 0.1s, border-color 0.1s;
 }
 
 .task-card:hover {
   border-color: #d3d3d3;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* The whole card is the drag source when sortable — no separate handle */
+.task-card--sortable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Red insertion line — shown above the card currently being dragged over */
+.task-card--drop-before::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brand-red-idle);
+  border-radius: 1px;
 }
 
 .task-card--completed .task-card__title {

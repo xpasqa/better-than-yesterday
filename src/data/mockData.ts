@@ -37,7 +37,6 @@ export const tasks: Task[] = [
     labels: ['important'],
     isCompleted: false,
     createdAt: today,
-    order: 1,
   },
   {
     id: '2',
@@ -48,7 +47,6 @@ export const tasks: Task[] = [
     labels: ['call'],
     isCompleted: false,
     createdAt: today,
-    order: 2,
   },
   {
     id: '3',
@@ -60,7 +58,6 @@ export const tasks: Task[] = [
     labels: [],
     isCompleted: false,
     createdAt: today,
-    order: 3,
   },
   {
     id: '4',
@@ -72,7 +69,6 @@ export const tasks: Task[] = [
     labels: ['email'],
     isCompleted: false,
     createdAt: today,
-    order: 4,
   },
   {
     id: '5',
@@ -83,7 +79,6 @@ export const tasks: Task[] = [
     labels: [],
     isCompleted: true,
     createdAt: today,
-    order: 5,
   },
   {
     id: '6',
@@ -95,7 +90,6 @@ export const tasks: Task[] = [
     labels: ['important'],
     isCompleted: false,
     createdAt: yesterday,
-    order: 6,
   },
   {
     id: '7',
@@ -107,7 +101,6 @@ export const tasks: Task[] = [
     labels: [],
     isCompleted: false,
     createdAt: today,
-    order: 7,
   },
   {
     id: '8',
@@ -119,7 +112,6 @@ export const tasks: Task[] = [
     labels: ['email'],
     isCompleted: false,
     createdAt: today,
-    order: 8,
   },
   {
     id: '9',
@@ -131,7 +123,6 @@ export const tasks: Task[] = [
     labels: [],
     isCompleted: false,
     createdAt: today,
-    order: 9,
   },
   {
     id: '10',
@@ -143,6 +134,5 @@ export const tasks: Task[] = [
     labels: [],
     isCompleted: false,
     createdAt: today,
-    order: 10,
   },
 ]

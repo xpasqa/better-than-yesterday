@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, TrashIcon } from '@phosphor-icons/react'
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import type { Task, Priority } from '../types'
 import { projects, labels } from '../data/mockData'
 import './TaskItem.css'
@@ -9,6 +11,11 @@ interface TaskItemProps {
   onToggleComplete: (id: string) => void
   onDeleteTask: (id: string) => void
   onOpenTask: (id: string) => void
+  dragAttributes?: DraggableAttributes
+  dragListeners?: DraggableSyntheticListeners
+  sortableRef?: (node: HTMLElement | null) => void
+  sortableStyle?: CSSProperties
+  isDropTarget?: boolean
 }
 
 const priorityColors: Record<Priority, string> = {
@@ -46,19 +53,32 @@ const FlagIcon = ({ priority }: { priority: Priority }) => (
   <PhFlagIcon size={12} weight="fill" color={priorityColors[priority]} />
 )
 
-export default function TaskItem({ task, onToggleComplete, onDeleteTask, onOpenTask }: TaskItemProps) {
+export default function TaskItem({
+  task, onToggleComplete, onDeleteTask, onOpenTask,
+  dragAttributes, dragListeners, sortableRef, sortableStyle, isDropTarget,
+}: TaskItemProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
   const project = projects.find(p => p.id === task.projectId)
   const taskLabels = labels.filter(l => task.labels.includes(l.id))
   const dueInfo = task.dueDate ? formatDueDate(task.dueDate) : null
+  const sortable = !!dragListeners
 
   return (
     <li
-      className={`task-item ${task.isCompleted ? 'task-item--completed' : ''}`}
+      ref={sortableRef}
+      style={sortableStyle}
+      className={[
+        'task-item',
+        task.isCompleted && 'task-item--completed',
+        sortable && 'task-item--sortable',
+        isDropTarget && 'task-item--drop-before',
+      ].filter(Boolean).join(' ')}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
+      {...dragAttributes}
+      {...dragListeners}
     >
       {/* Checkbox */}
       <button

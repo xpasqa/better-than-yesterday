@@ -1,8 +1,16 @@
 import { Fragment, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { CaretDownIcon, CheckCircleIcon, DotsThreeIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
+import { DndContext, DragOverlay, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { ViewType, Task, Section } from '../types'
 import { projects } from '../data/mockData'
+import { handleSectionTaskDragEnd } from '../dnd/handleSectionTaskDragEnd'
+import type { DragItemData } from '../dnd/types'
 import TaskList from './TaskList'
+import TaskItem from './TaskItem'
 import AddTaskForm from './AddTaskForm'
 import ViewModeToggle from './ViewModeToggle'
 import BoardView from './BoardView'
@@ -14,12 +22,14 @@ interface MainContentProps {
   tasks: Task[]
   sections: Section[]
   onToggleComplete: (id: string) => void
-  onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
+  onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void
   onDeleteTask: (id: string) => void
   onOpenTask: (id: string) => void
   onAddSection: (projectId: string, name: string, beforeSectionId?: string) => void
   onRenameSection: (sectionId: string, name: string) => void
   onDeleteSection: (sectionId: string) => void
+  onReorderSections: (projectId: string, orderedSectionIds: string[]) => void
+  onMoveTask: (taskId: string, beforeTaskId?: string, sectionId?: string | null) => void
 }
 
 function getViewTitle(view: ViewType, projectId: string | null): string {
@@ -63,10 +73,14 @@ function filterTasks(tasks: Task[], view: ViewType, projectId: string | null): T
 export default function MainContent({
   activeView, activeProjectId, tasks, sections,
   onToggleComplete, onAddTask, onDeleteTask, onOpenTask,
-  onAddSection, onRenameSection, onDeleteSection,
+  onAddSection, onRenameSection, onDeleteSection, onReorderSections, onMoveTask,
 }: MainContentProps) {
   const [showAddTask, setShowAddTask] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
+  const [activeDrag, setActiveDrag] = useState<
+    { type: 'task'; task: Task } | { type: 'section'; section: Section } | null
+  >(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   const title = getViewTitle(activeView, activeProjectId)
   const today = new Date().toISOString().split('T')[0]
@@ -96,6 +110,22 @@ export default function MainContent({
   const unsectionedTasks = todayTasks.filter(t => !t.sectionId)
   const isBoardMode = isProjectScoped && viewMode === 'board'
 
+  const onDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current as DragItemData | undefined
+    if (data?.type === 'task') {
+      const task = tasks.find(t => t.id === event.active.id)
+      if (task) setActiveDrag({ type: 'task', task })
+    } else if (data?.type === 'section') {
+      const section = projectSections.find(s => s.id === event.active.id)
+      if (section) setActiveDrag({ type: 'section', section })
+    }
+  }
+
+  const onDragEnd = (event: DragEndEvent) => {
+    setActiveDrag(null)
+    handleSectionTaskDragEnd(event, { projectSections, defaultProjectId, onReorderSections, onMoveTask })
+  }
+
   return (
     <main className="main-content">
       <div className={`main-content__inner ${isBoardMode ? 'main-content__inner--board' : ''}`}>
@@ -122,9 +152,17 @@ export default function MainContent({
             onAddSection={onAddSection}
             onRenameSection={onRenameSection}
             onDeleteSection={onDeleteSection}
+            onReorderSections={onReorderSections}
+            onMoveTask={onMoveTask}
           />
         ) : (
-          <>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={() => setActiveDrag(null)}
+          >
             {/* Overdue section */}
             {overdueTasks.length > 0 && (
               <div className="main-content__section">
@@ -134,6 +172,8 @@ export default function MainContent({
                 </div>
                 <TaskList
                   tasks={overdueTasks}
+                  containerId="overdue"
+                  kind="reorder-only"
                   onToggleComplete={onToggleComplete}
                   onDeleteTask={onDeleteTask}
                   onOpenTask={onOpenTask}
@@ -150,6 +190,8 @@ export default function MainContent({
                 </div>
                 <TaskList
                   tasks={todayTasks}
+                  containerId="today-list"
+                  kind="reorder-only"
                   onToggleComplete={onToggleComplete}
                   onDeleteTask={onDeleteTask}
                   onOpenTask={onOpenTask}
@@ -168,34 +210,38 @@ export default function MainContent({
                     </div>
                     <TaskList
                       tasks={unsectionedTasks}
+                      containerId="none"
+                      kind="section-grouped"
                       onToggleComplete={onToggleComplete}
                       onDeleteTask={onDeleteTask}
                       onOpenTask={onOpenTask}
                     />
                   </>
                 )}
-                {projectSections.map((section, i) => (
-                  <Fragment key={section.id}>
-                    {(i > 0 || unsectionedTasks.length > 0) && (
-                      <SectionGapRow
-                        projectId={defaultProjectId}
-                        beforeSectionId={section.id}
-                        onAdd={onAddSection}
+                <SortableContext items={projectSections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  {projectSections.map((section, i) => (
+                    <Fragment key={section.id}>
+                      {(i > 0 || unsectionedTasks.length > 0) && (
+                        <SectionGapRow
+                          projectId={defaultProjectId}
+                          beforeSectionId={section.id}
+                          onAdd={onAddSection}
+                        />
+                      )}
+                      <SectionGroup
+                        section={section}
+                        tasks={todayTasks.filter(t => t.sectionId === section.id)}
+                        defaultProjectId={defaultProjectId}
+                        onToggleComplete={onToggleComplete}
+                        onDeleteTask={onDeleteTask}
+                        onOpenTask={onOpenTask}
+                        onAddTask={onAddTask}
+                        onRename={name => onRenameSection(section.id, name)}
+                        onDelete={() => onDeleteSection(section.id)}
                       />
-                    )}
-                    <SectionGroup
-                      section={section}
-                      tasks={todayTasks.filter(t => t.sectionId === section.id)}
-                      defaultProjectId={defaultProjectId}
-                      onToggleComplete={onToggleComplete}
-                      onDeleteTask={onDeleteTask}
-                      onOpenTask={onOpenTask}
-                      onAddTask={onAddTask}
-                      onRename={name => onRenameSection(section.id, name)}
-                      onDelete={() => onDeleteSection(section.id)}
-                    />
-                  </Fragment>
-                ))}
+                    </Fragment>
+                  ))}
+                </SortableContext>
                 <AddSectionRow projectId={defaultProjectId} onAdd={onAddSection} />
               </div>
             )}
@@ -206,6 +252,8 @@ export default function MainContent({
               <div className="main-content__section">
                 <TaskList
                   tasks={todayTasks}
+                  containerId="flat"
+                  kind="reorder-only"
                   onToggleComplete={onToggleComplete}
                   onDeleteTask={onDeleteTask}
                   onOpenTask={onOpenTask}
@@ -230,7 +278,25 @@ export default function MainContent({
                 <span>Add task</span>
               </button>
             )}
-          </>
+
+            <DragOverlay>
+              {activeDrag?.type === 'task' && (
+                <ul className="task-list task-list--overlay">
+                  <TaskItem
+                    task={activeDrag.task}
+                    onToggleComplete={() => {}}
+                    onDeleteTask={() => {}}
+                    onOpenTask={() => {}}
+                  />
+                </ul>
+              )}
+              {activeDrag?.type === 'section' && (
+                <div className="main-content__section-header main-content__section-drag-overlay">
+                  <span>{activeDrag.section.name}</span>
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         )}
 
         {/* Completed tasks */}
@@ -291,7 +357,7 @@ function SectionGroup({
   onToggleComplete: (id: string) => void
   onDeleteTask: (id: string) => void
   onOpenTask: (id: string) => void
-  onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
+  onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void
   onRename: (name: string) => void
   onDelete: () => void
 }) {
@@ -301,6 +367,16 @@ function SectionGroup({
   const [nameDraft, setNameDraft] = useState(section.name)
   const [showAddTask, setShowAddTask] = useState(false)
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
+    id: section.id,
+    data: { type: 'section' },
+  })
+  const sortableStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
   const commitRename = () => {
     const trimmed = nameDraft.trim()
     if (trimmed && trimmed !== section.name) onRename(trimmed)
@@ -309,8 +385,12 @@ function SectionGroup({
   }
 
   return (
-    <div className="main-content__section-group">
-      <div className="main-content__section-header">
+    <div
+      className={`main-content__section-group ${isOver && !isDragging ? 'main-content__section-group--drop-before' : ''}`}
+      ref={setNodeRef}
+      style={sortableStyle}
+    >
+      <div className="main-content__section-header main-content__section-header--sortable" {...attributes} {...listeners}>
         <button
           className="main-content__section-collapse"
           onClick={() => setExpanded(e => !e)}
@@ -371,6 +451,8 @@ function SectionGroup({
         <>
           <TaskList
             tasks={tasks}
+            containerId={section.id}
+            kind="section-grouped"
             onToggleComplete={onToggleComplete}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}

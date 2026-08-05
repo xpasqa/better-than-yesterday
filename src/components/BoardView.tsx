@@ -1,6 +1,14 @@
 import { useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { DotsThreeIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
+import { DndContext, DragOverlay, PointerSensor, closestCenter, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Task, Section } from '../types'
+import type { DragItemData, TaskContainerKind } from '../dnd/types'
+import { handleSectionTaskDragEnd } from '../dnd/handleSectionTaskDragEnd'
+import SortableTaskCard from './SortableTaskCard'
 import TaskCard from './TaskCard'
 import AddTaskForm from './AddTaskForm'
 import './BoardView.css'
@@ -11,10 +19,12 @@ interface BoardViewProps {
   sections: Section[]
   onToggleComplete: (id: string) => void
   onOpenTask: (id: string) => void
-  onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
+  onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void
   onAddSection: (projectId: string, name: string, beforeSectionId?: string) => void
   onRenameSection: (sectionId: string, name: string) => void
   onDeleteSection: (sectionId: string) => void
+  onReorderSections: (projectId: string, orderedSectionIds: string[]) => void
+  onMoveTask: (taskId: string, beforeTaskId?: string, sectionId?: string | null) => void
 }
 
 type Grouping = 'section' | 'date'
@@ -24,83 +34,141 @@ interface Column {
   name: string
   tasks: Task[]
   section?: Section
+  containerId: string
+  kind: TaskContainerKind
 }
 
 function buildDateColumns(tasks: Task[]): Column[] {
   const today = new Date().toISOString().split('T')[0]
-  return [
+  const cols: Omit<Column, 'containerId' | 'kind'>[] = [
     { key: 'overdue', name: 'Overdue', tasks: tasks.filter(t => t.dueDate && t.dueDate < today) },
     { key: 'today', name: 'Today', tasks: tasks.filter(t => t.dueDate === today) },
     { key: 'upcoming', name: 'Upcoming', tasks: tasks.filter(t => t.dueDate && t.dueDate > today) },
     { key: 'no-date', name: 'No date', tasks: tasks.filter(t => !t.dueDate) },
   ]
+  return cols.map(c => ({ ...c, containerId: c.key, kind: 'reorder-only' as const }))
 }
 
 export default function BoardView({
   projectId, tasks, sections,
   onToggleComplete, onOpenTask, onAddTask, onAddSection, onRenameSection, onDeleteSection,
+  onReorderSections, onMoveTask,
 }: BoardViewProps) {
   const [grouping, setGrouping] = useState<Grouping>('section')
+  const [activeDrag, setActiveDrag] = useState<
+    { type: 'task'; task: Task } | { type: 'section'; section: Section } | null
+  >(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   const unsectioned = tasks.filter(t => !t.sectionId)
   const columns: Column[] = grouping === 'date'
     ? buildDateColumns(tasks)
     : [
         ...(unsectioned.length > 0
-          ? [{ key: 'no-section', name: 'No Section', tasks: unsectioned }]
+          ? [{ key: 'no-section', name: 'No Section', tasks: unsectioned, containerId: 'none', kind: 'section-grouped' as const }]
           : []),
         ...sections.map(section => ({
           key: section.id,
           name: section.name,
           tasks: tasks.filter(t => t.sectionId === section.id),
           section,
+          containerId: section.id,
+          kind: 'section-grouped' as const,
         })),
       ]
 
+  const onDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current as DragItemData | undefined
+    if (data?.type === 'task') {
+      const task = tasks.find(t => t.id === event.active.id)
+      if (task) setActiveDrag({ type: 'task', task })
+    } else if (data?.type === 'section') {
+      const section = sections.find(s => s.id === event.active.id)
+      if (section) setActiveDrag({ type: 'section', section })
+    }
+  }
+
+  const onDragEnd = (event: DragEndEvent) => {
+    setActiveDrag(null)
+    handleSectionTaskDragEnd(event, { projectSections: sections, defaultProjectId: projectId, onReorderSections, onMoveTask })
+  }
+
   return (
-    <div className="board-view">
-      <div className="board-view__toolbar">
-        <div className="board-view__grouping-toggle">
-          <button
-            className={`board-view__grouping-btn ${grouping === 'section' ? 'board-view__grouping-btn--active' : ''}`}
-            onClick={() => setGrouping('section')}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActiveDrag(null)}
+    >
+      <div className="board-view">
+        <div className="board-view__toolbar">
+          <div className="board-view__grouping-toggle">
+            <button
+              className={`board-view__grouping-btn ${grouping === 'section' ? 'board-view__grouping-btn--active' : ''}`}
+              onClick={() => setGrouping('section')}
+            >
+              Section
+            </button>
+            <button
+              className={`board-view__grouping-btn ${grouping === 'date' ? 'board-view__grouping-btn--active' : ''}`}
+              onClick={() => setGrouping('date')}
+            >
+              Date
+            </button>
+          </div>
+        </div>
+
+        <div className="board-view__columns">
+          <SortableContext
+            items={grouping === 'section' ? sections.map(s => s.id) : []}
+            strategy={verticalListSortingStrategy}
           >
-            Section
-          </button>
-          <button
-            className={`board-view__grouping-btn ${grouping === 'date' ? 'board-view__grouping-btn--active' : ''}`}
-            onClick={() => setGrouping('date')}
-          >
-            Date
-          </button>
+            {columns.map((col, i) => (
+              <div className="board-view__column-slot" key={col.key}>
+                <BoardColumn
+                  name={col.name}
+                  tasks={col.tasks}
+                  section={col.section}
+                  containerId={col.containerId}
+                  kind={col.kind}
+                  projectId={projectId}
+                  onToggleComplete={onToggleComplete}
+                  onOpenTask={onOpenTask}
+                  onAddTask={onAddTask}
+                  onRenameSection={onRenameSection}
+                  onDeleteSection={onDeleteSection}
+                />
+                {grouping === 'section' && (
+                  <SectionGap
+                    projectId={projectId}
+                    beforeSectionId={columns[i + 1]?.section?.id}
+                    onAdd={onAddSection}
+                  />
+                )}
+              </div>
+            ))}
+          </SortableContext>
         </div>
       </div>
 
-      <div className="board-view__columns">
-        {columns.map((col, i) => (
-          <div className="board-view__column-slot" key={col.key}>
-            <BoardColumn
-              name={col.name}
-              tasks={col.tasks}
-              section={col.section}
-              projectId={projectId}
-              onToggleComplete={onToggleComplete}
-              onOpenTask={onOpenTask}
-              onAddTask={onAddTask}
-              onRenameSection={onRenameSection}
-              onDeleteSection={onDeleteSection}
+      <DragOverlay>
+        {activeDrag?.type === 'task' && (
+          <div className="board-column__body board-column__body--overlay">
+            <TaskCard
+              task={activeDrag.task}
+              onToggleComplete={() => {}}
+              onOpenTask={() => {}}
             />
-            {grouping === 'section' && (
-              <SectionGap
-                projectId={projectId}
-                beforeSectionId={columns[i + 1]?.section?.id}
-                onAdd={onAddSection}
-              />
-            )}
           </div>
-        ))}
-      </div>
-    </div>
+        )}
+        {activeDrag?.type === 'section' && (
+          <div className="board-column__header board-column__drag-overlay">
+            <span className="board-column__name">{activeDrag.section.name}</span>
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -156,16 +224,18 @@ function SectionGap({ projectId, beforeSectionId, onAdd }: {
 }
 
 function BoardColumn({
-  name, tasks, section, projectId,
+  name, tasks, section, containerId, kind, projectId,
   onToggleComplete, onOpenTask, onAddTask, onRenameSection, onDeleteSection,
 }: {
   name: string
   tasks: Task[]
   section?: Section
+  containerId: string
+  kind: TaskContainerKind
   projectId: string
   onToggleComplete: (id: string) => void
   onOpenTask: (id: string) => void
-  onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => void
+  onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void
   onRenameSection: (sectionId: string, name: string) => void
   onDeleteSection: (sectionId: string) => void
 }) {
@@ -173,6 +243,22 @@ function BoardColumn({
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(name)
   const [adding, setAdding] = useState(false)
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
+    id: section?.id ?? containerId,
+    data: section ? { type: 'section' } : undefined,
+    disabled: !section,
+  })
+  const sortableStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const { setNodeRef: setBodyRef } = useDroppable({
+    id: `container:${containerId}`,
+    data: { type: 'container', containerId, kind },
+  })
 
   const commitRename = () => {
     if (!section) return
@@ -183,8 +269,16 @@ function BoardColumn({
   }
 
   return (
-    <div className="board-column">
-      <div className="board-column__header">
+    <div
+      className={`board-column ${isOver && !isDragging ? 'board-column--drop-before' : ''}`}
+      ref={setNodeRef}
+      style={sortableStyle}
+    >
+      <div
+        className={`board-column__header ${section ? 'board-column__header--sortable' : ''}`}
+        {...(section ? attributes : {})}
+        {...(section ? listeners : {})}
+      >
         {renaming ? (
           <input
             className="board-column__rename-input"
@@ -232,16 +326,20 @@ function BoardColumn({
         )}
       </div>
 
-      <div className="board-column__body">
-        {tasks.map(task => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onToggleComplete={onToggleComplete}
-            onOpenTask={onOpenTask}
-          />
-        ))}
-      </div>
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="board-column__body" ref={setBodyRef}>
+          {tasks.map(task => (
+            <SortableTaskCard
+              key={task.id}
+              task={task}
+              containerId={containerId}
+              kind={kind}
+              onToggleComplete={onToggleComplete}
+              onOpenTask={onOpenTask}
+            />
+          ))}
+        </div>
+      </SortableContext>
 
       {adding ? (
         <AddTaskForm

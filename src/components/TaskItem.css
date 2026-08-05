@@ -14,6 +14,39 @@
   min-height: 42px;
 }
 
+/* The whole row is the drag source when sortable — no separate handle */
+.task-item--sortable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Red insertion line — shown above the row currently being dragged over */
+.task-item--drop-before::before {
+  background: var(--brand-red-idle) !important;
+  inset: -2px calc(-1 * var(--task-row-bleed)) auto;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* Floating ghost rendered in DragOverlay while a task is being dragged */
+.task-list--overlay {
+  cursor: grabbing;
+}
+
+.task-list--overlay .task-item {
+  background: #fff;
+  border: 1px solid var(--divider-primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0px 12px 28px rgba(0,0,0,0.16), 0px 2px 6px rgba(0,0,0,0.08);
+  cursor: grabbing;
+}
+
+.task-list--overlay .task-item::before {
+  content: none;
+}
+
 /* Hover fill bleeds 8px wider than the row; the separator above does not */
 .task-item::before {
   content: '';

@@ -3,3 +3,8 @@
   padding: 0;
   margin: 0;
 }
+
+/* Give an empty sortable container a droppable area to receive the first task */
+.task-list:empty {
+  min-height: 8px;
+}

@@ -43,7 +43,6 @@ export interface Task {
   isCompleted: boolean
   subTasks?: SubTask[]
   createdAt: string
-  order: number
 }
 
 export interface Section {
