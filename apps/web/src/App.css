@@ -18,6 +18,29 @@
   background: var(--bg-primary);
 }
 
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--text-secondary);
+  font-size: var(--font-size-normal);
+}
+
+.app-signout {
+  position: fixed;
+  bottom: var(--spacing-medium);
+  right: var(--spacing-medium);
+  z-index: 10;
+  font-size: var(--font-size-xsmall);
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-input-hover);
+  border-radius: var(--border-radius-small);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+  cursor: pointer;
+}
+
 /* Compact-only chrome — the hamburger's only home */
 .app-topbar {
   display: flex;
