@@ -1,6 +1,6 @@
 export type Priority = 1 | 2 | 3 | 4
 
-export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline' | 'storage' | 'agent'
+export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline' | 'mail' | 'storage' | 'agent'
 
 export interface OutlineNode {
   id: string
@@ -49,6 +49,23 @@ export interface Section {
   id: string
   name: string
   projectId: string
+}
+
+/* 'flagged' is not a folder a message lives in — it's a cross-folder filter over isFlagged */
+export type MailFolder = 'inbox' | 'sent' | 'drafts' | 'junk' | 'trash'
+
+export type MailView = MailFolder | 'flagged'
+
+export interface MailMessage {
+  id: string
+  folder: MailFolder
+  sender: string
+  senderEmail: string
+  subject: string
+  body: string
+  receivedAt: string
+  isRead: boolean
+  isFlagged: boolean
 }
 
 export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'

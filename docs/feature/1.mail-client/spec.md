@@ -29,6 +29,34 @@ real sending/receiving, multiple accounts, IMAP/SMTP, real attachments
 (a decorative UI affordance only, same treatment as `AddTaskForm`'s
 disabled "Attachment" chip), push notifications.
 
+## Visual style
+
+Apple Mail informs the **structure only** — the styling follows this
+app's existing conventions, and the result should look like it has
+always belonged here rather than like a transplanted macOS app.
+Explicit user call: *"UI-nya sesuaikan saja dengan style yang sekarang"*
+and *"dibuat simple"*.
+
+Concretely:
+- Light theme, tokens from `variables.css` — no dark chrome, no
+  macOS-native window styling, no new colors invented.
+- Same visual language as `StorageView`/`AgentView`: plain rows, thin
+  `--divider-primary` separators, `--brand-red-idle` for the one primary
+  action, hover states at the same subtlety used by `TaskItem`.
+- `@phosphor-icons/react` throughout, matching sizes already in use.
+- Keep it simple: skip Apple Mail's denser chrome (category filter
+  chips, per-message toolbar row, smart-mailbox grouping headers).
+
+Structure taken from the real Apple Mail (observed directly):
+- Three columns: folder sidebar → message list → reading pane.
+- Folder rows carry a right-aligned unread count badge.
+- Message list has a small header (mailbox name + message/unread count).
+- A message row is: unread dot, sender (semibold), timestamp
+  right-aligned, subject beneath, then a truncated preview snippet.
+- Selected row gets a solid accent fill with inverted text.
+- Actions live in a toolbar above the reading pane: compose, reply,
+  forward, flag, delete, plus a search field.
+
 ## Data model
 
 ```ts

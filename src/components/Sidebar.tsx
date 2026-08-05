@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, FolderIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon,
 } from '@phosphor-icons/react'
 import type { ViewType, Task } from '../types'
@@ -131,6 +131,16 @@ export default function Sidebar({
             >
               <span className="sidebar__nav-icon sidebar__nav-icon--filters"><SquaresFourIcon size={18} /></span>
               <span className="sidebar__nav-label">Filters & Labels</span>
+            </button>
+          </li>
+          <li>
+            <button
+              className={`sidebar__nav-item ${activeView === 'mail' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('mail')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><EnvelopeSimpleIcon size={18} /></span>
+              <span className="sidebar__nav-label">Mail</span>
             </button>
           </li>
           <li>

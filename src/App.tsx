@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
 import TaskDetailModal from './components/TaskDetailModal'
 import OutlineView from './components/OutlineView'
+import MailView from './components/MailView'
 import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
 import type { ViewType } from './types'
@@ -113,6 +114,8 @@ function App() {
       />
       {activeView === 'outline' ? (
         <OutlineView />
+      ) : activeView === 'mail' ? (
+        <MailView />
       ) : activeView === 'storage' ? (
         <StorageView />
       ) : activeView === 'agent' ? (
