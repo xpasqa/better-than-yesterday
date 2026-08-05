@@ -1,0 +1,26 @@
+# SITE_ADDRESS defaults to ":80" for local/VPS-IP access. Set it to a real
+# domain (e.g. "better.example.com") in .env once one exists, and Caddy
+# provisions HTTPS automatically — no other change needed.
+{$SITE_ADDRESS} {
+	# Everything the Hono app owns, per apps/api/src/app.ts's own route
+	# tree — kept in sync with it, not guessed at.
+	handle /health {
+		reverse_proxy api:3001
+	}
+	handle /auth/* {
+		reverse_proxy api:3001
+	}
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	# Everything else is the built SPA. try_files falls back to index.html
+	# so client-side routes (added in fase 2) refresh correctly instead of
+	# 404ing at the file server.
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+		encode gzip
+	}
+}

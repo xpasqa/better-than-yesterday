@@ -3,30 +3,28 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
-    "@phosphor-icons/react": "^2.1.10",
-    "react": "^19.2.8",
-    "react-day-picker": "^10.0.1",
-    "react-dom": "^19.2.8",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @better/api\" \"npm run dev -w @better/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.scripts.json",
+    "lint": "oxlint -c oxlint.json .",
+    "lint:fix": "oxlint -c oxlint.json . --fix",
+    "test": "npm run test --workspaces --if-present",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "db:generate": "npm run db:generate -w @better/api",
+    "db:migrate": "npm run db:migrate -w @better/api",
+    "db:studio": "npm run db:studio -w @better/api",
+    "user": "tsx scripts/user.ts"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
+    "concurrently": "^9.1.2",
     "oxlint": "^1.75.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.2.0"
+    "tsx": "^4.19.2",
+    "typescript": "~6.0.2"
   }
 }

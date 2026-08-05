@@ -1,0 +1,28 @@
+{
+  "name": "@better/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./id": "./src/id.ts",
+    "./date": "./src/date.ts",
+    "./node": "./src/node.ts",
+    "./rank": "./src/rank.ts",
+    "./tree": "./src/tree.ts",
+    "./parse": "./src/parse.ts",
+    "./views": "./src/views.ts",
+    "./errors": "./src/errors.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "fractional-indexing": "^3.2.0"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@better/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./load-env": "./src/load-env.ts",
+    "./db/client": "./src/db/client.ts",
+    "./db/schema/user": "./src/db/schema/user.ts",
+    "./db/schema/node": "./src/db/schema/node.ts",
+    "./modules/auth/password": "./src/modules/auth/password.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts src/db/migrate.ts --format esm --target node22 --out-dir dist --clean",
+    "start": "node dist/db/migrate.js && node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@better/core": "*",
+    "@hono/node-server": "^1.13.7",
+    "@node-rs/argon2": "^2.0.2",
+    "drizzle-orm": "^0.38.3",
+    "hono": "^4.6.14",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "drizzle-kit": "^0.30.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "~6.0.2",
+    "vitest": "^3.2.4"
+  }
+}
