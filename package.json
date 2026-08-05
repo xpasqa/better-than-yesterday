@@ -21,6 +21,7 @@
     "user": "tsx scripts/user.ts"
   },
   "devDependencies": {
+    "@types/node": "^24.13.3",
     "concurrently": "^9.1.2",
     "oxlint": "^1.75.0",
     "tsx": "^4.19.2",

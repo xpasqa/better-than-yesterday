@@ -1,0 +1,28 @@
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { config } from '../config.ts'
+import * as appUser from './schema/user.ts'
+import * as node from './schema/node.ts'
+import * as label from './schema/label.ts'
+import * as savedFilter from './schema/saved-filter.ts'
+import * as reminder from './schema/reminder.ts'
+import * as notification from './schema/notification.ts'
+import * as pushSubscription from './schema/push-subscription.ts'
+import * as completion from './schema/completion.ts'
+import * as syncSeq from './schema/sync-seq.ts'
+
+export const schema = {
+  ...appUser,
+  ...node,
+  ...label,
+  ...savedFilter,
+  ...reminder,
+  ...notification,
+  ...pushSubscription,
+  ...completion,
+  ...syncSeq,
+}
+
+const queryClient = postgres(config.DATABASE_URL)
+export const db = drizzle(queryClient, { schema })
+export type Db = typeof db

@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
+    "./load-env": "./src/load-env.ts",
     "./db/client": "./src/db/client.ts",
-    "./db/schema/user": "./src/db/schema/user.ts"
+    "./db/schema/user": "./src/db/schema/user.ts",
+    "./db/schema/node": "./src/db/schema/node.ts",
+    "./modules/auth/password": "./src/modules/auth/password.ts"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm --target node22 --out-dir dist --clean",
-    "start": "node dist/index.js",
+    "build": "tsup src/index.ts src/db/migrate.ts --format esm --target node22 --out-dir dist --clean",
+    "start": "node dist/db/migrate.js && node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: better
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: better
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U better -d better"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      # Exposed for local `psql`/drizzle-kit access during development only;
+      # remove this mapping for a production deploy that has no need to
+      # reach Postgres from outside the compose network.
+      - '127.0.0.1:5432:5432'
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://better:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/better
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?set APP_ENCRYPTION_KEY in .env}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./apps/web/dist:/srv/web:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

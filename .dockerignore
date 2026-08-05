@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/dist-ssr
+.git
+.claude
+docs
+better-font
+*.log
+.env
+.env.*
+!.env.example
