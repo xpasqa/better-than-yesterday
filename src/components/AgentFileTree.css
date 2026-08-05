@@ -1,0 +1,72 @@
+.agent-file-tree {
+  padding: 6px 0;
+}
+
+.agent-file-tree__empty {
+  padding: 16px 12px;
+  font-size: var(--font-size-normal);
+  color: var(--text-tertiary);
+}
+
+.agent-file-tree__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 10px;
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  text-align: left;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.agent-file-tree__row:hover {
+  background: var(--bg-hover);
+}
+
+.agent-file-tree__row--selected {
+  background: var(--bg-selected);
+  color: var(--brand-red-idle);
+  font-weight: var(--font-weight-medium);
+}
+
+.agent-file-tree__caret {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 0.12s;
+}
+
+.agent-file-tree__caret--open {
+  transform: rotate(90deg);
+}
+
+.agent-file-tree__folder-icon {
+  flex-shrink: 0;
+  color: var(--meta-blue);
+}
+
+.agent-file-tree__file-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.agent-file-tree__row--selected .agent-file-tree__file-icon {
+  color: var(--brand-red-idle);
+}
+
+.agent-file-tree__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-file-tree__dot {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--brand-red-idle);
+}
