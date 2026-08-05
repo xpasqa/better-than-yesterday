@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BellIcon, ListIcon } from '@phosphor-icons/react'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import { useTheme } from './hooks/useTheme'
@@ -10,14 +10,53 @@ import OutlineView from './components/OutlineView'
 import MailView from './components/MailView'
 import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
+import Login from './components/Login'
+import TodayReal from './components/TodayReal'
 import type { ViewType } from './types'
 import { tasks as initialTasks, sections as initialSections } from './data/mockData'
 import type { Task, Section } from './types'
+import { fetchMe, logout, type AuthUser } from './store/auth-api'
+import { clearLocalStore } from './store/db'
+import { startSyncLoop } from './store/sync-client'
 import './styles/variables.css'
 import './styles/global.css'
 import './App.css'
 
+/**
+ * Real backend, real data — currently wired up for Today only. Every other
+ * view (Inbox, Upcoming, Board, Outline, Mail, Storage, Agent) still runs on
+ * the mock data below until docs/feature/2.backend/1.todo/todo.md blocks
+ * C–J migrate them too. This is a deliberate, incremental slice: proving
+ * the sync/auth/parser pipeline works end to end on one real view is worth
+ * more right now than half-wiring twenty.
+ */
+function useAuthGate() {
+  const [user, setUser] = useState<AuthUser | null | 'loading'>('loading')
+
+  useEffect(() => {
+    fetchMe()
+      .then(setUser)
+      .catch(() => setUser(null))
+  }, [])
+
+  useEffect(() => {
+    if (user && user !== 'loading') {
+      return startSyncLoop()
+    }
+  }, [user])
+
+  const handleLoggedIn = (loggedInUser: AuthUser) => setUser(loggedInUser)
+  const handleLogout = () => {
+    void logout()
+    void clearLocalStore()
+    setUser(null)
+  }
+
+  return { user, handleLoggedIn, handleLogout }
+}
+
 function App() {
+  const { user, handleLoggedIn, handleLogout } = useAuthGate()
   const [activeView, setActiveView] = useState<ViewType>('today')
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
@@ -116,8 +155,18 @@ function App() {
 
   const openTask = tasks.find(t => t.id === openTaskId) ?? null
 
+  if (user === 'loading') {
+    return <div className="app-loading">Loading…</div>
+  }
+  if (!user) {
+    return <Login onLoggedIn={handleLoggedIn} />
+  }
+
   return (
     <div className="app-shell">
+      <button type="button" className="app-signout" onClick={handleLogout}>
+        Sign out ({user.email})
+      </button>
       {isCompact && (
         <header className="app-topbar">
           <button
@@ -162,6 +211,8 @@ function App() {
           <StorageView />
         ) : activeView === 'agent' ? (
           <AgentView />
+        ) : activeView === 'today' ? (
+          <TodayReal user={user} />
         ) : (
           <MainContent
             activeView={activeView}

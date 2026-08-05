@@ -8,11 +8,11 @@ export default defineConfig({
     port: 4200,
     strictPort: false, // auto naik ke port berikutnya kalau 4200 dipakai
     proxy: {
-      // Backend Hono jalan di :3001 saat dev; produksi disatukan lewat Caddy.
-      '/api': {
-        target: 'http://127.0.0.1:3001',
-        changeOrigin: true,
-      },
+      // Backend Hono jalan di :3001 saat dev; produksi disatukan lewat Caddy
+      // (Caddyfile proxies these same three prefixes — keep both in sync).
+      '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/auth': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/health': { target: 'http://127.0.0.1:3001', changeOrigin: true },
     },
   },
 })
