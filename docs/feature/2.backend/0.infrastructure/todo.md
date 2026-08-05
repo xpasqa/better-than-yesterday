@@ -86,8 +86,17 @@ tidak lanjut ke blok berikutnya sebelum verifikasinya hijau
       ada VPS**; tiga akun *test* sudah dibuat secara lokal untuk verifikasi
 - [ ] Cron backup `pg_dump` di host + catatan cara restore ke scratch —
       menunggu VPS
-- [ ] **Verifikasi:** ketiga akun login dari browser HP via HTTPS; restart
-      container → sesi tetap hidup; `docker compose down && up` → data utuh
+- [x] **Verifikasi:** `docker compose up -d` (api + postgres + caddy) — image
+      `api` benar-benar di-build (bukan sekadar disimulasikan lewat perintah
+      host) dan seluruh stack diuji lewat Caddy di `127.0.0.1:80`:
+      `GET /health` → 200 lewat proxy, `GET /` → 200 (SPA ter-serve), `user
+      add` dijalankan langsung ke database container, `POST /auth/login` →
+      cookie `Secure` (karena `NODE_ENV=production` di dalam container) →
+      `POST /api/sync` bootstrap mengembalikan Inbox yang baru di-seed.
+      Registry Docker sempat tidak terjangkau di awal sesi; belakangan pulih
+      dan build+jalan bersih. **Yang belum**: HTTPS asli (perlu domain nyata,
+      lihat pertanyaan terbuka #1 di PRD), login dari HP sungguhan, dan
+      restart-persistence jangka panjang di VPS asli — ketiganya menunggu VPS
       — **sebagian terverifikasi**: `docker compose up -d postgres` jalan dan
       sehat di lingkungan build ini; image `api`/`caddy` belum sempat
       di-build+jalankan penuh di sini (registry Docker tidak terjangkau dari

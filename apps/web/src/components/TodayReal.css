@@ -113,6 +113,16 @@
   text-decoration: line-through;
 }
 
+.today-real__label {
+  flex-shrink: 0;
+  font-size: var(--font-size-xsmall);
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-radius: 999px;
+  padding: 2px var(--spacing-small);
+  white-space: nowrap;
+}
+
 .today-real__time {
   font-size: var(--font-size-xsmall);
   color: var(--text-secondary);

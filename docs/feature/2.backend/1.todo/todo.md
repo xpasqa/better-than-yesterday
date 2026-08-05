@@ -114,16 +114,37 @@ sisanya menambah lapisan.
 
 ## F. Project, section, label, board
 
-- [ ] Belum dimulai. Quick-add's `#project` resolusi hanya pencarian
-      substring case-insensitive di `node-actions.ts` — tidak ada UI untuk
-      membuat/mengelola project atau section
+- [ ] CRUD project/section lewat UI — **belum**. Quick-add's `#project`
+      resolusi hanya pencarian substring case-insensitive di
+      `node-actions.ts`; tidak ada UI untuk membuat/mengelola project atau
+      section secara eksplisit
 - [ ] Drag lintas section/project — belum (Today belum punya drag; mock
       Board masih pakai drag lama tanpa rank)
 - [ ] Board — belum disentuh, masih 100% mock
-- [ ] Manajemen label — **parser mengekstrak `$label` dari judul dengan
-      benar, tapi hasilnya dibuang** (`node-actions.ts` tidak menulis
-      `labelIds`). Ini gap nyata yang perlu diperbaiki sebelum label terasa
-      berfungsi, bukan cuma "terlihat jalan"
+- [x] **Manajemen label — sekarang benar-benar berfungsi**, bukan cuma
+      terlihat jalan: `db/schema/label.ts` dapat route sync sendiri
+      (`modules/sync/routes.ts` mendukung entitas `labels` di envelope
+      multi-entitas, satu cursor bersama `nodes`), Dexie punya tabel
+      `labels`, dan `label-actions.ts` di klien meng-cocokkan `$name` dari
+      parser ke label yang sudah ada (case-insensitive) atau membuat baru
+      — dites lulus di 6 test backend (round-trip, LWW, isolasi
+      antar-user, penolakan nama berspasi) **dan** diverifikasi manual di
+      browser: dua task dengan `$rumah` menghasilkan **satu** baris label,
+      dikonfirmasi langsung di Postgres. **Belum ada**: UI mengelola label
+      (rename/warna/favorit/hapus) — hanya penciptaan implisit dari
+      quick-add yang berjalan
+- [ ] Warna/favorit/rename label lewat UI — belum ada halaman "Filters &
+      Labels" yang nyata (masih mock)
+
+Catatan tersendiri, ditemukan saat mengerjakan blok ini: migrasi skema
+Dexie dari v1 ke v2 sempat gagal total (`UpgradeError: Not yet support
+for changing primary key`) karena percobaan pertama mengubah primary key
+tabel `outbox` langsung — Dexie tidak mendukung itu. Diperbaiki mengikuti
+pola resmi Dexie (tabel baru `pending` di versi 2 sambil migrasi data dari
+`outbox` lama, lalu ganti nama balik ke `outbox` di versi 3) — lihat
+`apps/web/src/store/db.ts`. **Siapa pun yang menambah kolom baru ke
+tipe `Node`/`Label` di kemudian hari harus lewat `.stores()` yang menambah
+index, bukan mengubah key path store yang sudah ada.**
 
 ## G. Filter tersimpan & pencarian
 

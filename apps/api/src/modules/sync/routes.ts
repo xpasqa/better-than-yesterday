@@ -1,17 +1,18 @@
 // POST /api/sync — the one endpoint behind Todo and Outline (spec induk
-// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes` only.
-// label/saved_filter/reminder/notification sync are not wired yet — they
-// follow the identical upsert-with-LWW shape once needed.
+// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes` and
+// `labels`. saved_filter/reminder/notification sync are not wired yet —
+// they follow the identical upsert-with-LWW shape once needed.
 import { Hono } from 'hono'
 import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { node } from '../../db/schema/node.ts'
+import { label } from '../../db/schema/label.ts'
 import { AppError } from '../../http/errors.ts'
-import { syncRequest, type NodeDto } from './dto.ts'
+import { syncRequest, type NodeDto, type LabelDto } from './dto.ts'
 
 export const syncRoutes = new Hono()
 
-function toRow(userId: string, dto: NodeDto) {
+function toNodeRow(userId: string, dto: NodeDto) {
   return {
     id: dto.id,
     userId,
@@ -48,7 +49,7 @@ function toRow(userId: string, dto: NodeDto) {
  */
 async function applyIncomingNodes(userId: string, dtos: NodeDto[]): Promise<void> {
   for (const dto of dtos) {
-    const row = toRow(userId, dto)
+    const row = toNodeRow(userId, dto)
     await db
       .insert(node)
       .values(row)
@@ -80,6 +81,43 @@ async function applyIncomingNodes(userId: string, dtos: NodeDto[]): Promise<void
   }
 }
 
+function toLabelRow(userId: string, dto: LabelDto) {
+  return {
+    id: dto.id,
+    userId,
+    name: dto.name,
+    color: dto.color,
+    isFavorite: dto.isFavorite,
+    rank: dto.rank,
+    createdAt: new Date(dto.createdAt),
+    updatedAt: new Date(dto.updatedAt),
+    deletedAt: dto.deletedAt ? new Date(dto.deletedAt) : null,
+  }
+}
+
+/** Same LWW + ownership guard as applyIncomingNodes, against `label`. */
+async function applyIncomingLabels(userId: string, dtos: LabelDto[]): Promise<void> {
+  for (const dto of dtos) {
+    const row = toLabelRow(userId, dto)
+    await db
+      .insert(label)
+      .values(row)
+      .onConflictDoUpdate({
+        target: label.id,
+        set: {
+          name: row.name,
+          color: row.color,
+          isFavorite: row.isFavorite,
+          rank: row.rank,
+          updatedAt: row.updatedAt,
+          deletedAt: row.deletedAt,
+          seq: sql`nextval('sync_seq')`,
+        },
+        setWhere: sql`${label.userId} = ${userId} and excluded.updated_at >= ${label.updatedAt}`,
+      })
+  }
+}
+
 function nodeToDto(row: typeof node.$inferSelect): NodeDto {
   return {
     id: row.id,
@@ -107,6 +145,19 @@ function nodeToDto(row: typeof node.$inferSelect): NodeDto {
   }
 }
 
+function labelToDto(row: typeof label.$inferSelect): LabelDto {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    isFavorite: row.isFavorite,
+    rank: row.rank,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+  }
+}
+
 syncRoutes.post('/sync', async (c) => {
   const userId = c.get('userId')
   const body = await c.req.json().catch(() => null)
@@ -120,18 +171,34 @@ syncRoutes.post('/sync', async (c) => {
   if (changes.nodes.length > 0) {
     await applyIncomingNodes(userId, changes.nodes)
   }
+  if (changes.labels.length > 0) {
+    await applyIncomingLabels(userId, changes.labels)
+  }
 
-  const rows = await db
-    .select()
-    .from(node)
-    .where(and(eq(node.userId, userId), gt(node.seq, cursorBigint)))
-    .orderBy(node.seq)
-    .limit(500)
+  const [nodeRows, labelRows] = await Promise.all([
+    db
+      .select()
+      .from(node)
+      .where(and(eq(node.userId, userId), gt(node.seq, cursorBigint)))
+      .orderBy(node.seq)
+      .limit(500),
+    db
+      .select()
+      .from(label)
+      .where(and(eq(label.userId, userId), gt(label.seq, cursorBigint)))
+      .orderBy(label.seq)
+      .limit(500),
+  ])
 
-  const nextCursor = rows.length > 0 ? rows[rows.length - 1]!.seq.toString() : cursor
+  // seq is one sequence shared by every syncable table, so the highest seq
+  // seen across both result sets is the correct next cursor regardless of
+  // which table it came from.
+  let nextCursor = cursorBigint
+  for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
+  for (const r of labelRows) if (r.seq > nextCursor) nextCursor = r.seq
 
   return c.json({
-    cursor: nextCursor,
-    changes: { nodes: rows.map(nodeToDto) },
+    cursor: nextCursor.toString(),
+    changes: { nodes: nodeRows.map(nodeToDto), labels: labelRows.map(labelToDto) },
   })
 })

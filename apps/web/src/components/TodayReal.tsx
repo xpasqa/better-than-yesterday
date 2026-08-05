@@ -3,7 +3,8 @@ import { CheckCircleIcon, CircleIcon, CloudArrowUpIcon, WifiSlashIcon } from '@p
 import { todayInTimezone } from '@better/core/date'
 import { today as computeToday } from '@better/core/views'
 import type { Node } from '@better/core/node'
-import { useAllNodes } from '../store/use-nodes'
+import type { Label } from '@better/core/label'
+import { useAllLabels, useAllNodes } from '../store/use-nodes'
 import { createTaskFromQuickAdd, toggleTaskComplete } from '../store/node-actions'
 import { getSyncStatus, onSyncStatusChange, type SyncStatus } from '../store/sync-client'
 import type { AuthUser } from '../store/auth-api'
@@ -13,7 +14,7 @@ interface TodayRealProps {
   user: AuthUser
 }
 
-function TaskRow({ node }: { node: Node }) {
+function TaskRow({ node, labelsById }: { node: Node; labelsById: Map<string, Label> }) {
   const done = node.completedAt !== null
   return (
     <li className={`today-real__row${done ? ' today-real__row--done' : ''}`}>
@@ -26,6 +27,14 @@ function TaskRow({ node }: { node: Node }) {
         {done ? <CheckCircleIcon size={20} weight="fill" /> : <CircleIcon size={20} />}
       </button>
       <span className="today-real__content">{node.content}</span>
+      {node.labelIds.map((id) => {
+        const found = labelsById.get(id)
+        return found ? (
+          <span key={id} className="today-real__label">
+            {found.name}
+          </span>
+        ) : null
+      })}
       {node.dueTime && <span className="today-real__time">{node.dueTime}</span>}
       {node.priority && <span className={`today-real__priority today-real__priority--${node.priority}`} />}
     </li>
@@ -34,6 +43,8 @@ function TaskRow({ node }: { node: Node }) {
 
 function TodayReal({ user }: TodayRealProps) {
   const nodes = useAllNodes()
+  const labels = useAllLabels()
+  const labelsById = new Map(labels.map((l) => [l.id, l]))
   const [quickAdd, setQuickAdd] = useState('')
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(getSyncStatus())
 
@@ -87,7 +98,7 @@ function TodayReal({ user }: TodayRealProps) {
           </h2>
           <ul className="today-real__list">
             {overdue.map((n) => (
-              <TaskRow key={n.id} node={n} />
+              <TaskRow key={n.id} node={n} labelsById={labelsById} />
             ))}
           </ul>
         </section>
@@ -102,7 +113,7 @@ function TodayReal({ user }: TodayRealProps) {
         ) : (
           <ul className="today-real__list">
             {dueToday.map((n) => (
-              <TaskRow key={n.id} node={n} />
+              <TaskRow key={n.id} node={n} labelsById={labelsById} />
             ))}
           </ul>
         )}

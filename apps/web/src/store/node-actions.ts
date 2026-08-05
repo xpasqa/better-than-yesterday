@@ -9,11 +9,12 @@ import { findInbox, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
+import { resolveOrCreateLabelIds } from './label-actions.ts'
 
 async function enqueue(node: Node): Promise<void> {
   await db.transaction('rw', db.nodes, db.outbox, async () => {
     await db.nodes.put(node)
-    await db.outbox.put({ nodeId: node.id, payload: node })
+    await db.outbox.put({ key: `node:${node.id}`, entityType: 'node', payload: node })
   })
   triggerSync()
 }
@@ -44,6 +45,7 @@ export async function createTaskFromQuickAdd(
 
   const siblings = allNodes.filter((n) => n.parentId === parentId)
   const lastRank = siblings.length > 0 ? siblings.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+  const labelIds = await resolveOrCreateLabelIds(parsed.labelNames)
 
   const now = new Date().toISOString()
   const node: Node = {
@@ -59,7 +61,7 @@ export async function createTaskFromQuickAdd(
     durationMin: parsed.durationMin,
     recurrence: parsed.recurrence,
     priority: parsed.priority,
-    labelIds: [],
+    labelIds,
     color: null,
     isFavorite: false,
     isInbox: false,

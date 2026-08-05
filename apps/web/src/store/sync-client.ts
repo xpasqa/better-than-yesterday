@@ -2,6 +2,7 @@
 // and right after any local write; never blocks the UI — a failed round
 // trip just leaves the outbox for the next attempt.
 import type { Node } from '@better/core/node'
+import type { Label } from '@better/core/label'
 import { db, getCursor, setCursor } from './db.ts'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline'
@@ -27,15 +28,16 @@ export function getSyncStatus(): SyncStatus {
 }
 
 /** Applies an incoming row only if it isn't older than what's already stored locally — same rule the server uses, so a client never regresses its own optimistic state from an in-flight round trip. */
-async function mergeIncoming(nodes: Node[]): Promise<void> {
-  await db.transaction('rw', db.nodes, async () => {
-    for (const incoming of nodes) {
-      const existing = await db.nodes.get(incoming.id)
-      if (!existing || incoming.updatedAt >= existing.updatedAt) {
-        await db.nodes.put(incoming)
-      }
+async function mergeIncoming<T extends { id: string; updatedAt: string }>(
+  table: { get: (id: string) => Promise<T | undefined>; put: (row: T) => Promise<string> },
+  incomingRows: T[],
+): Promise<void> {
+  for (const incoming of incomingRows) {
+    const existing = await table.get(incoming.id)
+    if (!existing || incoming.updatedAt >= existing.updatedAt) {
+      await table.put(incoming)
     }
-  })
+  }
 }
 
 let syncing = false
@@ -47,16 +49,15 @@ export async function syncOnce(): Promise<void> {
   setStatus('syncing')
   try {
     const outboxEntries = await db.outbox.toArray()
+    const nodes = outboxEntries.filter((e) => e.entityType === 'node').map((e) => e.payload as Node)
+    const labels = outboxEntries.filter((e) => e.entityType === 'label').map((e) => e.payload as Label)
     const cursor = await getCursor()
 
     const res = await fetch('/api/sync', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        cursor,
-        changes: { nodes: outboxEntries.map((e) => e.payload) },
-      }),
+      body: JSON.stringify({ cursor, changes: { nodes, labels } }),
     })
 
     if (!res.ok) {
@@ -64,12 +65,15 @@ export async function syncOnce(): Promise<void> {
       return
     }
 
-    const body = (await res.json()) as { cursor: string; changes: { nodes: Node[] } }
+    const body = (await res.json()) as { cursor: string; changes: { nodes: Node[]; labels: Label[] } }
 
-    if (outboxEntries.length > 0) {
-      await db.outbox.bulkDelete(outboxEntries.map((e) => e.nodeId))
-    }
-    await mergeIncoming(body.changes.nodes)
+    await db.transaction('rw', db.nodes, db.labels, db.outbox, async () => {
+      if (outboxEntries.length > 0) {
+        await db.outbox.bulkDelete(outboxEntries.map((e) => e.key))
+      }
+      await mergeIncoming(db.nodes, body.changes.nodes)
+      await mergeIncoming(db.labels, body.changes.labels)
+    })
     await setCursor(body.cursor)
     setStatus('idle')
   } catch {
