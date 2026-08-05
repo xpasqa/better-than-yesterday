@@ -20,14 +20,21 @@
   overflow-y: auto;
 }
 
-/* Same 800px column as every other view */
+/*
+ * Same 800px column as every other view, but unlike those views this one
+ * can share its row with the file panel — the remaining space can drop
+ * below 800px, so a horizontal gutter is required (not just centering)
+ * to keep content off the edges.
+ */
 .agent-chat__inner {
   max-width: var(--editor-max-width);
   margin: 0 auto;
+  padding: 0 24px;
 }
 
 .agent-chat__thread .agent-chat__inner {
-  padding: 56px 0 40px;
+  padding-top: 56px;
+  padding-bottom: 40px;
 }
 
 .agent-chat__header {
