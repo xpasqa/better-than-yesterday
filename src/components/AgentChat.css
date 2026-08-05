@@ -12,114 +12,97 @@
   overflow-y: auto;
 }
 
-/* Narrower than the app's usual 800px column — that width suits scanning
-   task/outline rows, but reads as too wide for conversational text. */
-.agent-chat__thread-inner {
-  max-width: 680px;
+/* Same 800px column as every other view */
+.agent-chat__inner {
+  max-width: var(--editor-max-width);
   margin: 0 auto;
-  padding: 32px 0 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
-.agent-chat__back {
+.agent-chat__thread .agent-chat__inner {
+  padding: 56px 0 40px;
+}
+
+.agent-chat__header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.agent-chat__title {
+  font-size: var(--font-size-header);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+  line-height: 35px;
+}
+
+.agent-chat__new {
   display: flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-start;
+  margin-left: auto;
+  padding: 6px 10px;
   font-size: var(--font-size-normal);
-  color: var(--text-secondary);
-  padding: 4px 0;
-  transition: color 0.1s;
-}
-
-.agent-chat__back:hover {
+  font-weight: var(--font-weight-medium);
   color: var(--brand-red-idle);
+  border-radius: 5px;
+  transition: background 0.1s;
+  cursor: pointer;
 }
 
-.agent-chat__meta {
+.agent-chat__new:hover {
+  background: rgba(211,51,34,0.08);
+}
+
+/* One turn = a labelled block, split by the same hairline the task list uses */
+.agent-chat__turn {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.agent-chat__turn:last-of-type {
+  border-bottom: none;
+}
+
+.agent-chat__turn-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.agent-chat__who {
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+}
+
+.agent-chat__time {
   font-size: 13px;
   color: var(--text-tertiary);
 }
 
-/* User bubble */
-.agent-chat__message--user {
-  align-self: flex-end;
-  max-width: 80%;
-  background: var(--bg-tertiary);
-  border-radius: 14px;
-  padding: 12px 16px;
-}
-
-.agent-chat__message--user p {
+.agent-chat__text {
   font-size: var(--font-size-content);
+  line-height: 24px;
   color: var(--text-primary);
-  line-height: 21px;
+  white-space: pre-wrap;
 }
 
-.agent-chat__message--user .agent-chat__meta {
-  display: block;
-  margin-top: 6px;
-  text-align: right;
-}
-
-/* Agent message — plain text, no card */
-.agent-chat__message--agent {
-  max-width: 85%;
-}
-
-.agent-chat__agent-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.agent-chat__avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  border-radius: 50%;
-  background: var(--brand-red-idle);
-  color: #fff;
-}
-
-.agent-chat__agent-name {
-  font-size: var(--font-size-normal);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-}
-
-.agent-chat__message--agent p {
-  font-size: var(--font-size-content);
-  color: var(--text-primary);
-  line-height: 22px;
-}
-
-/* Composer pinned to the bottom of the viewport */
+/* Composer pinned to the bottom, same card as AddTaskForm */
 .agent-chat__composer {
   flex-shrink: 0;
-  padding: 12px 0 20px;
-}
-
-.agent-chat__composer-inner {
-  max-width: 680px;
-  margin: 0 auto;
+  border-top: 1px solid var(--divider-primary);
+  padding: 16px 0 24px;
 }
 
 .agent-chat__input-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   border: 1px solid var(--border-idle);
-  border-radius: 24px;
-  padding: 8px 8px 8px 18px;
+  border-radius: 12px;
+  padding: 10px 10px 10px 14px;
   background: var(--bg-primary);
-  box-shadow: var(--shadow-raised-1);
   transition: border-color 0.1s;
 }
 
@@ -131,10 +114,11 @@
   flex: 1;
   min-width: 0;
   resize: none;
-  font-size: 15px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-content);
   color: var(--text-primary);
-  line-height: 20px;
-  padding: 6px 0;
+  line-height: 22px;
+  padding: 4px 0;
 }
 
 .agent-chat__input::placeholder {
@@ -147,11 +131,16 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  flex-shrink: 0;
+  border-radius: 8px;
   background: var(--brand-red-idle);
   color: #fff;
-  flex-shrink: 0;
   transition: background 0.15s;
+  cursor: pointer;
+}
+
+.agent-chat__send-btn:hover:not(:disabled) {
+  background: var(--brand-red-hover);
 }
 
 .agent-chat__send-btn:disabled {

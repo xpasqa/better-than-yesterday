@@ -5,92 +5,61 @@
   background: #fff;
 }
 
-/* Vertically and horizontally centred — this screen has nothing else on
-   it, so it doesn't use the app's usual top-anchored column layout. */
-.agent-view__center {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
+/* Same 800px column, same padding, as every other main-content view */
+.agent-view__inner {
+  max-width: var(--editor-max-width);
+  margin: 0 auto;
+  padding: 56px 0 100px;
 }
 
-.agent-view__greeting {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 31px;
+.agent-view__header {
+  margin-bottom: 24px;
+}
+
+.agent-view__title {
+  font-size: var(--font-size-header);
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
+  line-height: 35px;
 }
 
-.agent-view__greeting-icon {
-  color: var(--brand-red-idle);
-  flex-shrink: 0;
+.agent-view__subtitle {
+  font-size: var(--font-size-content);
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 17px;
 }
 
-/* Prompt card: input row on top, toolbar row below — sized and structured
-   to match the Claude reference (wide, two-row, generous padding). */
-.agent-view__prompt-card {
-  width: 100%;
-  max-width: 700px;
-  margin-top: 28px;
-  display: flex;
-  flex-direction: column;
+/* Composer borrows AddTaskForm's card exactly — 1px border, 12px radius, no shadow */
+.agent-view__composer {
   border: 1px solid var(--border-idle);
-  border-radius: 26px;
-  padding: 16px 16px 12px;
+  border-radius: 12px;
+  padding: 12px;
   background: var(--bg-primary);
-  box-shadow: var(--shadow-raised-1);
   transition: border-color 0.1s;
 }
 
-.agent-view__prompt-card:focus-within {
+.agent-view__composer:focus-within {
   border-color: var(--border-focus);
 }
 
-.agent-view__prompt-input {
+.agent-view__input {
   width: 100%;
   resize: none;
-  font-size: 16px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-content);
   color: var(--text-primary);
   line-height: 22px;
-  padding: 0 4px;
 }
 
-.agent-view__prompt-input::placeholder {
+.agent-view__input::placeholder {
   color: var(--text-tertiary);
 }
 
-.agent-view__toolbar {
+.agent-view__composer-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
   margin-top: 10px;
-}
-
-.agent-view__toolbar-spacer {
-  flex: 1;
-}
-
-.agent-view__tool-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  color: var(--text-secondary);
-  transition: background 0.1s;
-}
-
-.agent-view__tool-btn:disabled {
-  cursor: default;
-}
-
-.agent-view__tool-btn:hover {
-  background: var(--bg-highlight);
 }
 
 .agent-view__mode-toggle {
@@ -98,66 +67,79 @@
   align-items: center;
   gap: 2px;
   padding: 2px;
-  border-radius: 16px;
-  background: var(--bg-tertiary);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.04);
 }
 
 .agent-view__mode-btn {
-  padding: 4px 12px;
-  border-radius: 14px;
-  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
   transition: background 0.1s, color 0.1s;
+  cursor: pointer;
+}
+
+.agent-view__mode-btn:hover {
+  color: var(--text-primary);
 }
 
 .agent-view__mode-btn--active {
-  background: var(--bg-primary);
+  background: #fff;
   color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
-.agent-view__model-select {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 4px 4px 10px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  transition: background 0.1s;
-}
-
-.agent-view__model-select:hover {
-  background: var(--bg-highlight);
-}
-
-.agent-view__model-tier {
-  font-weight: var(--font-weight-regular);
-  color: var(--text-secondary);
-}
-
-/* Doubles as a voice-input affordance when empty (Waveform icon, neutral)
-   and the real submit button once there's text (red, PaperPlaneTilt). */
-.agent-view__submit-btn {
+.agent-view__send-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  margin-left: auto;
   flex-shrink: 0;
+  border-radius: 8px;
   background: var(--brand-red-idle);
   color: #fff;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s;
+  cursor: pointer;
 }
 
-.agent-view__submit-btn:disabled {
-  background: transparent;
-  color: var(--text-secondary);
+.agent-view__send-btn:hover:not(:disabled) {
+  background: var(--brand-red-hover);
 }
 
-.agent-view__submit-btn:disabled:hover {
-  background: var(--bg-highlight);
+.agent-view__send-btn:disabled {
+  background: #f4b8b4;
+  cursor: not-allowed;
+}
+
+/* Flat rows, same idiom as the task list */
+.agent-view__examples {
+  margin-top: 32px;
+}
+
+.agent-view__examples-label {
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-strong);
+  color: var(--text-primary);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--divider-primary);
+}
+
+.agent-view__example {
+  display: block;
+  width: 100%;
+  padding: 11px 0;
+  font-size: var(--font-size-content);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--divider-primary);
+  text-align: left;
+  transition: color 0.1s;
+  cursor: pointer;
+}
+
+.agent-view__example:hover {
+  color: var(--brand-red-idle);
 }

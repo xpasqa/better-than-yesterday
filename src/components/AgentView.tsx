@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import {
-  CaretDownIcon, MicrophoneIcon, PaperPlaneTiltIcon, PlusIcon, SparkleIcon, WaveformIcon,
-} from '@phosphor-icons/react'
+import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import AgentChat from './AgentChat'
 import './AgentView.css'
 
@@ -17,13 +15,20 @@ export interface ChatMessage {
 const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
   + 'In a working version, this is where an actual answer would go.'
 
+const EXAMPLES = [
+  'Summarise what I finished this week',
+  'What should I work on first today?',
+  'Draft a reply to the latest client email',
+  'Break the Q4 roadmap into tasks',
+]
+
 function getGreeting(): string {
   const hour = new Date().getHours()
-  if (hour >= 0 && hour < 5) return `Up late, ${USER_NAME}?`
+  if (hour < 5) return `Up late, ${USER_NAME}`
   if (hour < 12) return `Good morning, ${USER_NAME}`
   if (hour < 18) return `Good afternoon, ${USER_NAME}`
   if (hour < 22) return `Good evening, ${USER_NAME}`
-  return `Up late, ${USER_NAME}?`
+  return `Up late, ${USER_NAME}`
 }
 
 function generateId() {
@@ -39,8 +44,8 @@ export default function AgentView() {
   const [mode, setMode] = useState<'chat' | 'cowork'>('chat')
   const [messages, setMessages] = useState<ChatMessage[]>([])
 
-  const send = () => {
-    const trimmed = prompt.trim()
+  const sendText = (text: string) => {
+    const trimmed = text.trim()
     if (!trimmed) return
     setMessages(prev => [
       ...prev,
@@ -56,7 +61,7 @@ export default function AgentView() {
         messages={messages}
         prompt={prompt}
         onPromptChange={setPrompt}
-        onSend={send}
+        onSend={() => sendText(prompt)}
         onBack={() => { setMessages([]); setPrompt('') }}
       />
     )
@@ -64,36 +69,25 @@ export default function AgentView() {
 
   return (
     <main className="agent-view">
-      <div className="agent-view__center">
-        <h1 className="agent-view__greeting">
-          <SparkleIcon size={28} weight="fill" className="agent-view__greeting-icon" />
-          {getGreeting()}
-        </h1>
+      <div className="agent-view__inner">
+        <div className="agent-view__header">
+          <h1 className="agent-view__title">Agent</h1>
+          <p className="agent-view__subtitle">{getGreeting()}</p>
+        </div>
 
-        <div className="agent-view__prompt-card">
+        <div className="agent-view__composer">
           <textarea
-            className="agent-view__prompt-input"
-            placeholder="How can I help you today?"
+            className="agent-view__input"
+            placeholder="Ask anything, or describe what you want done"
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(prompt) }
             }}
-            rows={1}
+            rows={2}
             autoFocus
           />
-
-          <div className="agent-view__toolbar">
-            <button
-              className="agent-view__tool-btn"
-              disabled
-              title="Demo only — not wired to a real agent"
-              aria-label="Add attachment"
-              type="button"
-            >
-              <PlusIcon size={16} />
-            </button>
-
+          <div className="agent-view__composer-actions">
             <div className="agent-view__mode-toggle">
               <button
                 className={`agent-view__mode-btn ${mode === 'chat' ? 'agent-view__mode-btn--active' : ''}`}
@@ -110,39 +104,30 @@ export default function AgentView() {
                 Cowork
               </button>
             </div>
-
-            <span className="agent-view__toolbar-spacer" />
-
             <button
-              className="agent-view__model-select"
-              disabled
-              title="Demo only — not wired to a real agent"
-              type="button"
-            >
-              Agent <span className="agent-view__model-tier">High</span>
-              <CaretDownIcon size={11} weight="bold" />
-            </button>
-
-            <button
-              className="agent-view__tool-btn"
-              disabled
-              title="Demo only — not wired to a real agent"
-              aria-label="Voice input"
-              type="button"
-            >
-              <MicrophoneIcon size={16} />
-            </button>
-
-            <button
-              className="agent-view__submit-btn"
-              onClick={send}
+              className="agent-view__send-btn"
+              onClick={() => sendText(prompt)}
               disabled={!prompt.trim()}
-              aria-label="Run"
+              aria-label="Send"
               type="button"
             >
-              {prompt.trim() ? <PaperPlaneTiltIcon size={15} weight="fill" /> : <WaveformIcon size={16} />}
+              <PaperPlaneTiltIcon size={15} weight="fill" />
             </button>
           </div>
+        </div>
+
+        <div className="agent-view__examples">
+          <p className="agent-view__examples-label">Try asking</p>
+          {EXAMPLES.map(example => (
+            <button
+              key={example}
+              className="agent-view__example"
+              onClick={() => sendText(example)}
+              type="button"
+            >
+              {example}
+            </button>
+          ))}
         </div>
       </div>
     </main>
