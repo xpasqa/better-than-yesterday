@@ -9,7 +9,7 @@ import { hashPassword } from '../src/modules/auth/password.ts'
 /** Wipes every table between tests — cheap at this size, and avoids any cross-test bleed. */
 export async function resetDb(): Promise<void> {
   await db.execute(
-    sql`truncate table agent_file, agent_session, agent_project, ai_settings, completion, label, node, notification, push_subscription, reminder, saved_filter, app_user restart identity cascade`,
+    sql`truncate table storage_file, storage_folder, storage_area, agent_file, agent_session, agent_project, ai_settings, completion, label, node, notification, push_subscription, reminder, saved_filter, app_user restart identity cascade`,
   )
 }
 

@@ -8,6 +8,8 @@ import { requireAuth } from './http/auth-middleware.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { syncRoutes } from './modules/sync/routes.ts'
 import { agentRoutes } from './modules/agent/routes.ts'
+import { storageRoutes } from './modules/storage/routes.ts'
+import { scheduleOrphanSweep } from './modules/storage/sweep.ts'
 
 export function createApp() {
   const app = new Hono()
@@ -27,6 +29,10 @@ export function createApp() {
   app.use('/api/*', requireAuth)
   app.route('/api', syncRoutes)
   app.route('/api', agentRoutes)
+  app.route('/api', storageRoutes)
+
+  // Schedule weekly orphan sweep in-process
+  scheduleOrphanSweep()
 
   return app
 }
