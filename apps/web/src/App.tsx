@@ -213,7 +213,7 @@ function App() {
           <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
         )}
         {activeView === 'outline' ? (
-          <OutlineView />
+          <OutlineView user={user} />
         ) : activeView === 'mail' ? (
           <MailView />
         ) : activeView === 'storage' ? (

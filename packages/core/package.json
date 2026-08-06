@@ -12,7 +12,8 @@
     "./tree": "./src/tree.ts",
     "./parse": "./src/parse.ts",
     "./views": "./src/views.ts",
-    "./errors": "./src/errors.ts"
+    "./errors": "./src/errors.ts",
+    "./inline-markdown": "./src/inline-markdown.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

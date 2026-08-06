@@ -150,6 +150,71 @@
   color: var(--text-tertiary);
 }
 
+/* Static (unfocused) row text — same box model as the input so focusing
+   a row doesn't shift layout. Markdown renders here as real elements. */
+.outline-node__text {
+  flex: 1;
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 21px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  min-width: 0;
+  cursor: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.outline-node__text code {
+  background: rgba(var(--overlay-rgb), 0.08);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.9em;
+}
+
+.outline-node__text a {
+  color: var(--brand-red-idle);
+  text-decoration: underline;
+}
+
+.outline-node__placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Date chip — same pill language as task-row__time */
+.outline-node__date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.outline-node__date--overdue {
+  color: var(--brand-red-idle);
+  background: var(--brand-red-tint);
+}
+
+/* Note — Shift+Enter toggles this open under the row it belongs to */
+.outline-node__note {
+  display: block;
+  width: 100%;
+  margin: 0 0 4px 40px;
+  padding: 4px 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 44px;
+}
+
+.outline-node__note::placeholder {
+  color: var(--text-tertiary);
+}
+
 /* Child count badge */
 .outline-node__child-count {
   font-size: 12px;
