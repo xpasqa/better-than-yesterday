@@ -1,12 +1,10 @@
 export interface AgentFile {
-  id: string
   path: string
   content: string
 }
 
 export const MOCK_FILES: AgentFile[] = [
   {
-    id: 'file-riset-pasar',
     path: 'docs/riset-pasar.md',
     content: `# Riset Pasar
 
@@ -32,7 +30,6 @@ Mulai di titik harga $12, dan jadikan panel file sebagai pembeda utama.
 `,
   },
   {
-    id: 'file-spec-fitur',
     path: 'docs/spec-fitur.md',
     content: `# Spek Fitur: Panel File
 
@@ -60,7 +57,6 @@ interface AgentFile {
 `,
   },
   {
-    id: 'file-rapat-senin',
     path: 'notes/rapat-senin.md',
     content: `# Catatan Rapat — Senin
 
@@ -82,7 +78,6 @@ interface AgentFile {
 `,
   },
   {
-    id: 'file-pertanyaan-terbuka',
     path: 'notes/pertanyaan-terbuka.md',
     content: `# Pertanyaan Terbuka
 
@@ -98,7 +93,6 @@ Hal-hal yang belum diputuskan, dicatat supaya tidak hilang.
 `,
   },
   {
-    id: 'file-readme',
     path: 'README.md',
     content: `# Ringkasan
 

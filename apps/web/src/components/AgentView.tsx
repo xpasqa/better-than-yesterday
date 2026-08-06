@@ -9,7 +9,7 @@ const USER_NAME = 'Pasqa'
 
 export type ChatMessage =
   | { id: string; role: 'user' | 'agent'; kind: 'text'; content: string; time: string }
-  | { id: string; role: 'agent'; kind: 'file'; fileId: string; time: string }
+      | { id: string; role: 'agent'; kind: 'file'; path: string; time: string }
 
 const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
   + 'In a working version, this is where an actual answer would go.'
@@ -81,7 +81,7 @@ export default function AgentView() {
         },
       ]
       if (newFile) {
-        next.push({ id: generateId(), role: 'agent', kind: 'file', fileId: newFile.id, time: timeNow() })
+        next.push({ id: generateId(), role: 'agent', kind: 'file', path: newFile.path, time: timeNow() })
       }
       return next
     })
