@@ -9,9 +9,11 @@
 [3.agent](../3.agent/spec.md) · [spec induk](../spec.md) — §3.1 (dua kelas
 domain), §5 (multi-user) · [Engineering Policy](../../../policy/1-engineering-policy.md)
 
-Referensi desain: [`bty/docs/specs/05-attachments.md`](../../../../../bty/docs/specs/05-attachments.md)
+Referensi desain: `bty/docs/specs/05-attachments.md`
 — presigned-upload S3-compatible, sudah cocok hampir utuh untuk iDrive e2.
 Penyimpangan dari referensi itu didaftar di §12.
+**Catatan:** path `bty/` tidak ada di checkout ini — referensi ini broken dan hanya
+untuk konteks historis. Desain aktual ada di spec ini sendiri.
 
 ---
 
