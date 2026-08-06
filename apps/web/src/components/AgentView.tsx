@@ -1,20 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import AgentChat from './AgentChat'
-import { FILE_CREATION_SCHEDULE, MOCK_FILES } from '../agent/mockFiles'
 import type { AgentFile } from '../agent/mockFiles'
 import './AgentView.css'
 
 const USER_NAME = 'Pasqa'
+const API_BASE = '/api/agent'
 
 export type ChatMessage =
   | { id: string; role: 'user' | 'agent'; kind: 'text'; content: string; time: string }
-      | { id: string; role: 'agent'; kind: 'file'; path: string; time: string }
-
-const AGENT_REPLY = 'This is a demo response — nothing here is wired to a real agent. '
-  + 'In a working version, this is where an actual answer would go.'
-
-const AGENT_REPLY_WITH_FILE = 'Here\'s what I put together — you can review it in the file panel.'
+  | { id: string; role: 'agent'; kind: 'file'; path: string; time: string }
 
 const EXAMPLES = [
   'Summarise what I finished this week',
@@ -48,7 +43,9 @@ export default function AgentView() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [unseenPaths, setUnseenPaths] = useState<Set<string>>(new Set())
-  const [replyCount, setReplyCount] = useState(0)
+  const [isStreaming, setIsStreaming] = useState(false)
+  // nodeId: null = global context, set to project node id when in a project
+  const nodeId = useRef<string | null>(null)
 
   const selectFile = (path: string) => {
     setSelectedPath(path)
@@ -60,44 +57,121 @@ export default function AgentView() {
     })
   }
 
-  const sendText = (text: string) => {
+  const sendText = async (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed) return
+    if (!trimmed || isStreaming) return
 
-    const nextReplyIndex = replyCount + 1
-    const fileToCreate = FILE_CREATION_SCHEDULE[nextReplyIndex]
-    const newFile = fileToCreate !== undefined ? MOCK_FILES[fileToCreate] : null
+    const userMsgId = generateId()
+    const agentMsgId = generateId()
+    const t = timeNow()
 
-    setMessages(prev => {
-      const next: ChatMessage[] = [
-        ...prev,
-        { id: generateId(), role: 'user', kind: 'text', content: trimmed, time: timeNow() },
-        {
-          id: generateId(),
-          role: 'agent',
-          kind: 'text',
-          content: newFile ? AGENT_REPLY_WITH_FILE : AGENT_REPLY,
-          time: timeNow(),
-        },
-      ]
-      if (newFile) {
-        next.push({ id: generateId(), role: 'agent', kind: 'file', path: newFile.path, time: timeNow() })
-      }
-      return next
-    })
-
-    if (newFile) {
-      const isFirstFile = files.length === 0
-      setFiles(prev => [...prev, newFile])
-      setUnseenPaths(prev => new Set(prev).add(newFile.path))
-      if (isFirstFile) {
-        setPanelOpen(true)
-        selectFile(newFile.path)
-      }
-    }
-
-    setReplyCount(nextReplyIndex)
+    // Add user message + empty agent placeholder immediately
+    setMessages(prev => [
+      ...prev,
+      { id: userMsgId, role: 'user', kind: 'text', content: trimmed, time: t },
+      { id: agentMsgId, role: 'agent', kind: 'text', content: '', time: t },
+    ])
     setPrompt('')
+    setIsStreaming(true)
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed, nodeId: nodeId.current }),
+        credentials: 'include',
+      })
+
+      if (!res.ok || !res.body) {
+        const errText = res.status === 401
+          ? 'Not logged in. Please refresh and log in again.'
+          : `Request failed (${res.status})`
+        setMessages(prev =>
+          prev.map(m => m.id === agentMsgId && m.kind === 'text' ? { ...m, content: errText } : m),
+        )
+        setIsStreaming(false)
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE lines
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) continue
+          if (!line.startsWith('data:')) continue
+          const raw = line.slice(5).trim()
+
+          // Detect event type from prior line — Hono streamSSE sends event: then data:
+          // We'll parse based on the buffer context. Re-parse properly:
+          const eventMatch = /event: (\w+)\ndata: (.*)/.exec(buffer + '\n' + line)
+          void eventMatch // handled below via raw parsing
+
+          // Since we process line by line, check for SSE event prefix in buffer
+          // Actually detect by scanning the last 'event:' line before this data line
+          const lastEventIdx = (buffer + '\n' + line).lastIndexOf('event:')
+          const eventName = lastEventIdx >= 0
+            ? (buffer + '\n' + line).slice(lastEventIdx + 6).split('\n')[0]?.trim()
+            : 'token'
+
+          if (eventName === 'token') {
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === agentMsgId && m.kind === 'text'
+                  ? { ...m, content: m.content + raw }
+                  : m,
+              ),
+            )
+          } else if (eventName === 'file') {
+            try {
+              const { path } = JSON.parse(raw) as { path: string }
+              setFiles(prev => {
+                const exists = prev.some(f => f.path === path)
+                if (exists) return prev
+                const newFile: AgentFile = { path, content: '' }
+                const isFirst = prev.length === 0
+                if (isFirst) {
+                  setPanelOpen(true)
+                  selectFile(path)
+                }
+                setUnseenPaths(p => new Set(p).add(path))
+                setMessages(mp => [
+                  ...mp,
+                  { id: generateId(), role: 'agent', kind: 'file', path, time: timeNow() },
+                ])
+                return [...prev, newFile]
+              })
+            } catch { /* malformed */ }
+          } else if (eventName === 'error') {
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === agentMsgId && m.kind === 'text'
+                  ? { ...m, content: raw || 'An error occurred.' }
+                  : m,
+              ),
+            )
+          }
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error'
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === agentMsgId && m.kind === 'text' ? { ...m, content: msg } : m,
+        ),
+      )
+    } finally {
+      setIsStreaming(false)
+    }
   }
 
   if (messages.length > 0) {
@@ -106,7 +180,7 @@ export default function AgentView() {
         messages={messages}
         prompt={prompt}
         onPromptChange={setPrompt}
-        onSend={() => sendText(prompt)}
+        onSend={() => { void sendText(prompt) }}
         onBack={() => {
           setMessages([])
           setPrompt('')
@@ -114,7 +188,7 @@ export default function AgentView() {
           setSelectedPath(null)
           setPanelOpen(false)
           setUnseenPaths(new Set())
-          setReplyCount(0)
+          setIsStreaming(false)
         }}
         files={files}
         panelOpen={panelOpen}
@@ -123,6 +197,7 @@ export default function AgentView() {
         onSelectFile={selectFile}
         onOpenPanel={() => setPanelOpen(true)}
         onClosePanel={() => setPanelOpen(false)}
+        isStreaming={isStreaming}
       />
     )
   }
@@ -142,7 +217,7 @@ export default function AgentView() {
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(prompt) }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendText(prompt) }
             }}
             rows={2}
             autoFocus
@@ -166,8 +241,8 @@ export default function AgentView() {
             </div>
             <button
               className="agent-view__send-btn"
-              onClick={() => sendText(prompt)}
-              disabled={!prompt.trim()}
+              onClick={() => { void sendText(prompt) }}
+              disabled={!prompt.trim() || isStreaming}
               aria-label="Send"
               type="button"
             >
@@ -182,7 +257,7 @@ export default function AgentView() {
             <button
               key={example}
               className="agent-view__example"
-              onClick={() => sendText(example)}
+              onClick={() => { void sendText(example) }}
               type="button"
             >
               {example}

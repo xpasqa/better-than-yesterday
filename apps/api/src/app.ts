@@ -7,6 +7,7 @@ import { errorHandler } from './http/errors.ts'
 import { requireAuth } from './http/auth-middleware.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { syncRoutes } from './modules/sync/routes.ts'
+import { agentRoutes } from './modules/agent/routes.ts'
 
 export function createApp() {
   const app = new Hono()
@@ -25,6 +26,7 @@ export function createApp() {
   // the only place that ever grows as new phases land.
   app.use('/api/*', requireAuth)
   app.route('/api', syncRoutes)
+  app.route('/api', agentRoutes)
 
   return app
 }

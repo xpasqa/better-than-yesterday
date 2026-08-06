@@ -10,6 +10,10 @@ import * as notification from './schema/notification.ts'
 import * as pushSubscription from './schema/push-subscription.ts'
 import * as completion from './schema/completion.ts'
 import * as syncSeq from './schema/sync-seq.ts'
+import * as aiSettings from './schema/ai-settings.ts'
+import * as agentProject from './schema/agent-project.ts'
+import * as agentFile from './schema/agent-file.ts'
+import * as agentSession from './schema/agent-session.ts'
 
 export const schema = {
   ...appUser,
@@ -21,6 +25,10 @@ export const schema = {
   ...pushSubscription,
   ...completion,
   ...syncSeq,
+  ...aiSettings,
+  ...agentProject,
+  ...agentFile,
+  ...agentSession,
 }
 
 const queryClient = postgres(config.DATABASE_URL)
