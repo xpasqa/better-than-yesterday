@@ -388,3 +388,28 @@
     height: 42px;
   }
 }
+
+/* Inline add-project form */
+.sidebar__project-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 12px;
+  height: 34px;
+}
+
+.sidebar__project-add-input {
+  flex: 1;
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  min-width: 0;
+}
+
+.sidebar__project-add-input::placeholder {
+  color: var(--text-placeholder);
+}

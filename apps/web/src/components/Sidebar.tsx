@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
@@ -10,6 +10,7 @@ import type { ViewType, Task } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import { projects } from '../data/mockData'
 import ThemeToggle from './ThemeToggle'
+import { createProject } from '../store/project-actions'
 import './Sidebar.css'
 
 interface SidebarProps {
@@ -57,6 +58,32 @@ export default function Sidebar({
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [chatsExpanded, setChatsExpanded] = useState(true)
+  const [addingProject, setAddingProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const newProjectInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAddProjectClick = () => {
+    setAddingProject(true)
+    setProjectsExpanded(true)
+    setNewProjectName('')
+    // Focus the input after it renders
+    setTimeout(() => newProjectInputRef.current?.focus(), 0)
+  }
+
+  const handleAddProjectSubmit = async () => {
+    const name = newProjectName.trim()
+    if (name) {
+      const id = await createProject(name, [...realNodes])
+      onProjectChange(id)
+    }
+    setAddingProject(false)
+    setNewProjectName('')
+  }
+
+  const handleAddProjectKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); void handleAddProjectSubmit() }
+    if (e.key === 'Escape') { setAddingProject(false); setNewProjectName('') }
+  }
 
   const today = new Date().toISOString().split('T')[0]
   const realTodayStr = todayInTimezone(timezone)
@@ -228,6 +255,7 @@ export default function Sidebar({
               className="sidebar__section-add"
               title="Add project"
               type="button"
+              onClick={handleAddProjectClick}
             >
               <PlusIcon size={16} weight="bold" />
             </button>
@@ -270,6 +298,23 @@ export default function Sidebar({
                   </button>
                 </li>
               ))}
+              {addingProject && (
+                <li className="sidebar__project-add-row">
+                  <span className="sidebar__project-hash">#</span>
+                  <input
+                    ref={newProjectInputRef}
+                    className="sidebar__project-add-input"
+                    type="text"
+                    placeholder="Project name"
+                    value={newProjectName}
+                    onChange={e => setNewProjectName(e.target.value)}
+                    onKeyDown={handleAddProjectKeyDown}
+                    onBlur={() => { void handleAddProjectSubmit() }}
+                    maxLength={200}
+                    aria-label="New project name"
+                  />
+                </li>
+              )}
             </ul>
           )}
         </div>

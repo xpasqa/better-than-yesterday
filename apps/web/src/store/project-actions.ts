@@ -18,6 +18,40 @@ async function enqueueNode(node: Node): Promise<void> {
   triggerSync()
 }
 
+/** Creates a new project with the given name. Returns the new project's id. */
+export async function createProject(name: string, allNodes: Node[]): Promise<string> {
+  const trimmed = name.trim()
+  const roots = allNodes.filter((n) => n.parentId === null)
+  const lastRank = roots.length > 0 ? roots.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+  const now = new Date().toISOString()
+  const project: Node = {
+    id: uuidv7(),
+    userId: '',
+    parentId: null,
+    kind: 'project',
+    rank: between(lastRank, null),
+    content: trimmed,
+    note: null,
+    dueDate: null,
+    dueTime: null,
+    durationMin: null,
+    recurrence: null,
+    priority: null,
+    labelIds: [],
+    color: null,
+    isFavorite: false,
+    isInbox: false,
+    collapsed: false,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    seq: 0,
+  }
+  await enqueueNode(project)
+  return project.id
+}
+
 /** Resolves `#name` to an existing project's id, creating one if nothing matches. Returns `null` only when `query` itself is empty. */
 export async function resolveOrCreateProjectId(query: string, allNodes: Node[]): Promise<string | null> {
   const trimmed = query.trim()
