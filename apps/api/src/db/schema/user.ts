@@ -1,5 +1,4 @@
-// docs/feature/2.backend/0.infrastructure/spec.md §4.1 + 1.todo/spec.md §3.7.
-import { pgTable, smallint, text, time, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, pgTable, smallint, text, time, timestamp } from 'drizzle-orm/pg-core'
 
 export const appUser = pgTable('app_user', {
   id: text('id').primaryKey(),
@@ -14,4 +13,7 @@ export const appUser = pgTable('app_user', {
   defaultRemindTime: time('default_remind_time').notNull().default('09:00'),
   digestTime: time('digest_time'), // null = digest off
   language: text('language').notNull().default('id'),
+
+  // Storage quota in bytes — default 10 GiB (storage spec §7)
+  storageQuotaBytes: bigint('storage_quota_bytes', { mode: 'bigint' }).notNull().default(BigInt(10737418240)),
 })
