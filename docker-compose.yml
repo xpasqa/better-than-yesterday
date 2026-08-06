@@ -42,6 +42,9 @@ services:
     ports:
       - '80:80'
       - '443:443'
+      # Matches SITE_ADDRESS=:8080 in .env for local use; port 80 stays
+      # published for a production deploy where SITE_ADDRESS is a domain.
+      - '127.0.0.1:8080:8080'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./apps/web/dist:/srv/web:ro
