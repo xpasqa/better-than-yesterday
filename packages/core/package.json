@@ -13,7 +13,9 @@
     "./parse": "./src/parse.ts",
     "./views": "./src/views.ts",
     "./errors": "./src/errors.ts",
-    "./inline-markdown": "./src/inline-markdown.ts"
+    "./inline-markdown": "./src/inline-markdown.ts",
+    "./storage-validate": "./src/storage-validate.ts",
+    "./storage-tree": "./src/storage-tree.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
