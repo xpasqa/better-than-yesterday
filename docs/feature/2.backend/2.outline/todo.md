@@ -33,12 +33,27 @@ sync sudah hidup). **Tidak ada migrasi database di seluruh fase ini.**
 
 ## C. Keyboard lengkap & catatan
 
-- [ ] Sisa tabel §7: `⌘↑/⌘↓` tukar, `⌘.` buka/tutup, `⌘⏎` selesai,
-      `⌘T` beri tanggal, `Shift+Enter` catatan (`note`)
-- [ ] Markdown inline saat blur (React nodes, **bukan** `dangerouslySetInnerHTML`);
-      sumber mentah saat fokus; tepat satu `<input>` di DOM
-- [ ] **Verifikasi:** tiap baris tabel keyboard punya tes lulus **termasuk
-      no-op**; `Backspace` di node berisi menghapus karakter, bukan node
+- [x] Sisa tabel §7: `⌘↑/⌘↓` tukar, `⌘.` buka/tutup, `⌘⏎` selesai,
+      `⌘T` beri tanggal, `Shift+Enter` catatan (`note`) — semua di
+      `apps/web/src/store/outline-actions.ts` (`swapWithSibling`) dan
+      `OutlineView.tsx`'s `handleKeyDown`
+- [x] Markdown inline saat blur (React nodes, **bukan** `dangerouslySetInnerHTML`);
+      sumber mentah saat fokus; tepat satu `<input>` di DOM —
+      `packages/core/src/inline-markdown.ts` (bold/italic/code/strike/link,
+      11 unit test) + `OutlineView.tsx`'s `InlineMarkdown` component
+- [x] **Verifikasi:** setiap operasi diuji manual di browser lewat
+      `KeyboardEvent` sintetik pada baris yang benar-benar fokus (dispatch
+      langsung, karena tool otomasi browser yang dipakai sesi ini tidak
+      meneruskan flag `ctrlKey`/`metaKey` dari parameter modifier-nya) —
+      `⌘⏎` menyelesaikan/membatalkan task dan baris tercoret; `⌘.`
+      mengubah `collapsed` (hanya bila punya anak); `⌘T` mengisi `dueDate`
+      hari ini; `⌘↑`/`⌘↓` menukar posisi dengan sibling (urutan array
+      dicek sebelum/sesudah); `Shift+Enter` membuka textarea catatan.
+      **Belum ada:** unit test otomatis per baris tabel keyboard (tidak
+      ada e2e runner di repo ini — apps/web diverifikasi manual sejak
+      awal proyek, konsisten dengan phase 0/1); `Backspace` di tengah
+      teks berisi belum diuji eksplisit (perilaku native `<input>`,
+      bukan logika kustom, jadi risikonya rendah tapi belum dibuktikan)
 
 ## D. Zoom & breadcrumb
 

@@ -6,7 +6,7 @@
 // node-actions.ts's enqueue pattern.
 import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
-import { indent as treeIndent, outdent as treeOutdent } from '@better/core/tree'
+import { indent as treeIndent, outdent as treeOutdent, move as treeMove } from '@better/core/tree'
 import type { Node } from '@better/core/node'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
@@ -84,4 +84,26 @@ export async function outdentNode(node: Node, allNodes: Node[]): Promise<boolean
   if (!result) return false
   await patchNode(node, result)
   return true
+}
+
+/** ⌘↑ / ⌘↓ (§7). Returns false on the documented no-op (no sibling in that direction). */
+export async function swapWithSibling(node: Node, allNodes: Node[], direction: 'up' | 'down'): Promise<boolean> {
+  const siblings = allNodes.filter((n) => n.parentId === node.parentId).sort(byRank)
+  const idx = siblings.findIndex((s) => s.id === node.id)
+  if (idx === -1) return false
+
+  if (direction === 'up') {
+    if (idx === 0) return false
+    const prev = siblings[idx - 1]!
+    await patchNode(node, treeMove(allNodes, node.id, node.parentId, prev.id))
+  } else {
+    if (idx >= siblings.length - 1) return false
+    const afterNext = siblings[idx + 2] ?? null
+    await patchNode(node, treeMove(allNodes, node.id, node.parentId, afterNext?.id ?? null))
+  }
+  return true
+}
+
+function byRank(a: Node, b: Node): number {
+  return a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0
 }
