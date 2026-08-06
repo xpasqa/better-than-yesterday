@@ -48,4 +48,4 @@ the browser, not just written.
       quiet icon in the list header (user feedback: "buat lebih minimal dan lebih clean")
 
 ## Commit
-- [ ] Committed once Phase 7 passes
+- [x] Committed once Phase 7 passes
