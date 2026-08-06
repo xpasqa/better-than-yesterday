@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/package.json
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
-RUN npm ci
+RUN NODE_OPTIONS=--max-old-space-size=512 npm ci
 
 COPY packages/core packages/core
 COPY apps/api apps/api
