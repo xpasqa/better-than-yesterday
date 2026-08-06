@@ -18,11 +18,13 @@ interface AgentChatProps {
   onSelectFile: (path: string) => void
   onOpenPanel: () => void
   onClosePanel: () => void
+  isStreaming?: boolean
 }
 
 export default function AgentChat({
   messages, prompt, onPromptChange, onSend, onBack,
   files, panelOpen, selectedPath, unseenPaths, onSelectFile, onOpenPanel, onClosePanel,
+  isStreaming: _isStreaming = false,
 }: AgentChatProps) {
   const endRef = useRef<HTMLDivElement>(null)
 
