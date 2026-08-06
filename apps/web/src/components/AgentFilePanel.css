@@ -67,6 +67,8 @@
     height: auto;
     z-index: 70;
     box-shadow: var(--shadow-raised-2);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

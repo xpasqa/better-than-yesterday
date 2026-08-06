@@ -16,6 +16,7 @@ import TodayReal from './components/TodayReal'
 import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
 import ProjectReal from './components/ProjectReal'
+import BottomNav from './components/BottomNav'
 import { pathForView, deriveViewFromPathname } from './routes'
 import { tasks as initialTasks, sections as initialSections } from './data/mockData'
 import type { Task, Section } from './types'
@@ -78,6 +79,7 @@ function App() {
    * which is wide enough to keep the full desktop layout.
    */
   const isCompact = useMediaQuery('(max-width: 1023px)')
+  const isPhone = useMediaQuery('(max-width: 767px)')
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const { theme, toggleTheme } = useTheme()
@@ -176,14 +178,27 @@ function App() {
       </button>
       {isCompact && (
         <header className="app-topbar">
-          <button
-            className="app-topbar__btn"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-            type="button"
-          >
-            <ListIcon size={21} />
-          </button>
+          {/* On phone, BottomNav handles primary nav — topbar only shows title area + actions */}
+          {!isPhone && (
+            <button
+              className="app-topbar__btn"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+              type="button"
+            >
+              <ListIcon size={21} />
+            </button>
+          )}
+          {isPhone && (
+            <button
+              className="app-topbar__btn"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+              type="button"
+            >
+              <ListIcon size={21} />
+            </button>
+          )}
           <div className="app-topbar__actions">
             <ThemeToggle theme={theme} onToggle={toggleTheme} size="large" />
             <button className="app-topbar__btn app-topbar__bell" aria-label="Notifications" type="button">
@@ -254,6 +269,7 @@ function App() {
           onUpdateTask={handleUpdateTask}
         />
       )}
+      <BottomNav onMorePress={() => setDrawerOpen(true)} />
     </div>
   )
 }
