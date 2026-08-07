@@ -49,7 +49,8 @@
 - [x] `npx tsc --noEmit` (api) — clean
 - [x] `npx tsc --noEmit` (web) — clean
 - [x] `npx oxlint -c oxlint.json .` — clean
-- [ ] `npm install` (blocked: node_modules owned by root in this environment)
-- [ ] `npm run db:migrate` (blocked: needs live DB + npm install)
-- [ ] `npm run test -w @better/api` (blocked: needs live DB + npm install)
+- [x] `npm install` — fixed Tencent mirror URLs in package-lock.json
+- [x] `npm run db:migrate` — migration 0001_agent_phase3.sql applied successfully
+- [x] Docker build + deploy — fixed npm 12 + @better/core bundling (issue #11)
+- [ ] `npm run test -w @better/api` (deferred: requires test suite setup)
 - [ ] Browser round-trip: send message → SSE tokens → file panel → "New task" reset

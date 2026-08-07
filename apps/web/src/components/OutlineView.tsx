@@ -276,8 +276,9 @@ interface OutlineViewProps {
 
 export default function OutlineView({ user }: OutlineViewProps) {
   const allNodes = useAllNodes()
-  // Outline only shows non-deleted, non-project, non-inbox nodes
-  const nodes = allNodes.filter(n => n.deletedAt === null && n.kind !== 'project' && !n.isInbox)
+  // Outline uses all non-deleted nodes — it shares the same node tree as Todo.
+  // Projects and inbox appear as root containers; their children are shown under them.
+  const nodes = allNodes.filter(n => n.deletedAt === null)
   const timezone = user.timezone ?? 'Asia/Jakarta'
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const roots = childrenOf(nodes, null)
