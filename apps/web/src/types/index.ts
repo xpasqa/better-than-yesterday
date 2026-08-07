@@ -60,17 +60,25 @@ export interface MailMessage {
 
 export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'
 
+// API response shapes from /api/storage/tree
 export interface StorageFolder {
   id: string
-  name: string
+  areaId: string
   parentId: string | null
+  name: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface StorageFile {
   id: string
+  areaId: string
+  folderId: string | null
   name: string
-  parentId: string | null
-  type: StorageFileType
+  s3Key: string
   sizeBytes: number
-  modifiedAt: string
+  mimeType: string
+  status: 'pending' | 'ready'
+  createdAt: string
+  updatedAt: string
 }
