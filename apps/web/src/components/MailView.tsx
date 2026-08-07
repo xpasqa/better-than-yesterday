@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   ArchiveIcon, ArrowBendUpLeftIcon, ArrowBendUpRightIcon, ArrowLeftIcon, EnvelopeSimpleIcon,
   EnvelopeSimpleOpenIcon, FlagIcon, MagnifyingGlassIcon, NotePencilIcon,
-  PaperPlaneTiltIcon, TrashIcon, WarningCircleIcon,
+  PaperclipIcon, PaperPlaneTiltIcon, TrashIcon, WarningCircleIcon,
 } from '@phosphor-icons/react'
 import type { MailFolder, MailMessage, MailView as MailFolderView } from '../types'
 import { mailMessages as initialMessages } from '../data/mockData'
@@ -47,7 +47,11 @@ export default function MailView() {
     : inFolder
 
   const activeMessage = visible.find(m => m.id === activeMessageId) ?? null
-  const unreadInbox = messages.filter(m => m.folder === 'inbox' && !m.isRead).length
+  /* G2: count unread per folder for sidebar badges */
+  const unreadByFolder = (folderId: string): number =>
+    folderId === 'flagged'
+      ? messages.filter(m => m.isFlagged && !m.isRead).length
+      : messages.filter(m => m.folder === folderId && !m.isRead).length
 
   const openMessage = (id: string) => {
     setActiveMessageId(id)
@@ -60,6 +64,14 @@ export default function MailView() {
 
   const toggleRead = (id: string) => {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, isRead: !m.isRead } : m))
+  }
+
+  /* Archive moves to trash (no dedicated archive folder in this app) */
+  const archiveMessage = (id: string) => {
+    setMessages(prev => prev.map(m =>
+      m.id === id ? { ...m, folder: 'trash' as MailFolder } : m
+    ))
+    setActiveMessageId(null)
   }
 
   /* Deleting from Trash removes it for good; anywhere else it just moves there */
@@ -136,9 +148,7 @@ export default function MailView() {
                 >
                   <Icon size={17} />
                   <span>{f.name}</span>
-                  {f.id === 'inbox' && unreadInbox > 0 && (
-                    <span className="mail-view__folder-count">{unreadInbox}</span>
-                  )}
+                  {(() => { const n = unreadByFolder(f.id); return n > 0 ? <span className="mail-view__folder-count">{n}</span> : null })()}
                 </button>
               </li>
             )
@@ -223,7 +233,7 @@ export default function MailView() {
               <button onClick={() => toggleRead(activeMessage.id)} title="Mark as unread">
                 {activeMessage.isRead ? <EnvelopeSimpleIcon size={17} /> : <EnvelopeSimpleOpenIcon size={17} />}
               </button>
-              <button title="Archive" disabled>
+              <button onClick={() => archiveMessage(activeMessage.id)} title="Archive">
                 <ArchiveIcon size={17} />
               </button>
               <button onClick={() => deleteMessage(activeMessage.id)} title="Delete">
@@ -239,6 +249,16 @@ export default function MailView() {
                 <span className="mail-view__message-date">{formatDate(activeMessage.receivedAt)}</span>
               </div>
               <div className="mail-view__message-body">{activeMessage.body}</div>
+              {activeMessage.attachments && activeMessage.attachments.length > 0 && (
+                <div className="mail-view__attachments">
+                  {activeMessage.attachments.map(name => (
+                    <span key={name} className="mail-view__attachment-chip">
+                      <PaperclipIcon size={13} />
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         ) : (

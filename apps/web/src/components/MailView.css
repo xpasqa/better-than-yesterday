@@ -487,6 +487,30 @@
   }
 }
 
+/* Attachment chips — decorative only, no click handler */
+.mail-view__attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider-primary);
+}
+
+.mail-view__attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--control-border);
+  border-radius: 99px;
+  cursor: default;
+  user-select: none;
+}
+
 @media (hover: none) {
   .mail-item {
     padding-top: 12px;

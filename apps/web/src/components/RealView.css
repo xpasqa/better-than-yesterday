@@ -43,34 +43,6 @@
   flex-shrink: 0;
 }
 
-/* Quick add bar */
-.real-view__quick-add {
-  display: flex;
-  gap: var(--spacing-small);
-  margin-bottom: var(--spacing-xlarge);
-}
-
-.real-view__quick-add input {
-  flex: 1;
-  font-size: var(--font-size-normal);
-  padding: var(--spacing-small) var(--spacing-medium);
-  border: 1px solid var(--bg-input-hover);
-  border-radius: var(--border-radius-small);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-.real-view__quick-add button {
-  font-size: var(--font-size-normal);
-  font-weight: var(--font-weight-medium);
-  padding: var(--spacing-small) var(--spacing-large);
-  border-radius: var(--border-radius-small);
-  border: none;
-  background: #d1453b;
-  color: #fff;
-  cursor: pointer;
-}
-
 /* Group label (Overdue, Today, section headers) */
 .real-view__group-label {
   font-size: var(--font-size-xsmall);

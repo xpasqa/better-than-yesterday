@@ -25,6 +25,8 @@ export const labels: Label[] = [
 const today = new Date().toISOString().split('T')[0]
 const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0]
+const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
 
 export const tasks: Task[] = [
   {
@@ -148,6 +150,7 @@ export const mailMessages: MailMessage[] = [
     receivedAt: today,
     isRead: false,
     isFlagged: true,
+    attachments: ['roadmap-notes-q3.pdf', 'open-questions.md'],
   },
   {
     id: 'm2',
@@ -183,6 +186,30 @@ export const mailMessages: MailMessage[] = [
     isFlagged: true,
   },
   {
+    id: 'm10',
+    folder: 'inbox',
+    sender: 'Stripe',
+    senderEmail: 'billing@stripe.com',
+    subject: 'Your invoice for July 2026',
+    body: 'Your invoice for July 2026 is now available. Total charged: $49.00.\n\nLog in to your dashboard to view or download the invoice.',
+    receivedAt: twoDaysAgo,
+    isRead: false,
+    isFlagged: false,
+    attachments: ['invoice-july-2026.pdf'],
+  },
+  {
+    id: 'm11',
+    folder: 'inbox',
+    sender: 'Andi Kurniawan',
+    senderEmail: 'andi.k@publion.org',
+    subject: 'Design review — homepage v2',
+    body: 'Attached the revised mockups from yesterday\'s session. Main changes:\n\n- Hero section simplified\n- CTA button moved above the fold\n- Testimonials replaced with metrics\n\nLet me know what you think before EOD.',
+    receivedAt: lastWeek,
+    isRead: true,
+    isFlagged: false,
+    attachments: ['homepage-v2.fig', 'homepage-v2-specs.pdf'],
+  },
+  {
     id: 'm5',
     folder: 'sent',
     sender: 'Me',
@@ -203,6 +230,18 @@ export const mailMessages: MailMessage[] = [
     receivedAt: yesterday,
     isRead: true,
     isFlagged: false,
+    attachments: ['invoice-august-2026.pdf'],
+  },
+  {
+    id: 'm12',
+    folder: 'sent',
+    sender: 'Me',
+    senderEmail: 'me@example.com',
+    subject: 'Re: Coffee next week?',
+    body: 'Lena,\n\nTuesday works — how about 10am at the usual place?\n\nLooking forward to it.',
+    receivedAt: twoDaysAgo,
+    isRead: true,
+    isFlagged: false,
   },
   {
     id: 'm7',
@@ -212,6 +251,17 @@ export const mailMessages: MailMessage[] = [
     subject: 'Thoughts on the new onboarding flow',
     body: 'I have been using it for a week now and the second step still feels like it is asking too much too early. What if we',
     receivedAt: today,
+    isRead: true,
+    isFlagged: false,
+  },
+  {
+    id: 'm13',
+    folder: 'drafts',
+    sender: 'Me',
+    senderEmail: 'me@example.com',
+    subject: 'Q4 planning — initial thoughts',
+    body: 'A few things I want to bring to the Q4 planning session:\n\n1. Prioritise the mobile experience — we keep deprioritising it\n2. Cut the number of active projects from 6 to 4\n3.',
+    receivedAt: yesterday,
     isRead: true,
     isFlagged: false,
   },

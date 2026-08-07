@@ -56,6 +56,8 @@ export interface MailMessage {
   receivedAt: string
   isRead: boolean
   isFlagged: boolean
+  /** Decorative only — filenames shown as disabled chips in the reading pane */
+  attachments?: string[]
 }
 
 export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'

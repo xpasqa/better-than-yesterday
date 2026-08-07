@@ -49,3 +49,12 @@ the browser, not just written.
 
 ## Commit
 - [x] Committed once Phase 7 passes
+
+## Post-ship improvements (2026-08-07)
+
+Gap analysis terhadap spec menemukan 4 item yang belum maksimal setelah Phase 7:
+
+- [x] **G1** Archive button aktif — sebelumnya `disabled`, sekarang pindahkan pesan ke Trash (`archiveMessage` handler di `MailView.tsx`)
+- [x] **G2** Unread count per folder — sebelumnya hanya Inbox, sekarang semua folder menampilkan badge via `unreadByFolder()` termasuk Flagged cross-filter
+- [x] **G3** Mock data diperkaya — dari 9 → 13 pesan: +2 Inbox (Stripe invoice, design review), +1 Sent (reply coffee), +1 Drafts (Q4 planning); variasi tanggal `twoDaysAgo`/`lastWeek` ditambahkan
+- [x] **G4** Attachment chip dekoratif — tambah `attachments?: string[]` ke `MailMessage` type; 4 pesan punya attachment; chip render di bawah body dengan `PaperclipIcon`, tidak bisa diklik (sesuai spec)

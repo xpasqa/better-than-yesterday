@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, TrashIcon } from '@phosphor-icons/react'
+import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, NotePencilIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Node } from '@better/core/node'
 import type { Label } from '@better/core/label'
 import { toggleTaskComplete, deleteTask } from '../store/node-actions'
@@ -134,6 +134,16 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode }: TaskRowProps) 
             </button>
             {showMenu && (
               <div className="task-row__dropdown">
+                {onOpenNode && (
+                  <button
+                    type="button"
+                    className="task-row__dropdown-item"
+                    onClick={() => { onOpenNode(node); setShowMenu(false) }}
+                  >
+                    <NotePencilIcon size={16} />
+                    Edit task
+                  </button>
+                )}
                 <button
                   type="button"
                   className="task-row__dropdown-item task-row__dropdown-item--danger"
