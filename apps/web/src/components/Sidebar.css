@@ -389,6 +389,58 @@
   }
 }
 
+/* Profile dropdown */
+.sidebar__profile-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__profile-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 180px;
+  background: var(--bg-raised);
+  border: 1px solid var(--divider-primary);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-raised-2);
+  z-index: 200;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__profile-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--border-radius-small);
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sidebar__profile-item:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar__profile-item--danger {
+  color: var(--text-danger);
+}
+
+.sidebar__profile-divider {
+  height: 1px;
+  background: var(--divider-primary);
+  margin: 3px 0;
+}
+
 /* Inline add-project form */
 .sidebar__project-add-row {
   display: flex;

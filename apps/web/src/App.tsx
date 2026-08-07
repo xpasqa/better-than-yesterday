@@ -14,6 +14,7 @@ import AgentView from './components/AgentView'
 import Login from './components/Login'
 import CreateProjectModal from './components/CreateProjectModal'
 import NodeDetailModal from './components/NodeDetailModal'
+import AgentSettingsModal from './components/AgentSettingsModal'
 import TodayReal from './components/TodayReal'
 import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
@@ -74,6 +75,7 @@ function App() {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
   const [createProjectOpen, setCreateProjectOpen] = useState(false)
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
 
   /*
    * Below 1024px the sidebar stops being a docked column and becomes an
@@ -176,9 +178,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      <button type="button" className="app-signout" onClick={handleLogout}>
-        Sign out ({user.email})
-      </button>
       {isCompact && (
         <header className="app-topbar">
           {/* On phone, BottomNav handles primary nav — topbar only shows title area + actions */}
@@ -223,10 +222,13 @@ function App() {
           tasks={tasks}
           realNodes={realNodes}
           timezone={user.timezone}
+          userName={user.name}
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
           onAddProject={() => setCreateProjectOpen(true)}
+          onOpenSettings={() => setAgentSettingsOpen(true)}
+          onLogout={handleLogout}
         />
         {isCompact && drawerOpen && (
           <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
@@ -282,6 +284,9 @@ function App() {
             setDrawerOpen(false)
           }}
         />
+      )}
+      {agentSettingsOpen && (
+        <AgentSettingsModal onClose={() => setAgentSettingsOpen(false)} />
       )}
       {openNodeId && (() => {
         const openNode = realNodes.find(n => n.id === openNodeId) ?? null

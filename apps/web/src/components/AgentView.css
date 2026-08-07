@@ -153,11 +153,48 @@
 
 @media (max-width: 767px) {
   .agent-view__inner {
-    padding: 24px 16px 88px;
+    /* Composer pinned at bottom — no bottom padding needed on scroll container */
+    padding: 24px 16px 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  .agent-view__header {
+    flex-shrink: 0;
+  }
+
+  /* Push examples up, composer sticks to bottom */
+  .agent-view__examples {
+    flex: 1;
+  }
+
+  /* Sticky composer above bottom nav */
+  .agent-view__composer-wrap {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-primary);
+    padding: 12px 0 calc(56px + env(safe-area-inset-bottom) + 12px);
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-top: 1px solid var(--divider-primary);
   }
 
   .agent-view__title {
     font-size: 22px;
     line-height: 30px;
+  }
+
+  /* 44px min tap target for send button */
+  .agent-view__send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  /* Prevent iOS zoom on focus — font-size must be >= 16px */
+  .agent-view__input {
+    font-size: 16px;
   }
 }

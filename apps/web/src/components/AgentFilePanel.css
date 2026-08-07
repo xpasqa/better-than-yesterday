@@ -82,4 +82,10 @@
   .agent-file-panel__tree {
     max-height: 34%;
   }
+
+  /* 44px tap target for close button on mobile */
+  .agent-file-panel__close {
+    width: 44px;
+    height: 44px;
+  }
 }

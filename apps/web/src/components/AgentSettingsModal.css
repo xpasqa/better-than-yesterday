@@ -1,0 +1,169 @@
+/* Agent settings modal — follows the same pattern as CreateProjectModal */
+.agent-settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.agent-settings-modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-raised);
+  border-radius: 12px;
+  box-shadow: var(--shadow-raised-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.agent-settings-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--divider-primary);
+  flex-shrink: 0;
+}
+
+.agent-settings-modal__title {
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.agent-settings-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+
+.agent-settings-modal__close:hover {
+  background: var(--bg-highlight);
+}
+
+.agent-settings-modal__loading {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-normal);
+}
+
+.agent-settings-modal__body {
+  padding: 20px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agent-settings-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.agent-settings-modal__label {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.agent-settings-modal__key-hint {
+  font-weight: var(--font-weight-regular);
+  color: var(--text-tertiary);
+}
+
+.agent-settings-modal__input {
+  width: 100%;
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--control-border);
+  border-radius: var(--border-radius-small);
+  padding: 8px 10px;
+  transition: border-color 0.1s;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.agent-settings-modal__input:focus {
+  border-color: var(--brand-red-idle);
+}
+
+.agent-settings-modal__input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.agent-settings-modal__error {
+  font-size: var(--font-size-small);
+  color: var(--text-danger);
+  margin: 0;
+}
+
+.agent-settings-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+
+.agent-settings-modal__btn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  padding: 6px 14px;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: background 0.1s, opacity 0.1s;
+}
+
+.agent-settings-modal__btn--cancel {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--control-border);
+}
+
+.agent-settings-modal__btn--cancel:hover {
+  background: var(--bg-highlight);
+}
+
+.agent-settings-modal__btn--submit {
+  background: var(--brand-red-idle);
+  color: #fff;
+  border: none;
+}
+
+.agent-settings-modal__btn--submit:hover:not(:disabled) {
+  background: var(--brand-red-hover, #b03a30);
+}
+
+.agent-settings-modal__btn--submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Mobile: full-width sheet from bottom */
+@media (max-width: 767px) {
+  .agent-settings-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .agent-settings-modal {
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

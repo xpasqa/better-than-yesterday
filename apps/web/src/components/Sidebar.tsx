@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
-  ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
+  GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
@@ -29,11 +29,15 @@ interface SidebarProps {
    */
   realNodes?: Node[]
   timezone?: string
+  userName?: string
   onViewChange: (view: ViewType) => void
   onProjectChange: (id: string) => void
   onToggleCollapse: () => void
   /** Opens the Create Project modal */
   onAddProject: () => void
+  /** Opens the Agent Settings modal */
+  onOpenSettings: () => void
+  onLogout: () => void
 }
 
 const recentChats = [
@@ -54,10 +58,25 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
   theme, onToggleTheme, tasks, realNodes = [], timezone = 'Asia/Jakarta',
-  onViewChange, onProjectChange, onToggleCollapse, onAddProject
+  userName = 'Pasqa',
+  onViewChange, onProjectChange, onToggleCollapse, onAddProject, onOpenSettings, onLogout,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [chatsExpanded, setChatsExpanded] = useState(true)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!profileOpen) return
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [profileOpen])
 
   const today = new Date().toISOString().split('T')[0]
   const realTodayStr = todayInTimezone(timezone)
@@ -92,14 +111,47 @@ export default function Sidebar({
     drawer && drawerOpen ? 'sidebar--drawer-open' : '',
   ].filter(Boolean).join(' ')
 
+  const initial = (userName.charAt(0) || 'P').toUpperCase()
+
   return (
     <aside className={rootClass}>
       <div className="sidebar__header">
-        <button className="sidebar__workspace" type="button">
-          <div className="sidebar__avatar">P</div>
-          <span className="sidebar__workspace-name">Pasqa</span>
-          <span className="sidebar__workspace-chevron"><CaretDownIcon size={14} weight="bold" /></span>
-        </button>
+        <div className="sidebar__profile-wrap" ref={profileRef}>
+          <button
+            className="sidebar__workspace"
+            type="button"
+            onClick={() => setProfileOpen(o => !o)}
+            aria-haspopup="true"
+            aria-expanded={profileOpen}
+          >
+            <div className="sidebar__avatar">{initial}</div>
+            <span className="sidebar__workspace-name">{userName}</span>
+            <span className="sidebar__workspace-chevron"><CaretDownIcon size={14} weight="bold" /></span>
+          </button>
+          {profileOpen && (
+            <div className="sidebar__profile-menu" role="menu">
+              <button
+                className="sidebar__profile-item"
+                role="menuitem"
+                type="button"
+                onClick={() => { setProfileOpen(false); onOpenSettings() }}
+              >
+                <GearIcon size={15} />
+                Agent settings
+              </button>
+              <div className="sidebar__profile-divider" />
+              <button
+                className="sidebar__profile-item sidebar__profile-item--danger"
+                role="menuitem"
+                type="button"
+                onClick={() => { setProfileOpen(false); onLogout() }}
+              >
+                <SignOutIcon size={15} />
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
         <div className="sidebar__header-actions">
           {/* The drawer already has the top bar's controls above it — one set is enough */}
           {!drawer && (

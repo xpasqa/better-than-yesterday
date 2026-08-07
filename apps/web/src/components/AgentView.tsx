@@ -102,26 +102,24 @@ export default function AgentView() {
         if (done) break
         buffer += decoder.decode(value, { stream: true })
 
-        // Parse SSE lines
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
+        // SSE messages are separated by double newlines. Split on that boundary
+        // so each chunk is one complete "event:\ndata:\n" block.
+        const parts = buffer.split('\n\n')
+        // Keep the last (possibly incomplete) part in the buffer
+        buffer = parts.pop() ?? ''
 
-        for (const line of lines) {
-          if (line.startsWith('event:')) continue
-          if (!line.startsWith('data:')) continue
-          const raw = line.slice(5).trim()
-
-          // Detect event type from prior line — Hono streamSSE sends event: then data:
-          // We'll parse based on the buffer context. Re-parse properly:
-          const eventMatch = /event: (\w+)\ndata: (.*)/.exec(buffer + '\n' + line)
-          void eventMatch // handled below via raw parsing
-
-          // Since we process line by line, check for SSE event prefix in buffer
-          // Actually detect by scanning the last 'event:' line before this data line
-          const lastEventIdx = (buffer + '\n' + line).lastIndexOf('event:')
-          const eventName = lastEventIdx >= 0
-            ? (buffer + '\n' + line).slice(lastEventIdx + 6).split('\n')[0]?.trim()
-            : 'token'
+        for (const part of parts) {
+          // Extract event name and data from each SSE message block
+          let eventName = 'token'
+          let raw = ''
+          for (const line of part.split('\n')) {
+            if (line.startsWith('event:')) {
+              eventName = line.slice(6).trim()
+            } else if (line.startsWith('data:')) {
+              raw = line.slice(5).trim()
+            }
+          }
+          if (!raw && eventName !== 'done') continue
 
           if (eventName === 'token') {
             setMessages(prev =>
@@ -210,44 +208,45 @@ export default function AgentView() {
           <p className="agent-view__subtitle">{getGreeting()}</p>
         </div>
 
-        <div className="agent-view__composer">
-          <textarea
-            className="agent-view__input"
-            placeholder="Ask anything, or describe what you want done"
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendText(prompt) }
-            }}
-            rows={2}
-            autoFocus
-          />
-          <div className="agent-view__composer-actions">
-            <div className="agent-view__mode-toggle">
+        <div className="agent-view__composer-wrap">
+          <div className="agent-view__composer">
+            <textarea
+              className="agent-view__input"
+              placeholder="Ask anything, or describe what you want done"
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendText(prompt) }
+              }}
+              rows={2}
+            />
+            <div className="agent-view__composer-actions">
+              <div className="agent-view__mode-toggle">
+                <button
+                  className={`agent-view__mode-btn ${mode === 'chat' ? 'agent-view__mode-btn--active' : ''}`}
+                  onClick={() => setMode('chat')}
+                  type="button"
+                >
+                  Chat
+                </button>
+                <button
+                  className={`agent-view__mode-btn ${mode === 'cowork' ? 'agent-view__mode-btn--active' : ''}`}
+                  onClick={() => setMode('cowork')}
+                  type="button"
+                >
+                  Cowork
+                </button>
+              </div>
               <button
-                className={`agent-view__mode-btn ${mode === 'chat' ? 'agent-view__mode-btn--active' : ''}`}
-                onClick={() => setMode('chat')}
+                className="agent-view__send-btn"
+                onClick={() => { void sendText(prompt) }}
+                disabled={!prompt.trim() || isStreaming}
+                aria-label="Send"
                 type="button"
               >
-                Chat
-              </button>
-              <button
-                className={`agent-view__mode-btn ${mode === 'cowork' ? 'agent-view__mode-btn--active' : ''}`}
-                onClick={() => setMode('cowork')}
-                type="button"
-              >
-                Cowork
+                <PaperPlaneTiltIcon size={15} weight="fill" />
               </button>
             </div>
-            <button
-              className="agent-view__send-btn"
-              onClick={() => { void sendText(prompt) }}
-              disabled={!prompt.trim() || isStreaming}
-              aria-label="Send"
-              type="button"
-            >
-              <PaperPlaneTiltIcon size={15} weight="fill" />
-            </button>
           </div>
         </div>
 
