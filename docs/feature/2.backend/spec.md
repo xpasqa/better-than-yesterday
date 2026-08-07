@@ -237,7 +237,7 @@ menyalakan browser atau database, ia ada di tempat yang salah.
 | IMAP/SMTP | `imapflow` + `nodemailer` |
 | Frontend | React 19 + TS + Vite + CSS polos — **tidak berubah** |
 | Test | Vitest; integrasi lawan Postgres asli; Playwright seperlunya |
-| Deploy | 1 VPS, docker compose (api + postgres + caddy) |
+| Deploy | 1 VPS, docker compose (api + postgres) + nginx + Certbot |
 
 Frontend tidak dipindah ke Tailwind: itu akan membuang ekstraksi runtime
 Todoist yang jadi alasan tampilannya terasa benar. Library yang dipakai di

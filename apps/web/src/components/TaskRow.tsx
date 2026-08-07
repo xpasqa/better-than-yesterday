@@ -1,38 +1,152 @@
-import { CheckCircleIcon, CircleIcon } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Node } from '@better/core/node'
 import type { Label } from '@better/core/label'
-import { toggleTaskComplete } from '../store/node-actions'
+import { toggleTaskComplete, deleteTask } from '../store/node-actions'
 import './TaskRow.css'
 
 interface TaskRowProps {
   node: Node
   labelsById: Map<string, Label>
+  /** All nodes in the store — used to look up the parent project name. Omit in ProjectReal (redundant). */
+  allNodes?: Node[]
+  /** Called when the user clicks the content area to open the detail modal. */
+  onOpenNode?: (node: Node) => void
+}
+
+const priorityColors: Record<number, string> = {
+  1: 'var(--priority-p1)',
+  2: 'var(--priority-p2)',
+  3: 'var(--priority-p3)',
+}
+
+function formatDueDate(date: string): { text: string; overdue: boolean; isToday: boolean } {
+  const today = new Date().toISOString().split('T')[0]
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  const overdue = date < today
+  if (date === today) return { text: 'Today', overdue: false, isToday: true }
+  if (date === tomorrow) return { text: 'Tomorrow', overdue: false, isToday: false }
+  const d = new Date(date + 'T00:00:00')
+  return {
+    text: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    overdue,
+    isToday: false,
+  }
 }
 
 /** Shared row for every real (store-backed) task view — Today, Inbox, Upcoming, Project. */
-function TaskRow({ node, labelsById }: TaskRowProps) {
+function TaskRow({ node, labelsById, allNodes = [], onOpenNode }: TaskRowProps) {
+  const [hovered, setHovered] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+
   const done = node.completedAt !== null
+  const dueInfo = node.dueDate ? formatDueDate(node.dueDate) : null
+  const taskLabels = node.labelIds.map(id => labelsById.get(id)).filter(Boolean) as Label[]
+  const priority = node.priority ?? 4
+
+  // Project name — only shown when allNodes is passed (Today/Inbox/Upcoming, not ProjectReal)
+  const parentProject = allNodes.length > 0 && node.parentId
+    ? allNodes.find(n => n.id === node.parentId && n.kind === 'project' && !n.isInbox)
+    : null
+
   return (
-    <li className={`task-row${done ? ' task-row--done' : ''}`}>
+    <li
+      className={[
+        'task-row',
+        done && 'task-row--done',
+      ].filter(Boolean).join(' ')}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
+    >
+      {/* Checkbox */}
       <button
         type="button"
-        className="task-row__check"
-        aria-label={done ? `Mark "${node.content}" not done` : `Mark "${node.content}" done`}
+        className={`task-row__checkbox task-row__checkbox--p${priority}`}
+        aria-label={done ? 'Mark as incomplete' : 'Mark as complete'}
         onClick={() => void toggleTaskComplete(node)}
       >
-        {done ? <CheckCircleIcon size={20} weight="fill" /> : <CircleIcon size={20} />}
+        {done && (
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
-      <span className="task-row__content">{node.content}</span>
-      {node.labelIds.map((id) => {
-        const found = labelsById.get(id)
-        return found ? (
-          <span key={id} className="task-row__label">
-            {found.name}
-          </span>
-        ) : null
-      })}
-      {node.dueTime && <span className="task-row__time">{node.dueTime}</span>}
-      {node.priority && <span className={`task-row__priority task-row__priority--${node.priority}`} />}
+
+      {/* Content */}
+      <div
+        className="task-row__content"
+        onClick={() => onOpenNode?.(node)}
+        style={{ cursor: onOpenNode ? 'pointer' : 'default' }}
+      >
+        <p className="task-row__title">{node.content}</p>
+        {node.note && <p className="task-row__description">{node.note}</p>}
+
+        {/* Meta row */}
+        {(dueInfo || node.dueTime || taskLabels.length > 0 || parentProject) && (
+          <div className="task-row__meta">
+            {dueInfo && (
+              <span className={[
+                'task-row__due',
+                dueInfo.overdue && 'task-row__due--overdue',
+                dueInfo.isToday && 'task-row__due--today',
+              ].filter(Boolean).join(' ')}>
+                <CalendarBlankIcon size={12} />
+                {dueInfo.text}
+                {node.dueTime && <span className="task-row__due-time">{node.dueTime}</span>}
+              </span>
+            )}
+            {!dueInfo && node.dueTime && (
+              <span className="task-row__due">
+                <CalendarBlankIcon size={12} />
+                <span className="task-row__due-time">{node.dueTime}</span>
+              </span>
+            )}
+            {taskLabels.map(label => (
+              <span key={label.id} className="task-row__label" style={{ color: label.color }}>
+                @ {label.name}
+              </span>
+            ))}
+            {parentProject && (
+              <span className="task-row__project">
+                #{parentProject.content}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Hover actions */}
+      {hovered && (
+        <div className="task-row__actions">
+          {priority < 4 && (
+            <span className="task-row__priority-flag">
+              <PhFlagIcon size={12} weight="fill" color={priorityColors[priority]} />
+            </span>
+          )}
+          <div className="task-row__menu-wrapper">
+            <button
+              type="button"
+              className="task-row__action-btn"
+              onClick={() => setShowMenu(m => !m)}
+              aria-label="More options"
+            >
+              <DotsThreeIcon size={18} weight="bold" />
+            </button>
+            {showMenu && (
+              <div className="task-row__dropdown">
+                <button
+                  type="button"
+                  className="task-row__dropdown-item task-row__dropdown-item--danger"
+                  onClick={() => { void deleteTask(node); setShowMenu(false) }}
+                >
+                  <TrashIcon size={16} />
+                  Delete task
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </li>
   )
 }

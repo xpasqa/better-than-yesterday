@@ -28,7 +28,7 @@ atau mail milik owner, dan sebaliknya.
 **In:** struktur monorepo · `packages/core` kosong tapi ber-bentuk ·
 `apps/api` dengan config, error envelope, logging, health · tabel `app_user` +
 sesi · login/logout · CLI tambah user · aturan scoping `user_id` · seed per
-user · docker compose + Caddy + deploy VPS · gate `npm run verify` · tes
+user · docker compose + nginx + Certbot + deploy VPS · gate `npm run verify` · tes
 isolasi antar-user.
 
 **Out:** semua fitur domain (fase 1–5) · sign-up publik · reset password via

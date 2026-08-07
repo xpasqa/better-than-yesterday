@@ -1,50 +1,73 @@
+import { useState } from 'react'
 import { project as computeProject } from '@better/core/views'
+import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
 import { useAllLabels, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
-import QuickAddBar from './QuickAddBar'
+import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
 import './RealView.css'
 
 interface ProjectRealProps {
   user: AuthUser
   projectId: string
+  onOpenNode?: (id: string) => void
 }
 
-function ProjectReal({ user, projectId }: ProjectRealProps) {
+function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
   const nodes = useAllNodes()
   const labels = useAllLabels()
   const labelsById = new Map(labels.map((l) => [l.id, l]))
+  const [addingTask, setAddingTask] = useState(false)
+
   const project = nodes.find((n) => n.id === projectId && n.kind === 'project')
   const items = project ? computeProject(nodes, projectId) : []
 
   return (
-    <div className="real-view">
-      <header className="real-view__header">
-        <h1>{project?.content ?? 'Project not found'}</h1>
-        <SyncStatusBadge />
-      </header>
-
-      {project ? (
-        <>
-          <QuickAddBar timezone={user.timezone ?? 'Asia/Jakarta'} defaultParentId={projectId} />
-          {items.length === 0 ? (
-            <p className="real-view__empty">No tasks in this project yet.</p>
-          ) : (
-            <ul className="real-view__list">
-              {items.map((n) => (
-                <TaskRow key={n.id} node={n} labelsById={labelsById} />
-              ))}
-            </ul>
+    <main className="real-view">
+      <div className="real-view__inner">
+        <div className="real-view__header">
+          <h1>{project?.content ?? 'Project not found'}</h1>
+          {project && (
+            <p className="real-view__subtitle">
+              <CheckCircleIcon size={14} />
+              {items.length} {items.length === 1 ? 'task' : 'tasks'}
+              <SyncStatusBadge />
+            </p>
           )}
-        </>
-      ) : (
-        <p className="real-view__empty">
-          This project id isn't in your synced tree — it may still be one of the sample projects that
-          hasn't been migrated to a real project yet.
-        </p>
-      )}
-    </div>
+        </div>
+
+        {project ? (
+          <>
+            {items.length > 0 && (
+              <ul className="real-view__list">
+                {items.map((n) => (
+                  <TaskRow key={n.id} node={n} labelsById={labelsById} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} />
+                ))}
+              </ul>
+            )}
+
+            {addingTask ? (
+              <AddTaskFormReal
+                timezone={user.timezone ?? 'Asia/Jakarta'}
+                defaultParentId={projectId}
+                onCancel={() => setAddingTask(false)}
+                onAdded={() => setAddingTask(false)}
+              />
+            ) : (
+              <button className="real-view__add-task-btn" onClick={() => setAddingTask(true)} type="button">
+                <PlusIcon size={16} weight="bold" />
+                Add task
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="real-view__empty">
+            This project id isn't in your synced tree yet.
+          </p>
+        )}
+      </div>
+    </main>
   )
 }
 

@@ -25,7 +25,7 @@ const loginInput = z.object({
 })
 
 function clientIp(c: { req: { header: (name: string) => string | undefined } }): string {
-  // Behind Caddy, the real client address arrives via X-Forwarded-For.
+  // Behind nginx, the real client address arrives via X-Forwarded-For.
   // Falling back to a constant when absent (local dev, direct connection)
   // still rate-limits per email, just without the IP dimension.
   return c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'

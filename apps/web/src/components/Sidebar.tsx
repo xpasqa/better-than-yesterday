@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
@@ -8,9 +8,7 @@ import { inbox as computeInbox, project as computeProject, today as computeToday
 import { findInbox, type Node } from '@better/core/node'
 import type { ViewType, Task } from '../types'
 import type { Theme } from '../hooks/useTheme'
-import { projects } from '../data/mockData'
 import ThemeToggle from './ThemeToggle'
-import { createProject } from '../store/project-actions'
 import './Sidebar.css'
 
 interface SidebarProps {
@@ -34,6 +32,8 @@ interface SidebarProps {
   onViewChange: (view: ViewType) => void
   onProjectChange: (id: string) => void
   onToggleCollapse: () => void
+  /** Opens the Create Project modal */
+  onAddProject: () => void
 }
 
 const recentChats = [
@@ -54,36 +54,10 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
   theme, onToggleTheme, tasks, realNodes = [], timezone = 'Asia/Jakarta',
-  onViewChange, onProjectChange, onToggleCollapse
+  onViewChange, onProjectChange, onToggleCollapse, onAddProject
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [chatsExpanded, setChatsExpanded] = useState(true)
-  const [addingProject, setAddingProject] = useState(false)
-  const [newProjectName, setNewProjectName] = useState('')
-  const newProjectInputRef = useRef<HTMLInputElement>(null)
-
-  const handleAddProjectClick = () => {
-    setAddingProject(true)
-    setProjectsExpanded(true)
-    setNewProjectName('')
-    // Focus the input after it renders
-    setTimeout(() => newProjectInputRef.current?.focus(), 0)
-  }
-
-  const handleAddProjectSubmit = async () => {
-    const name = newProjectName.trim()
-    if (name) {
-      const id = await createProject(name, [...realNodes])
-      onProjectChange(id)
-    }
-    setAddingProject(false)
-    setNewProjectName('')
-  }
-
-  const handleAddProjectKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); void handleAddProjectSubmit() }
-    if (e.key === 'Escape') { setAddingProject(false); setNewProjectName('') }
-  }
 
   const today = new Date().toISOString().split('T')[0]
   const realTodayStr = todayInTimezone(timezone)
@@ -95,7 +69,6 @@ export default function Sidebar({
     tasks.filter(t => !t.isCompleted && t.projectId === 'inbox').length +
     computeInbox(realNodes).length
 
-  const allProjects = projects.filter(p => p.id !== 'inbox')
   const realProjects = realNodes.filter(
     (n) => n.kind === 'project' && n.deletedAt === null && n.id !== findInbox(realNodes)?.id,
   )
@@ -255,7 +228,8 @@ export default function Sidebar({
               className="sidebar__section-add"
               title="Add project"
               type="button"
-              onClick={handleAddProjectClick}
+              onClick={onAddProject}
+              aria-label="Add project"
             >
               <PlusIcon size={16} weight="bold" />
             </button>
@@ -284,37 +258,8 @@ export default function Sidebar({
                   </button>
                 </li>
               ))}
-              {allProjects.map(project => (
-                <li key={project.id}>
-                  <button
-                    className={`sidebar__nav-item ${activeProjectId === project.id ? 'sidebar__nav-item--active' : ''}`}
-                    onClick={() => onProjectChange(project.id)}
-                  >
-                    <span className="sidebar__project-hash" style={{ color: project.color }}>#</span>
-                    <span className="sidebar__nav-label">{project.name}</span>
-                    {getProjectTaskCount(project.id) > 0 && (
-                      <span className="sidebar__nav-count">{getProjectTaskCount(project.id)}</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-              {addingProject && (
-                <li className="sidebar__project-add-row">
-                  <span className="sidebar__project-hash">#</span>
-                  <input
-                    ref={newProjectInputRef}
-                    className="sidebar__project-add-input"
-                    type="text"
-                    placeholder="Project name"
-                    value={newProjectName}
-                    onChange={e => setNewProjectName(e.target.value)}
-                    onKeyDown={handleAddProjectKeyDown}
-                    onBlur={() => { void handleAddProjectSubmit() }}
-                    maxLength={200}
-                    aria-label="New project name"
-                  />
-                </li>
-              )}
+
+
             </ul>
           )}
         </div>

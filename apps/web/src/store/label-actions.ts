@@ -15,14 +15,14 @@ async function enqueueLabel(label: Label): Promise<void> {
   triggerSync()
 }
 
-async function createLabel(name: string, existing: Label[]): Promise<Label> {
+async function createLabel(name: string, color: string, existing: Label[]): Promise<Label> {
   const lastRank = existing.length > 0 ? existing.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
   const now = new Date().toISOString()
   const label: Label = {
     id: uuidv7(),
     userId: '', // filled in by the server from the session; the client value is never trusted
     name,
-    color: 'grey',
+    color,
     isFavorite: false,
     rank: between(lastRank, null),
     createdAt: now,
@@ -32,6 +32,12 @@ async function createLabel(name: string, existing: Label[]): Promise<Label> {
   }
   await enqueueLabel(label)
   return label
+}
+
+/** Creates a new label with the given name and color. Returns the new label. */
+export async function createLabelFromUI(name: string, color: string): Promise<Label> {
+  const existing = await db.labels.filter((l) => l.deletedAt === null).toArray()
+  return createLabel(name, color, existing)
 }
 
 /**

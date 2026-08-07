@@ -2,33 +2,48 @@
 .real-view {
   flex: 1;
   min-width: 0;
-  padding: var(--spacing-xlarge);
+  height: 100%;
   overflow-y: auto;
   background: var(--bg-primary);
+  position: relative;
 }
 
+/* Content column centered at 800px — same as MainContent */
+.real-view__inner {
+  max-width: var(--editor-max-width, 800px);
+  margin: 0 auto;
+  padding: 56px 0 100px;
+}
+
+/* Header */
 .real-view__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-large);
+  margin-bottom: 24px;
 }
 
 .real-view__header h1 {
   font-size: var(--font-size-header);
   font-weight: var(--font-weight-strong);
   color: var(--text-primary);
+  line-height: 35px;
   margin: 0;
 }
 
-.real-view__status {
-  display: inline-flex;
+.real-view__subtitle {
+  display: flex;
   align-items: center;
-  gap: var(--spacing-xsmall);
-  font-size: var(--font-size-xsmall);
+  gap: 6px;
+  font-size: var(--font-size-content);
+  font-weight: var(--font-weight-regular);
   color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 17px;
 }
 
+.real-view__subtitle svg {
+  flex-shrink: 0;
+}
+
+/* Quick add bar */
 .real-view__quick-add {
   display: flex;
   gap: var(--spacing-small);
@@ -56,6 +71,7 @@
   cursor: pointer;
 }
 
+/* Group label (Overdue, Today, section headers) */
 .real-view__group-label {
   font-size: var(--font-size-xsmall);
   font-weight: var(--font-weight-medium);
@@ -75,4 +91,47 @@
   font-size: var(--font-size-normal);
   color: var(--text-secondary);
   padding: var(--spacing-medium) 0;
+}
+
+/* Status badge row */
+.real-view__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  font-size: var(--font-size-xsmall);
+  color: var(--text-secondary);
+}
+
+/* "+ Add task" trigger button — mirrors MainContent's inline add trigger */
+.real-view__add-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-content);
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--border-radius-small);
+  transition: color 0.1s;
+  margin-top: 4px;
+}
+
+.real-view__add-task-btn:hover {
+  color: var(--brand-red-idle);
+}
+
+.real-view__add-task-btn:hover svg {
+  color: var(--brand-red-idle);
+}
+
+/* Mobile: reduce top padding */
+@media (max-width: 767px) {
+  .real-view__inner {
+    padding: 24px 20px 80px;
+  }
 }

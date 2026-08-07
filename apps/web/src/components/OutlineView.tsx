@@ -275,7 +275,9 @@ interface OutlineViewProps {
 }
 
 export default function OutlineView({ user }: OutlineViewProps) {
-  const nodes = useAllNodes()
+  const allNodes = useAllNodes()
+  // Outline only shows non-deleted, non-project, non-inbox nodes
+  const nodes = allNodes.filter(n => n.deletedAt === null && n.kind !== 'project' && !n.isInbox)
   const timezone = user.timezone ?? 'Asia/Jakarta'
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const roots = childrenOf(nodes, null)

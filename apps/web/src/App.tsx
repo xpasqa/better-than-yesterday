@@ -12,13 +12,14 @@ import MailView from './components/MailView'
 import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
 import Login from './components/Login'
+import CreateProjectModal from './components/CreateProjectModal'
+import NodeDetailModal from './components/NodeDetailModal'
 import TodayReal from './components/TodayReal'
 import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
 import ProjectReal from './components/ProjectReal'
 import BottomNav from './components/BottomNav'
 import { pathForView, deriveViewFromPathname } from './routes'
-import { tasks as initialTasks, sections as initialSections } from './data/mockData'
 import type { Task, Section } from './types'
 import { fetchMe, logout, type AuthUser } from './store/auth-api'
 import { clearLocalStore } from './store/db'
@@ -67,10 +68,12 @@ function App() {
   const location = useLocation()
   const { view: activeView, projectId: activeProjectId } = deriveViewFromPathname(location.pathname)
   const realNodes = useAllNodes()
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
-  const [sections, setSections] = useState<Section[]>(initialSections)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [sections, setSections] = useState<Section[]>([])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
+  const [createProjectOpen, setCreateProjectOpen] = useState(false)
+  const [openNodeId, setOpenNodeId] = useState<string | null>(null)
 
   /*
    * Below 1024px the sidebar stops being a docked column and becomes an
@@ -223,6 +226,7 @@ function App() {
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
+          onAddProject={() => setCreateProjectOpen(true)}
         />
         {isCompact && drawerOpen && (
           <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
@@ -236,13 +240,13 @@ function App() {
         ) : activeView === 'agent' ? (
           <AgentView />
         ) : activeView === 'today' ? (
-          <TodayReal user={user} />
+          <TodayReal user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'inbox' ? (
-          <InboxReal user={user} />
+          <InboxReal user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'upcoming' ? (
-          <UpcomingReal user={user} />
+          <UpcomingReal user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'project' && activeProjectId ? (
-          <ProjectReal user={user} projectId={activeProjectId} />
+          <ProjectReal user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : (
           <MainContent
             activeView={activeView}
@@ -269,6 +273,22 @@ function App() {
           onUpdateTask={handleUpdateTask}
         />
       )}
+      {createProjectOpen && (
+        <CreateProjectModal
+          onClose={() => setCreateProjectOpen(false)}
+          onCreated={(id) => {
+            setCreateProjectOpen(false)
+            navigate(pathForView('project', id))
+            setDrawerOpen(false)
+          }}
+        />
+      )}
+      {openNodeId && (() => {
+        const openNode = realNodes.find(n => n.id === openNodeId) ?? null
+        return openNode ? (
+          <NodeDetailModal node={openNode} onClose={() => setOpenNodeId(null)} />
+        ) : null
+      })()}
       <BottomNav onMorePress={() => setDrawerOpen(true)} />
     </div>
   )

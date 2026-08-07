@@ -76,10 +76,9 @@ tidak lanjut ke blok berikutnya sebelum verifikasinya hijau
 
 ## G. Deploy
 
-- [x] `Dockerfile` api multi-stage; `docker-compose.yml` lengkap: api +
-      postgres + caddy
-- [x] `Caddyfile` — serve `apps/web/dist`, proxy `/health`, `/auth/*`, `/api/*`
-      → `api:3001`, HTTPS otomatis lewat `SITE_ADDRESS`
+- [x] `Dockerfile` api multi-stage; `docker-compose.yml` lengkap: api + postgres
+- [x] nginx + Certbot — serve `apps/web/dist` dari `/var/www/bty.xvntr.my.id/`,
+      proxy `/health`, `/auth/*`, `/api/*` → `api:3101`, TLS via Let's Encrypt
 - [x] `.env.example` — `DATABASE_URL`, `SESSION_SECRET`,
       `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `SITE_ADDRESS` (nama saja)
 - [ ] Deploy ke VPS; `user add` × 3 akun asli (owner, istri, teman) — **belum

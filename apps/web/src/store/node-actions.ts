@@ -83,3 +83,11 @@ export async function deleteTask(node: Node): Promise<void> {
   const now = new Date().toISOString()
   await enqueue({ ...node, deletedAt: now, updatedAt: now })
 }
+
+/** Patch a node with the given fields. Uses LWW: sets updatedAt to now. */
+export async function updateNode(id: string, patch: Partial<Omit<Node, 'id' | 'userId' | 'createdAt' | 'seq'>>): Promise<void> {
+  const existing = await db.nodes.get(id)
+  if (!existing) return
+  const now = new Date().toISOString()
+  await enqueue({ ...existing, ...patch, id, updatedAt: now })
+}

@@ -56,6 +56,16 @@ input, textarea {
   background: none;
 }
 
+/*
+ * iOS Safari auto-zooms when an input is focused with font-size < 16px.
+ * Keyed on touch input (hover: none) so desktop layout is not affected.
+ */
+@media (hover: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 a {
   text-decoration: none;
   color: inherit;
