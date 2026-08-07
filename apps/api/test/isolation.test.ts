@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, makeCompletionDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -17,11 +17,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = [], completions: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes, labels } }),
+    body: JSON.stringify({ cursor, changes: { nodes, labels, completions } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -127,6 +127,49 @@ describe('cross-user isolation', () => {
     const checkA = await sync(cookieA, '0')
     const row = checkA.body.changes.labels.find((l: { id: string }) => l.id === sharedId)
     expect(row.name).toBe('asli')
+  })
+
+  it("user B's sync bootstrap never includes user A's completions", async () => {
+    await createTestUser('completionA@example.com')
+    await createTestUser('completionB@example.com')
+    const cookieA = await loginCookie('completionA@example.com')
+    const cookieB = await loginCookie('completionB@example.com')
+
+    const bootA = await sync(cookieA, '0')
+    const nodeIdA = bootA.body.changes.nodes[0].id
+    await sync(cookieA, bootA.body.cursor, [], [], [makeCompletionDto({ id: uuidv7(), nodeId: nodeIdA })])
+
+    const bootB = await sync(cookieB, '0')
+    expect(bootB.body.changes.completions).toEqual([])
+  })
+
+  it("user B cannot claim user A's completion by reusing its id", async () => {
+    await createTestUser('completion-victim@example.com')
+    await createTestUser('completion-attacker@example.com')
+    const cookieA = await loginCookie('completion-victim@example.com')
+    const cookieB = await loginCookie('completion-attacker@example.com')
+
+    const bootA = await sync(cookieA, '0')
+    const nodeIdA = bootA.body.changes.nodes[0].id
+    const sharedId = uuidv7()
+    await sync(cookieA, bootA.body.cursor, [], [], [
+      makeCompletionDto({ id: sharedId, nodeId: nodeIdA, occurredOn: '2026-08-01' }),
+    ])
+
+    const bootB = await sync(cookieB, '0')
+    const nodeIdB = bootB.body.changes.nodes[0].id
+    const hijack = await sync(cookieB, bootB.body.cursor, [], [], [
+      makeCompletionDto({ id: sharedId, nodeId: nodeIdB, occurredOn: '2026-08-02' }),
+    ])
+    expect(hijack.status).toBe(200)
+
+    const checkA = await sync(cookieA, '0')
+    const row = checkA.body.changes.completions.find((c: { id: string }) => c.id === sharedId)
+    expect(row.nodeId).toBe(nodeIdA)
+    expect(row.occurredOn).toBe('2026-08-01')
+
+    const checkB = await sync(cookieB, '0')
+    expect(checkB.body.changes.completions).toEqual([])
   })
 
   it('a session for one user never authorizes as a different userId', async () => {

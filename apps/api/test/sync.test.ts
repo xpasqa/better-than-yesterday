@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, makeCompletionDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -14,11 +14,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = [], completions: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes, labels } }),
+    body: JSON.stringify({ cursor, changes: { nodes, labels, completions } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -192,5 +192,60 @@ describe('POST /api/sync — labels', () => {
     const { status, body } = await sync(cookie, '0', [], [makeLabelDto({ id: uuidv7(), name: 'dua kata' })])
     expect(status).toBe(422)
     expect(body.error.code).toBe('VALIDATION_ERROR')
+  })
+})
+
+describe('POST /api/sync — completions', () => {
+  it('a created completion round-trips with the same field values', async () => {
+    await createTestUser('completion@example.com')
+    const cookie = await loginCookie('completion@example.com')
+    const boot = await sync(cookie, '0')
+    const inboxId = boot.body.changes.nodes[0].id
+
+    const id = uuidv7()
+    await sync(cookie, boot.body.cursor, [], [], [
+      makeCompletionDto({ id, nodeId: inboxId, occurredOn: '2026-08-05' }),
+    ])
+
+    const after = await sync(cookie, '0')
+    const row = after.body.changes.completions.find((c: { id: string }) => c.id === id)
+    expect(row).toBeDefined()
+    expect(row.nodeId).toBe(inboxId)
+    expect(row.occurredOn).toBe('2026-08-05')
+  })
+
+  it('nodes, labels, and completions share one cursor', async () => {
+    await createTestUser('completion-cursor@example.com')
+    const cookie = await loginCookie('completion-cursor@example.com')
+    const boot = await sync(cookie, '0')
+    const inboxId = boot.body.changes.nodes[0].id
+
+    const push = await sync(cookie, boot.body.cursor, [], [], [
+      makeCompletionDto({ id: uuidv7(), nodeId: inboxId }),
+    ])
+    expect(push.body.cursor).not.toBe(boot.body.cursor)
+
+    const pullAfter = await sync(cookie, push.body.cursor)
+    expect(pullAfter.body.changes.nodes).toEqual([])
+    expect(pullAfter.body.changes.labels).toEqual([])
+    expect(pullAfter.body.changes.completions).toEqual([])
+  })
+
+  it('a retried push with the same completion id is a harmless no-op, not an overwrite', async () => {
+    await createTestUser('completion-retry@example.com')
+    const cookie = await loginCookie('completion-retry@example.com')
+    const boot = await sync(cookie, '0')
+    const inboxId = boot.body.changes.nodes[0].id
+    const id = uuidv7()
+
+    await sync(cookie, boot.body.cursor, [], [], [makeCompletionDto({ id, nodeId: inboxId, occurredOn: '2026-08-01' })])
+    // Same id, different occurredOn — simulates a retried request after a
+    // dropped response. Must NOT overwrite the original.
+    await sync(cookie, boot.body.cursor, [], [], [makeCompletionDto({ id, nodeId: inboxId, occurredOn: '2026-08-02' })])
+
+    const after = await sync(cookie, '0')
+    const rows = after.body.changes.completions.filter((c: { id: string }) => c.id === id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].occurredOn).toBe('2026-08-01')
   })
 })

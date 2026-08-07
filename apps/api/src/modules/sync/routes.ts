@@ -7,8 +7,9 @@ import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { node } from '../../db/schema/node.ts'
 import { label } from '../../db/schema/label.ts'
+import { completion } from '../../db/schema/completion.ts'
 import { AppError } from '../../http/errors.ts'
-import { syncRequest, type NodeDto, type LabelDto } from './dto.ts'
+import { syncRequest, type NodeDto, type LabelDto, type CompletionDto } from './dto.ts'
 
 export const syncRoutes = new Hono()
 
@@ -118,6 +119,28 @@ async function applyIncomingLabels(userId: string, dtos: LabelDto[]): Promise<vo
   }
 }
 
+function toCompletionRow(userId: string, dto: CompletionDto) {
+  return {
+    id: dto.id,
+    userId,
+    nodeId: dto.nodeId,
+    completedAt: new Date(dto.completedAt),
+    occurredOn: dto.occurredOn,
+  }
+}
+
+/**
+ * Insert-only — a completion row never changes after it's written (spec §8),
+ * so there is nothing to LWW against. `onConflictDoNothing` makes a retried
+ * push with the same id a harmless no-op instead of silently overwriting
+ * whichever row already holds that id (including, safely, another user's).
+ */
+async function applyIncomingCompletions(userId: string, dtos: CompletionDto[]): Promise<void> {
+  for (const dto of dtos) {
+    await db.insert(completion).values(toCompletionRow(userId, dto)).onConflictDoNothing()
+  }
+}
+
 function nodeToDto(row: typeof node.$inferSelect): NodeDto {
   return {
     id: row.id,
@@ -158,6 +181,15 @@ function labelToDto(row: typeof label.$inferSelect): LabelDto {
   }
 }
 
+function completionToDto(row: typeof completion.$inferSelect): CompletionDto {
+  return {
+    id: row.id,
+    nodeId: row.nodeId,
+    completedAt: row.completedAt.toISOString(),
+    occurredOn: row.occurredOn,
+  }
+}
+
 syncRoutes.post('/sync', async (c) => {
   const userId = c.get('userId')
   const body = await c.req.json().catch(() => null)
@@ -174,8 +206,11 @@ syncRoutes.post('/sync', async (c) => {
   if (changes.labels.length > 0) {
     await applyIncomingLabels(userId, changes.labels)
   }
+  if (changes.completions.length > 0) {
+    await applyIncomingCompletions(userId, changes.completions)
+  }
 
-  const [nodeRows, labelRows] = await Promise.all([
+  const [nodeRows, labelRows, completionRows] = await Promise.all([
     db
       .select()
       .from(node)
@@ -188,6 +223,12 @@ syncRoutes.post('/sync', async (c) => {
       .where(and(eq(label.userId, userId), gt(label.seq, cursorBigint)))
       .orderBy(label.seq)
       .limit(500),
+    db
+      .select()
+      .from(completion)
+      .where(and(eq(completion.userId, userId), gt(completion.seq, cursorBigint)))
+      .orderBy(completion.seq)
+      .limit(500),
   ])
 
   // seq is one sequence shared by every syncable table, so the highest seq
@@ -196,9 +237,14 @@ syncRoutes.post('/sync', async (c) => {
   let nextCursor = cursorBigint
   for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of labelRows) if (r.seq > nextCursor) nextCursor = r.seq
+  for (const r of completionRows) if (r.seq > nextCursor) nextCursor = r.seq
 
   return c.json({
     cursor: nextCursor.toString(),
-    changes: { nodes: nodeRows.map(nodeToDto), labels: labelRows.map(labelToDto) },
+    changes: {
+      nodes: nodeRows.map(nodeToDto),
+      labels: labelRows.map(labelToDto),
+      completions: completionRows.map(completionToDto),
+    },
   })
 })
