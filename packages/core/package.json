@@ -11,6 +11,8 @@
     "./rank": "./src/rank.ts",
     "./tree": "./src/tree.ts",
     "./parse": "./src/parse.ts",
+    "./recurrence": "./src/recurrence.ts",
+    "./completion": "./src/completion.ts",
     "./views": "./src/views.ts",
     "./errors": "./src/errors.ts",
     "./inline-markdown": "./src/inline-markdown.ts",
