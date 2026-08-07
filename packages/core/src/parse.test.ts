@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays } from './date.ts'
+import { addDays, dayOfWeek } from './date.ts'
 import { parse } from './parse.ts'
 
 // Wednesday 2026-08-05 — a real day chosen because it is neither a Sunday
@@ -312,5 +312,11 @@ describe('parse — recurrence', () => {
     const result = parse('cek email setiap hari kerja', CTX)
     expect(result.recurrence).toBe('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR')
     expect(result.content).toBe('cek email')
+  })
+
+  it('"setiap minggu" composes with date-word matching to anchor on the next Sunday — documents the actual behavior, not a claim that it never happens', () => {
+    const result = parse('laporan setiap minggu', CTX)
+    expect(result.recurrence).toBe('FREQ=WEEKLY')
+    expect(dayOfWeek(result.dueDate!)).toBe(0) // Sunday
   })
 })

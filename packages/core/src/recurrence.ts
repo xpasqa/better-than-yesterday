@@ -25,9 +25,18 @@ const WEEKDAY_TO_CODE: Record<string, string> = {
   friday: 'FR',
   sabtu: 'SA',
   saturday: 'SA',
-  // Sunday/"minggu" is deliberately excluded — "setiap minggu" means
-  // "every week" (spec.md §8 row 5), not "every Sunday". Spec's eight
-  // patterns have no "every Sunday" row, so there is nothing to support.
+  // Sunday/"minggu" is deliberately excluded — this file's own output for
+  // "setiap minggu" is the unambiguous FREQ=WEEKLY (spec.md §8 row 5, "every
+  // week"), never a weekday-anchored rule. That said, `parse()` composes
+  // this module's output with parse.ts's separate `findDateCandidates`,
+  // which DOES treat bare "minggu" as Sunday for date purposes — so the
+  // *composed* result of e.g. `parse('laporan setiap minggu', ctx)` is
+  // `dueDate: <next Sunday>, recurrence: 'FREQ=WEEKLY'`, which in practice
+  // behaves as "every Sunday". That's benign (Sunday is a fine anchor for a
+  // weekly task) and intentional at the composition layer, just documented
+  // here so it isn't mistaken for the bug it resembles. See
+  // parse.test.ts's "setiap minggu" composition test for the pinned
+  // behavior.
 }
 
 /** Finds every occurrence of the eight spec.md §8 recurrence phrases in `input`. */

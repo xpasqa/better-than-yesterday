@@ -1,6 +1,6 @@
 // The most important test in this repository (infra spec §8): every phase
-// that adds a table must add its own case here. Covers `node` and `label`
-// via /api/sync, the two synced entities phase 1 wired up.
+// that adds a table must add its own case here. Covers `node`, `label`, and
+// `completion` via /api/sync, the three synced entities wired up so far.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'

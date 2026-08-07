@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findRecurrenceCandidates } from './recurrence.ts'
+import { findRecurrenceCandidates, nextOccurrence } from './recurrence.ts'
 
 function values(input: string): string[] {
   return findRecurrenceCandidates(input).map((c) => c.value)
@@ -96,8 +96,6 @@ describe('findRecurrenceCandidates — edge cases', () => {
     expect(values('minum obat setiap 3 hari')).toEqual(['FREQ=DAILY;INTERVAL=3'])
   })
 })
-
-import { nextOccurrence } from './recurrence.ts'
 
 describe('nextOccurrence', () => {
   it('FREQ=DAILY advances by one day', () => {

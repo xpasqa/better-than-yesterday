@@ -200,8 +200,9 @@ index, bukan mengubah key path store yang sudah ada.**
       `completion`, tidak menutup task; `skipRecurrence` majukan tanpa
       menulis `completion`
 - [x] **Bug ditemukan & diperbaiki di luar scope rencana awal**: quick-add
-      yang mengetik frasa recurring tanpa tanggal (mis. "setiap senin" tanpa
-      kata hari) akan membuat node dengan `recurrence` terisi tapi `due_date`
+      yang mengetik frasa recurring tanpa tanggal (mis. "setiap hari", yang
+      memang wajarnya tidak disertai tanggal eksplisit) akan membuat node
+      dengan `recurrence` terisi tapi `due_date`
       `null` — melanggar CHECK constraint `node_recur_needs_date` di DB, jadi
       akan gagal saat sync push (setelah tersimpan optimis di Dexie lokal).
       Diperbaiki di `createTaskFromQuickAdd` (`apps/web/src/store/
@@ -222,7 +223,7 @@ index, bukan mengubah key path store yang sudah ada.**
       Playwright terpasang. Task 8 Step 4 (verifikasi manual di browser)
       secara eksplisit **dilewati**, bukan dicoba-dan-gagal — jadi belum ada
       konfirmasi visual/interaktif bahwa recurring bekerja end-to-end di
-      browser sungguhan (quick-add "setiap senin", centang task, cek
+      browser sungguhan (quick-add "setiap bulan", centang task, cek
       due_date maju, cek baris `completion` di Postgres). Semua yang di atas
       hanya terverifikasi lewat tes otomatis (unit + integrasi Postgres asli
       untuk sync/isolation). **Masih pending** sampai ada sesi dengan
