@@ -51,7 +51,12 @@ describe('findRecurrenceCandidates — the eight spec.md §8 patterns', () => {
   })
 
   it('parses "setiap hari kerja" / "every weekday" as FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', () => {
-    expect(values('cek email setiap hari kerja')).toEqual(['FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'])
+    // "setiap hari kerja" also contains "setiap hari" as a nested match at
+    // this raw-candidate layer (see the dedicated edge-case test below) —
+    // toContain here only asserts this pattern IS recognized, not that it's
+    // the only candidate found. "every weekday" has no such nested overlap
+    // ("weekday" has no word-boundary before "day"), so toEqual is exact there.
+    expect(values('cek email setiap hari kerja')).toContain('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR')
     expect(values('standup every weekday')).toEqual(['FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'])
   })
 
@@ -91,8 +96,12 @@ describe('findRecurrenceCandidates — edge cases', () => {
     expect(values('SETIAP HARI belanja')).toEqual(['FREQ=DAILY'])
   })
 
-  it('"setiap hari kerja" does not also fire the bare "setiap hari" pattern (outer match, no duplicate)', () => {
-    expect(values('cek email setiap hari kerja')).toHaveLength(1)
+  it('returns both the "setiap hari kerja" and nested "setiap hari" candidates — this function does no containment filtering, that is pickRightmostNonNested\'s job at the call site (Task 3)', () => {
+    const candidates = findRecurrenceCandidates('cek email setiap hari kerja')
+    expect(candidates.map((c) => c.value)).toEqual(
+      expect.arrayContaining(['FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', 'FREQ=DAILY']),
+    )
+    expect(candidates).toHaveLength(2)
   })
 
   it('"setiap minggu" (every week) is never confused with Sunday — "minggu" is excluded from the weekday-name pattern', () => {
@@ -290,15 +299,11 @@ describe('nextOccurrence', () => {
     expect(nextOccurrence('FREQ=YEARLY', '2026-08-05')).toBe('2027-08-05')
   })
 
-  it('FREQ=YEARLY clamps Feb 29 to Feb 28 in a non-leap target year (leap-year edge case)', () => {
-    // 2028 is a leap year; 2029 is not.
+  it('FREQ=YEARLY clamps Feb 29 to Feb 28 in a non-leap target year (leap-year edge case, spec.md §12)', () => {
+    // 2028 is a leap year; 2029 is not. nextOccurrence always advances by
+    // exactly one calendar year for YEARLY, so this — not "wait for the
+    // next actual leap year" — is the real, spec-required behavior.
     expect(nextOccurrence('FREQ=YEARLY', '2028-02-29')).toBe('2029-02-28')
-  })
-
-  it('FREQ=YEARLY keeps Feb 29 -> Feb 29 when the target year is also a leap year', () => {
-    // 2028 and 2032 are both leap years.
-    expect(nextOccurrence('FREQ=YEARLY', '2028-02-29')).not.toBe('2032-02-29') // sanity: not this call...
-    expect(nextOccurrence('FREQ=DAILY', '2028-02-28')).toBe('2028-02-29') // ...leap day exists and is reachable
   })
 
   it('is stable across a DST transition boundary (calendar-date arithmetic, not wall-clock)', () => {
@@ -450,6 +455,12 @@ describe('parse — recurrence', () => {
     expect(result.labelNames).toEqual(['kesehatan'])
     expect(result.priority).toBe(2)
     expect(result.content).toBe('minum obat')
+  })
+
+  it('resolves "setiap hari kerja" to the outer weekday-set match, not the nested bare "setiap hari" — pickRightmostNonNested\'s containment filter at work (findRecurrenceCandidates itself returns both, see recurrence.test.ts)', () => {
+    const result = parse('cek email setiap hari kerja', CTX)
+    expect(result.recurrence).toBe('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR')
+    expect(result.content).toBe('cek email')
   })
 })
 ```
