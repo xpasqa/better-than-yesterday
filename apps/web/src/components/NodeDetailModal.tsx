@@ -21,7 +21,7 @@ const PRIORITIES = [
   { value: 1 as const, label: 'Priority 1', color: 'var(--priority-p1)' },
   { value: 2 as const, label: 'Priority 2', color: 'var(--priority-p2)' },
   { value: 3 as const, label: 'Priority 3', color: 'var(--priority-p3)' },
-  { value: null as const, label: 'No priority', color: 'var(--text-tertiary)' },
+  { value: null, label: 'No priority', color: 'var(--text-tertiary)' },
 ]
 
 type OpenField = 'date' | 'priority' | 'labels' | 'project' | null
