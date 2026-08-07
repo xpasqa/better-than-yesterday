@@ -37,6 +37,12 @@ export async function createTaskFromQuickAdd(
 ): Promise<Node> {
   const parsed = parse(input, { now: new Date(), timezone: ctx.timezone, language: ctx.language })
 
+  // A recurrence phrase with no date can't be stored — node_recur_needs_date CHECK
+  // (apps/api/src/db/schema/node.ts) requires dueDate whenever recurrence is set.
+  // Treat "recurring but dateless" as unrecognized rather than create a node that
+  // would fail on sync push.
+  const recurrence = parsed.dueDate ? parsed.recurrence : null
+
   const allNodes = await db.nodes.toArray()
   const parentId = parsed.projectQuery
     ? await resolveOrCreateProjectId(parsed.projectQuery, allNodes)
@@ -58,7 +64,7 @@ export async function createTaskFromQuickAdd(
     dueDate: parsed.dueDate,
     dueTime: parsed.dueTime,
     durationMin: parsed.durationMin,
-    recurrence: parsed.recurrence,
+    recurrence,
     priority: parsed.priority,
     labelIds,
     color: null,
