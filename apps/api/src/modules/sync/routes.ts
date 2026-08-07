@@ -1,9 +1,9 @@
 // POST /api/sync — the one endpoint behind Todo and Outline (spec induk
-// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes` and
-// `labels`. saved_filter/reminder/notification sync are not wired yet —
-// they follow the identical upsert-with-LWW shape once needed.
+// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes`, `labels`,
+// and `completions`. saved_filter/reminder/notification sync are not wired
+// yet — they follow the identical upsert-with-LWW shape once needed.
 import { Hono } from 'hono'
-import { and, eq, gt, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { node } from '../../db/schema/node.ts'
 import { label } from '../../db/schema/label.ts'
@@ -134,9 +134,23 @@ function toCompletionRow(userId: string, dto: CompletionDto) {
  * so there is nothing to LWW against. `onConflictDoNothing` makes a retried
  * push with the same id a harmless no-op instead of silently overwriting
  * whichever row already holds that id (including, safely, another user's).
+ *
+ * Unlike node/label, this table has a cross-table reference (`nodeId`) with
+ * no LWW `setWhere` to lean on for ownership — so it's checked explicitly
+ * here: only completions whose `nodeId` is confirmed to belong to the
+ * pushing user are inserted, per this plan's Global Constraint ("Sync rows
+ * are always scoped WHERE user_id — no cross-user read or write, ever").
  */
 async function applyIncomingCompletions(userId: string, dtos: CompletionDto[]): Promise<void> {
+  if (!dtos.length) return
+  const nodeIds = [...new Set(dtos.map((d) => d.nodeId))]
+  const ownedNodes = await db
+    .select({ id: node.id })
+    .from(node)
+    .where(and(eq(node.userId, userId), inArray(node.id, nodeIds)))
+  const ownedIds = new Set(ownedNodes.map((n) => n.id))
   for (const dto of dtos) {
+    if (!ownedIds.has(dto.nodeId)) continue
     await db.insert(completion).values(toCompletionRow(userId, dto)).onConflictDoNothing()
   }
 }
@@ -232,8 +246,8 @@ syncRoutes.post('/sync', async (c) => {
   ])
 
   // seq is one sequence shared by every syncable table, so the highest seq
-  // seen across both result sets is the correct next cursor regardless of
-  // which table it came from.
+  // seen across all three result sets is the correct next cursor regardless
+  // of which table it came from.
   let nextCursor = cursorBigint
   for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of labelRows) if (r.seq > nextCursor) nextCursor = r.seq

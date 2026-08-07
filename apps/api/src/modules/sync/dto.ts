@@ -16,7 +16,10 @@ export const nodeDto = z.object({
     .regex(/^\d{2}:\d{2}(:\d{2})?$/)
     .nullable(),
   durationMin: z.number().int().positive().nullable(),
-  recurrence: z.string().nullable(),
+  recurrence: z
+    .string()
+    .regex(/^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;INTERVAL=\d+|;BYDAY=[A-Z]{2}(,[A-Z]{2})*|;BYMONTHDAY=\d{1,2})?$/)
+    .nullable(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   labelIds: z.array(z.string()),
   color: z.string().nullable(),
