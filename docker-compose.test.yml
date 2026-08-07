@@ -1,0 +1,24 @@
+# Dev-only test database for `npm test -w @better/api` (apps/api/test/setup.ts
+# defaults TEST_DATABASE_URL to this). Not part of the production stack —
+# start explicitly, then migrate it once before running tests:
+#   docker compose -f docker-compose.test.yml up -d
+#   DATABASE_URL=postgresql://postgres@127.0.0.1:55432/better_test \
+#     npm run db:migrate -w @better/api
+services:
+  postgres-test:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: better_test
+    tmpfs:
+      # No named volume — each test run starts from an empty, migrated schema.
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d better_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - '127.0.0.1:55432:5432'
