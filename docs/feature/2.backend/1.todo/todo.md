@@ -12,6 +12,17 @@ sisanya menambah lapisan.
 > view Today yang benar-benar dikabelkan ke UI baru (`TodayReal.tsx`),
 > bukan refactor `MainContent.tsx` yang sesungguhnya. F–J belum dimulai.
 > Rincian di laporan akhir sesi.
+>
+> **Update 2026-08-07 (issue #22, audit ulang):** sejak status di atas
+> ditulis, Today/Inbox/Upcoming/Project semuanya sudah dikabelkan ke UI
+> real (`TodayReal`/`InboxReal`/`UpcomingReal`/`ProjectReal`), dan
+> `MainContent.tsx`/`BoardView.tsx`/`mockData.ts`'s `tasks`/`projects`/
+> `labels` sudah **dihapus total** (issue #20) — bukan direfactor,
+> dihapus, karena satu-satunya jalan ke sana ("Filters & Labels" nav)
+> selalu kosong di production. Checklist di bawah disesuaikan; beberapa
+> item blok C/D yang tadinya "belum" karena menunggu file itu sekarang
+> jadi tidak relevan lagi (filenya sudah tidak ada, bukan "sudah
+> diperbaiki" dalam arti yang dimaksud item aslinya) — dicatat per item.
 
 ## A. Core — aturan sebelum penyimpanan
 
@@ -56,14 +67,20 @@ sisanya menambah lapisan.
 - [x] `apps/web/src/store/` — Dexie (`db.ts`), outbox (koalesk per node id
       di `db.outbox`, keyed by `nodeId`), sync client (`sync-client.ts`:
       debounce 400 ms + polling 5 detik, banner offline, retry otomatis)
-- [ ] `mockData.ts` dihapus; `projects`/`labels` dialirkan lewat store —
-      **belum**: `mockData.ts` masih dipakai Sidebar/MainContent/dll untuk
-      semua view selain Today
+- [x] `mockData.ts` dihapus; `projects`/`labels` dialirkan lewat store —
+      **tercapai lewat rute berbeda dari yang dibayangkan item ini**:
+      bukan `projects`/`labels` mock "dialirkan" jadi data real, tapi
+      `mockData.ts`'s `tasks`/`projects`/`sections`/`labels` (dan seluruh
+      komponen yang memakainya — `MainContent`, `BoardView`,
+      `TaskDetailModal`, dll) dihapus total karena satu-satunya jalan ke
+      sana selalu kosong (issue #20). `mockData.ts` sekarang cuma berisi
+      `mailMessages` (mock Mail, memang disengaja, di luar scope fase ini)
 - [x] Id klien → `core/id.ts` (UUIDv7) — dipakai di `node-actions.ts`
-- [ ] Hard delete → `deleted_at` — sudah benar di jalur BARU
-      (`node-actions.ts`), tapi `App.tsx`'s `handleDeleteTask` (mock) masih
-      hard-delete karena belum disentuh; `subTasks[]` belum di-flatten (tidak
-      ada UI subtask baru di slice ini)
+- [x] Hard delete → `deleted_at` — `node-actions.ts` sekarang satu-satunya
+      jalur delete task yang ada; `App.tsx`'s `handleDeleteTask` (mock,
+      hard-delete) sudah dihapus bersama seluruh state mock (issue #20),
+      bukan "diperbaiki" — jalur lamanya sudah tidak ada. `subTasks[]`
+      masih belum di-flatten — tidak ada UI subtask di real views
 - [x] **Verifikasi:** matikan API → quick-add & toggle-complete tetap jalan +
       banner "Offline — changes saved locally"; nyalakan → konvergen otomatis
       dalam satu interval poll, dikonfirmasi langsung di Postgres
@@ -75,13 +92,18 @@ sisanya menambah lapisan.
       Outline nanti) + tes tiap fungsi. **Belum ada:** `label`, `search`,
       grouping/sorting selain urutan today (tanggal/prioritas/project/
       section)
-- [ ] **`MainContent.tsx` dipecah** — **belum dilakukan.** Pendekatan yang
-      dipakai sesi ini: `TodayReal.tsx` baru dibangun di samping
-      `MainContent.tsx` yang lama, alih-alih membedah komponen 572-baris itu.
-      Ini pilihan sadar untuk memprioritaskan satu jalur nyata yang bekerja
-      penuh — tapi berarti pekerjaan refactor yang sebenarnya masih di depan
-- [ ] Badge sidebar dari store — **belum**; Sidebar masih membaca `tasks`
-      mock untuk hitungannya
+- [x] **`MainContent.tsx` dipecah** — bukan direfactor, **dihapus**
+      (issue #20): `TodayReal`/`InboxReal`/`UpcomingReal`/`ProjectReal`
+      sudah menggantikannya penuh untuk empat view utama; `MainContent.tsx`
+      dan `BoardView.tsx` sendiri (beserta `TaskItem`/`TaskList`/
+      `TaskDetailModal`/`AddTaskForm` yang cuma dipakai olehnya) sudah
+      tidak ada di repo. Tujuan aslinya (lapisan view yang maintainable,
+      berbasis data real) tercapai lewat rute berbeda dari yang
+      dibayangkan item ini — dicatat di sini, bukan diam-diam dianggap
+      selesai dengan cara yang sama
+- [x] Badge sidebar dari store — `Sidebar.tsx`'s `todayCount`/`inboxCount`
+      sekarang murni dari `computeToday`/`computeInbox` (store real);
+      prop `tasks` mock sudah dihapus dari `Sidebar` sepenuhnya (issue #20)
 - [x] **Verifikasi (untuk Today saja):** task di kedalaman mana pun dengan
       `due_date` muncul; Upcoming (fungsi core, belum ada UI-nya) tidak
       memuat task tanpa tanggal; "hari ini" dihitung dari timezone user API,
@@ -114,13 +136,17 @@ sisanya menambah lapisan.
 
 ## F. Project, section, label, board
 
-- [ ] CRUD project/section lewat UI — **belum**. Quick-add's `#project`
-      resolusi hanya pencarian substring case-insensitive di
-      `node-actions.ts`; tidak ada UI untuk membuat/mengelola project atau
-      section secara eksplisit
-- [ ] Drag lintas section/project — belum (Today belum punya drag; mock
-      Board masih pakai drag lama tanpa rank)
-- [ ] Board — belum disentuh, masih 100% mock
+- [ ] CRUD project/section lewat UI — **sebagian**: bikin project sekarang
+      bisa lewat `CreateProjectModal.tsx` (fitur terpisah, issue #13/
+      `8.add-project`), tapi rename/delete project, dan seluruh CRUD
+      section (bikin/rename/hapus), masih belum ada UI-nya sama sekali.
+      Quick-add's `#project` resolusi masih hanya pencarian substring
+      case-insensitive di `node-actions.ts`
+- [ ] Drag lintas section/project — belum (Today belum punya drag)
+- [ ] Board — **mock lama sudah dihapus** (`BoardView.tsx`, issue #20,
+      karena satu-satunya jalan ke sana selalu kosong), belum ada
+      penggantinya yang real. Bukan lagi "100% mock" — sekarang "tidak
+      ada sama sekali", perlu dibangun dari nol kalau mau dikerjakan
 - [x] **Manajemen label — sekarang benar-benar berfungsi**, bukan cuma
       terlihat jalan: `db/schema/label.ts` dapat route sync sendiri
       (`modules/sync/routes.ts` mendukung entitas `labels` di envelope
@@ -133,8 +159,11 @@ sisanya menambah lapisan.
       dikonfirmasi langsung di Postgres. **Belum ada**: UI mengelola label
       (rename/warna/favorit/hapus) — hanya penciptaan implisit dari
       quick-add yang berjalan
-- [ ] Warna/favorit/rename label lewat UI — belum ada halaman "Filters &
-      Labels" yang nyata (masih mock)
+- [ ] Warna/favorit/rename label lewat UI — masih belum ada. Halaman
+      mock "Filters & Labels" yang dulu ada sebagai placeholder **sudah
+      dihapus** (issue #20, selalu kosong di production); kalau
+      dikerjakan sekarang, halaman realnya dibangun dari nol, bukan
+      mengganti mock yang sudah ada
 
 Catatan tersendiri, ditemukan saat mengerjakan blok ini: migrasi skema
 Dexie dari v1 ke v2 sempat gagal total (`UpgradeError: Not yet support
@@ -170,15 +199,18 @@ index, bukan mengubah key path store yang sudah ada.**
 - [ ] E2E Playwright — belum ada test runner Playwright terpasang; jalur
       "quick-add → Today → centang" sudah diverifikasi **manual** via
       browser tool, bukan sebagai E2E otomatis
-- [ ] Cron backup `pg_dump` — belum diaktifkan; menunggu VPS sungguhan
-      (lihat 0.infrastructure/todo.md blok G)
+- [x] Cron backup `pg_dump` — aktif (issue #21), lihat
+      `0.infrastructure/todo.md` untuk detail
 
 ## Definisi selesai fase 1
 
 Tiga user memakainya dari HP dan laptop, dan owner melewati **dua minggu
 berturut-turut tanpa membuka Todoist**. Repo siap menerima fase 2 (Outline)
 tanpa migrasi skema baru — pohonnya sudah ada. **Belum tercapai**: fase 1
-punya satu jalur nyata (Today + quick-add) yang bekerja penuh dan
-terverifikasi, tapi blok F–J — termasuk seluruh manajemen project/label,
-Board, filter, recurring, notifikasi, dan migrasi total menjauh dari
-`mockData.ts` — masih di depan sebelum kriteria ini bisa dicentang.
+punya empat jalur nyata (Today/Inbox/Upcoming/Project + quick-add) yang
+bekerja penuh dan terverifikasi (migrasi total menjauh dari `mockData.ts`
+untuk data task sudah tercapai, issue #20), tapi blok F–J — CRUD project/
+section, rename/delete project, manajemen label (warna/rename/favorit),
+Board, filter tersimpan, recurring, dan notifikasi — masih di depan
+sebelum kriteria ini bisa dicentang. Belum ada 3 user asli yang memakainya
+sama sekali (masih 1 user test) — lihat `0.infrastructure/todo.md`.
