@@ -5,12 +5,16 @@
 FROM node:22-slim AS build
 WORKDIR /repo
 
+# Upgrade npm first — npm 10 has a bug ("Exit handler never called") that
+# crashes on large workspace installs; npm 12 fixes it.
+RUN npm install -g npm@12
+
 # Copy just the manifests first so this layer caches across source changes.
 COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/package.json
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
-RUN NODE_OPTIONS=--max-old-space-size=512 npm ci
+RUN NODE_OPTIONS=--max-old-space-size=1024 npm ci
 
 COPY packages/core packages/core
 COPY apps/api apps/api
