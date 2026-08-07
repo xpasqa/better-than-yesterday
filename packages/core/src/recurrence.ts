@@ -53,7 +53,6 @@ export function findRecurrenceCandidates(input: string): Candidate[] {
     /\b(?:setiap|every)\s+(senin|selasa|rabu|kamis|jumat|sabtu|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi,
   )) {
     const code = WEEKDAY_TO_CODE[m[1]!.toLowerCase()]
-    if (!code) continue
     candidates.push({ start: m.index, end: m.index + m[0].length, value: `FREQ=WEEKLY;BYDAY=${code}` })
   }
 

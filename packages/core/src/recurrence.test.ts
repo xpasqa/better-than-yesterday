@@ -84,6 +84,14 @@ describe('findRecurrenceCandidates — edge cases', () => {
     expect(values('setiap tanggal 35')).toEqual([])
   })
 
+  it('ignores day 0 in "setiap tanggal" (day < 1 branch)', () => {
+    expect(values('setiap tanggal 0')).toEqual([])
+  })
+
+  it('ignores an out-of-range day in the English "every Nth" pattern', () => {
+    expect(values('every 32nd')).toEqual([])
+  })
+
   it('does not match "setiap 3 hari" as bare "setiap hari" (distinct literal text, no overlap)', () => {
     expect(values('minum obat setiap 3 hari')).toEqual(['FREQ=DAILY;INTERVAL=3'])
   })
