@@ -97,7 +97,7 @@ function parseRule(rule: string): ParsedRule {
   }
   return {
     freq: parts.FREQ as ParsedRule['freq'],
-    interval: parts.INTERVAL ? Number(parts.INTERVAL) : 1,
+    interval: Math.max(1, Number(parts.INTERVAL) || 1),
     byDay: parts.BYDAY ? parts.BYDAY.split(',') : null,
     byMonthDay: parts.BYMONTHDAY ? Number(parts.BYMONTHDAY) : null,
   }
@@ -133,7 +133,7 @@ function nextByDay(fromDate: string, byDayCodes: string[]): string {
   for (let add = 1; add <= 7; add++) {
     if (targets.has((fromDow + add) % 7)) return addDays(fromDate, add)
   }
-  return addDays(fromDate, 7) // unreachable when byDayCodes is non-empty; keeps the function total
+  return addDays(fromDate, 7) // defensive fallback for malformed BYDAY content (e.g., all invalid codes)
 }
 
 /**
@@ -147,5 +147,6 @@ export function nextOccurrence(rule: string, fromDate: string): string {
   if (freq === 'DAILY') return addDays(fromDate, interval)
   if (freq === 'WEEKLY') return byDay ? nextByDay(fromDate, byDay) : addDays(fromDate, 7)
   if (freq === 'MONTHLY') return byMonthDay ? addMonthsToDay(fromDate, 1, byMonthDay) : addMonths(fromDate, 1)
-  return addMonths(fromDate, 12) // YEARLY
+  if (freq === 'YEARLY') return addMonths(fromDate, 12)
+  throw new Error(`nextOccurrence: unrecognized or missing FREQ in rule "${rule}"`)
 }

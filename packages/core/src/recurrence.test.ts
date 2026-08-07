@@ -167,4 +167,16 @@ describe('nextOccurrence', () => {
     // byDayCodes is non-empty" return statement for 100% branch coverage.
     expect(nextOccurrence('FREQ=WEEKLY;BYDAY=XX,YY', '2026-08-05')).toBe('2026-08-12')
   })
+
+  it('throws on an unrecognized FREQ (malformed/corrupted rule text)', () => {
+    expect(() => nextOccurrence('FREQ=BOGUS', '2026-08-05')).toThrow()
+  })
+
+  it('throws on a rule with no FREQ at all', () => {
+    expect(() => nextOccurrence('', '2026-08-05')).toThrow()
+  })
+
+  it('clamps INTERVAL=0 to 1 so it always genuinely advances (reachable from real text like "setiap 0 hari")', () => {
+    expect(nextOccurrence('FREQ=DAILY;INTERVAL=0', '2026-08-05')).toBe('2026-08-06')
+  })
 })
