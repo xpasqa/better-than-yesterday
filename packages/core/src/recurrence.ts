@@ -81,3 +81,71 @@ export function findRecurrenceCandidates(input: string): Candidate[] {
 
   return candidates
 }
+
+interface ParsedRule {
+  freq: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
+  interval: number
+  byDay: string[] | null
+  byMonthDay: number | null
+}
+
+function parseRule(rule: string): ParsedRule {
+  const parts: Record<string, string> = {}
+  for (const part of rule.split(';')) {
+    const [key, value] = part.split('=')
+    if (key && value) parts[key] = value
+  }
+  return {
+    freq: parts.FREQ as ParsedRule['freq'],
+    interval: parts.INTERVAL ? Number(parts.INTERVAL) : 1,
+    byDay: parts.BYDAY ? parts.BYDAY.split(',') : null,
+    byMonthDay: parts.BYMONTHDAY ? Number(parts.BYMONTHDAY) : null,
+  }
+}
+
+/** Last day of the given month (1-12). Day 0 of the following month is the last day of this one. */
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate()
+}
+
+/** `dateStr` shifted by `months`, with `targetDay` clamped to however many days that target month actually has. */
+function addMonthsToDay(dateStr: string, months: number, targetDay: number): string {
+  const [year, month] = dateStr.split('-').map(Number) as [number, number, number]
+  const totalMonths = year * 12 + (month - 1) + months
+  const targetYear = Math.floor(totalMonths / 12)
+  const targetMonth = (totalMonths % 12) + 1
+  const clampedDay = Math.min(targetDay, daysInMonth(targetYear, targetMonth))
+  return `${String(targetYear).padStart(4, '0')}-${String(targetMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+}
+
+/** `dateStr` shifted by `months`, keeping the same day-of-month (clamped if the target month is shorter). */
+function addMonths(dateStr: string, months: number): string {
+  const day = Number(dateStr.split('-')[2])
+  return addMonthsToDay(dateStr, months, day)
+}
+
+const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
+
+/** The next date after `fromDate` (exclusive) whose weekday is in `byDayCodes`. */
+function nextByDay(fromDate: string, byDayCodes: string[]): string {
+  const targets = new Set(byDayCodes.map((c) => DAY_CODES.indexOf(c)))
+  const fromDow = dayOfWeek(fromDate)
+  for (let add = 1; add <= 7; add++) {
+    if (targets.has((fromDow + add) % 7)) return addDays(fromDate, add)
+  }
+  return addDays(fromDate, 7) // unreachable when byDayCodes is non-empty; keeps the function total
+}
+
+/**
+ * The next occurrence strictly after `fromDate` for a rule produced by
+ * `findRecurrenceCandidates`. Pure calendar-date arithmetic — see
+ * date.ts's header comment for why this sidesteps DST entirely rather than
+ * needing special-case handling for it.
+ */
+export function nextOccurrence(rule: string, fromDate: string): string {
+  const { freq, interval, byDay, byMonthDay } = parseRule(rule)
+  if (freq === 'DAILY') return addDays(fromDate, interval)
+  if (freq === 'WEEKLY') return byDay ? nextByDay(fromDate, byDay) : addDays(fromDate, 7)
+  if (freq === 'MONTHLY') return byMonthDay ? addMonthsToDay(fromDate, 1, byMonthDay) : addMonths(fromDate, 1)
+  return addMonths(fromDate, 12) // YEARLY
+}

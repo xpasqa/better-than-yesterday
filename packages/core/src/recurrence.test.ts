@@ -96,3 +96,75 @@ describe('findRecurrenceCandidates — edge cases', () => {
     expect(values('minum obat setiap 3 hari')).toEqual(['FREQ=DAILY;INTERVAL=3'])
   })
 })
+
+import { nextOccurrence } from './recurrence.ts'
+
+describe('nextOccurrence', () => {
+  it('FREQ=DAILY advances by one day', () => {
+    expect(nextOccurrence('FREQ=DAILY', '2026-08-05')).toBe('2026-08-06')
+  })
+
+  it('FREQ=DAILY;INTERVAL=N advances by N days', () => {
+    expect(nextOccurrence('FREQ=DAILY;INTERVAL=3', '2026-08-05')).toBe('2026-08-08')
+  })
+
+  it('FREQ=WEEKLY (no BYDAY) advances by exactly seven days', () => {
+    expect(nextOccurrence('FREQ=WEEKLY', '2026-08-05')).toBe('2026-08-12')
+  })
+
+  it('FREQ=WEEKLY;BYDAY=XX advances to the next matching weekday, wrapping to next week', () => {
+    // 2026-08-05 is a Wednesday. Next Monday is 2026-08-10.
+    expect(nextOccurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-05')).toBe('2026-08-10')
+    // Next Friday (later this same week) is 2026-08-07.
+    expect(nextOccurrence('FREQ=WEEKLY;BYDAY=FR', '2026-08-05')).toBe('2026-08-07')
+  })
+
+  it('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR (weekday) skips the weekend', () => {
+    // 2026-08-07 is a Friday — next weekday occurrence is Monday 2026-08-10.
+    expect(nextOccurrence('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', '2026-08-07')).toBe('2026-08-10')
+  })
+
+  it('FREQ=MONTHLY (no BYMONTHDAY) advances to the same day next month', () => {
+    expect(nextOccurrence('FREQ=MONTHLY', '2026-08-15')).toBe('2026-09-15')
+  })
+
+  it('FREQ=MONTHLY clamps to the last day of a shorter target month (end-of-month edge case)', () => {
+    // Jan 31 -> Feb has 28 days in 2027 (not a leap year).
+    expect(nextOccurrence('FREQ=MONTHLY', '2027-01-31')).toBe('2027-02-28')
+  })
+
+  it('FREQ=MONTHLY;BYMONTHDAY=N advances to day N of next month', () => {
+    expect(nextOccurrence('FREQ=MONTHLY;BYMONTHDAY=25', '2026-08-25')).toBe('2026-09-25')
+  })
+
+  it('FREQ=MONTHLY;BYMONTHDAY=31 clamps in a 30-day month', () => {
+    expect(nextOccurrence('FREQ=MONTHLY;BYMONTHDAY=31', '2026-08-31')).toBe('2026-09-30')
+  })
+
+  it('FREQ=YEARLY advances to the same month/day next year', () => {
+    expect(nextOccurrence('FREQ=YEARLY', '2026-08-05')).toBe('2027-08-05')
+  })
+
+  it('FREQ=YEARLY clamps Feb 29 to Feb 28 in a non-leap target year (leap-year edge case, spec.md §12)', () => {
+    // 2028 is a leap year; 2029 is not. nextOccurrence always advances by
+    // exactly one calendar year for YEARLY, so this — not "wait for the
+    // next actual leap year" — is the real, spec-required behavior.
+    expect(nextOccurrence('FREQ=YEARLY', '2028-02-29')).toBe('2029-02-28')
+  })
+
+  it('is stable across a DST transition boundary (calendar-date arithmetic, not wall-clock)', () => {
+    // Jakarta has no DST, but the underlying UTC-noon-anchored arithmetic in
+    // date.ts is what actually prevents DST bugs — this exercises the same
+    // codepath across a boundary where a naive local-Date implementation in
+    // a DST timezone would be at risk of drifting a day.
+    expect(nextOccurrence('FREQ=DAILY', '2026-03-08')).toBe('2026-03-09')
+    expect(nextOccurrence('FREQ=WEEKLY', '2026-03-08')).toBe('2026-03-15')
+  })
+
+  it('FREQ=WEEKLY;BYDAY=XX (all invalid codes) falls back to seven-day offset for unreachable-return coverage', () => {
+    // nextByDay with invalid codes doesn't find any matching weekday within 7 days,
+    // so it returns the fallback (add 7 days). This covers the "unreachable when
+    // byDayCodes is non-empty" return statement for 100% branch coverage.
+    expect(nextOccurrence('FREQ=WEEKLY;BYDAY=XX,YY', '2026-08-05')).toBe('2026-08-12')
+  })
+})
