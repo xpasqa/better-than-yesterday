@@ -1,45 +1,4 @@
-export type Priority = 1 | 2 | 3 | 4
-
-export type ViewType = 'inbox' | 'today' | 'upcoming' | 'filters' | 'project' | 'outline' | 'mail' | 'storage' | 'agent'
-
-export interface Label {
-  id: string
-  name: string
-  color: string
-}
-
-export interface Project {
-  id: string
-  name: string
-  color: string
-  isFavorite?: boolean
-}
-
-export interface SubTask {
-  id: string
-  content: string
-  isCompleted: boolean
-}
-
-export interface Task {
-  id: string
-  content: string
-  description?: string
-  projectId: string
-  sectionId?: string
-  priority: Priority
-  dueDate?: string
-  labelIds: string[]
-  isCompleted: boolean
-  subTasks?: SubTask[]
-  createdAt: string
-}
-
-export interface Section {
-  id: string
-  name: string
-  projectId: string
-}
+export type ViewType = 'inbox' | 'today' | 'upcoming' | 'project' | 'outline' | 'mail' | 'storage' | 'agent'
 
 /* 'flagged' is not a folder a message lives in — it's a cross-folder filter over isFlagged */
 export type MailFolder = 'inbox' | 'sent' | 'drafts' | 'junk' | 'trash'

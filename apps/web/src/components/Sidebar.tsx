@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
-  GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon, SparkleIcon, SquaresFourIcon, TrayIcon, XIcon,
+  GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon, SparkleIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
-import { findInbox, type Node } from '@better/core/node'
-import type { ViewType, Task } from '../types'
+import { findInbox, type Node as TaskNode } from '@better/core/node'
+import type { ViewType } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import ThemeToggle from './ThemeToggle'
 import './Sidebar.css'
@@ -20,14 +20,13 @@ interface SidebarProps {
   drawerOpen?: boolean
   theme: Theme
   onToggleTheme: () => void
-  tasks: Task[]
   /**
    * The real (store-backed) tree, once one exists — counts and the project
    * list below add these in alongside the mock data rather than replacing
    * it, since only Today/Inbox/Upcoming/Project are migrated so far
    * (docs/feature/2.backend/1.todo/todo.md blocks C–J).
    */
-  realNodes?: Node[]
+  realNodes?: TaskNode[]
   timezone?: string
   userName?: string
   onViewChange: (view: ViewType) => void
@@ -57,7 +56,7 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 
 export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
-  theme, onToggleTheme, tasks, realNodes = [], timezone = 'Asia/Jakarta',
+  theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
   onViewChange, onProjectChange, onToggleCollapse, onAddProject, onOpenSettings, onLogout,
 }: SidebarProps) {
@@ -78,22 +77,14 @@ export default function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [profileOpen])
 
-  const today = new Date().toISOString().split('T')[0]
   const realTodayStr = todayInTimezone(timezone)
   const realToday = computeToday(realNodes, realTodayStr)
-  const todayCount =
-    tasks.filter(t => !t.isCompleted && t.dueDate === today).length +
-    realToday.overdue.length + realToday.today.length
-  const inboxCount =
-    tasks.filter(t => !t.isCompleted && t.projectId === 'inbox').length +
-    computeInbox(realNodes).length
+  const todayCount = realToday.overdue.length + realToday.today.length
+  const inboxCount = computeInbox(realNodes).length
 
   const realProjects = realNodes.filter(
     (n) => n.kind === 'project' && n.deletedAt === null && n.id !== findInbox(realNodes)?.id,
   )
-
-  const getProjectTaskCount = (id: string) =>
-    tasks.filter(t => !t.isCompleted && t.projectId === id).length
 
   if (collapsed) {
     return (
@@ -219,15 +210,6 @@ export default function Sidebar({
             >
               <span className="sidebar__nav-icon sidebar__nav-icon--upcoming"><CalendarDotsIcon size={18} /></span>
               <span className="sidebar__nav-label">Upcoming</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'filters' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('filters')}
-            >
-              <span className="sidebar__nav-icon sidebar__nav-icon--filters"><SquaresFourIcon size={18} /></span>
-              <span className="sidebar__nav-label">Filters & Labels</span>
             </button>
           </li>
           <li>

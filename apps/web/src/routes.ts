@@ -4,7 +4,7 @@
 // "/*", and a handful of paths this shallow don't earn the extra structure.
 import type { ViewType } from './types'
 
-const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'filters', 'outline', 'mail', 'storage', 'agent']
+const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'outline', 'mail', 'storage', 'agent']
 
 export function pathForView(view: ViewType, projectId?: string | null): string {
   if (view === 'project' && projectId) return `/project/${projectId}`
