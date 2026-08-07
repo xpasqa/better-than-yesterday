@@ -10,7 +10,7 @@ import { s3, S3_BUCKET, storageKey } from '../../db/s3-client.ts'
 import {
   getOrCreatePersonalArea, getOrCreateOwnerArea,
   getQuota, getTreeFolders, getTreeFiles,
-  createFolder, renameFolder, moveFolder, deleteFolder,
+  createFolder, renameFolder, moveFolder, deleteFolder, getFileKeysUnderFolder,
   createPendingFile, confirmFile, renameFile, moveFile, deleteFile,
 } from './service.ts'
 import { uuidv7 } from '@better/core/id'
@@ -205,13 +205,12 @@ storageRoutes.delete('/storage/folders/:id', async (c) => {
   const userId = c.get('userId')
   const folderId = c.req.param('id')
 
-  // Collect all file keys under this folder before cascade delete
-  const { getTreeFiles: getAllFiles } = await import('./service.ts')
-  const files = await getAllFiles(folderId, null) // TODO: recursive collect
-  if (files.length > 0) {
+  // Collect every file key in this folder and all its descendants before cascade delete
+  const keys = await getFileKeysUnderFolder(userId, folderId)
+  if (keys.length > 0) {
     await s3!.send(new DeleteObjectsCommand({
       Bucket: S3_BUCKET,
-      Delete: { Objects: files.map(f => ({ Key: f.s3Key })) },
+      Delete: { Objects: keys.map((key) => ({ Key: key })) },
     }))
   }
 

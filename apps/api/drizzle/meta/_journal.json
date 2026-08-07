@@ -8,6 +8,20 @@
       "when": 1785952183198,
       "tag": "0000_skinny_whiplash",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786024875000,
+      "tag": "0001_agent_phase3",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786025333000,
+      "tag": "0002_storage_phase4",
+      "breakpoints": true
     }
   ]
 }

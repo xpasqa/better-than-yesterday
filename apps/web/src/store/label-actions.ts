@@ -7,6 +7,9 @@ import type { Label } from '@better/core/label'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
 
+/** Default color for labels created implicitly via quick-add's `$name` token. */
+const DEFAULT_LABEL_COLOR = '#dc4c3e'
+
 async function enqueueLabel(label: Label): Promise<void> {
   await db.transaction('rw', db.labels, db.outbox, async () => {
     await db.labels.put(label)
@@ -56,7 +59,7 @@ export async function resolveOrCreateLabelIds(names: string[]): Promise<string[]
       ids.push(found.id)
       continue
     }
-    const created = await createLabel(name, active)
+    const created = await createLabel(name, DEFAULT_LABEL_COLOR, active)
     active.push(created) // so a repeated name later in the same call resolves to it, not a duplicate
     ids.push(created.id)
   }

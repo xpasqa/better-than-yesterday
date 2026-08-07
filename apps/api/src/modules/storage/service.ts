@@ -1,6 +1,6 @@
 // Storage service — area, folder, file CRUD + quota.
 // docs/feature/2.backend/4.storage/spec.md §4, §6, §7
-import { and, eq, isNull, sql, sum } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql, sum } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { storageArea, storageFolder, storageFile } from '../../db/schema/storage.ts'
 import { appUser } from '../../db/schema/user.ts'
@@ -134,6 +134,38 @@ export async function moveFolder(
     .returning()
   if (!row) throw new AppError('NOT_FOUND', 404, 'Folder not found')
   return folderToDto(row)
+}
+
+/** BFS over this user's folders — root plus every folder nested under it, any depth. */
+async function collectFolderAndDescendantIds(userId: string, rootFolderId: string): Promise<string[]> {
+  const allFolders = await db
+    .select({ id: storageFolder.id, parentId: storageFolder.parentId })
+    .from(storageFolder)
+    .where(eq(storageFolder.userId, userId))
+
+  const childrenByParent = new Map<string, string[]>()
+  for (const folder of allFolders) {
+    if (folder.parentId === null) continue
+    const siblings = childrenByParent.get(folder.parentId) ?? []
+    siblings.push(folder.id)
+    childrenByParent.set(folder.parentId, siblings)
+  }
+
+  const ids = [rootFolderId]
+  for (let i = 0; i < ids.length; i++) {
+    for (const childId of childrenByParent.get(ids[i]!) ?? []) ids.push(childId)
+  }
+  return ids
+}
+
+/** S3 keys for every file in this folder or any of its descendant folders (any status). */
+export async function getFileKeysUnderFolder(userId: string, folderId: string): Promise<string[]> {
+  const folderIds = await collectFolderAndDescendantIds(userId, folderId)
+  const rows = await db
+    .select({ s3Key: storageFile.s3Key })
+    .from(storageFile)
+    .where(and(eq(storageFile.userId, userId), inArray(storageFile.folderId, folderIds)))
+  return rows.map((r) => r.s3Key)
 }
 
 export async function deleteFolder(userId: string, folderId: string): Promise<void> {
