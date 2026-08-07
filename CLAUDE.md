@@ -17,6 +17,19 @@ docs/feature/<number>.<name-spec>/todo.md
   `docs/<name>/` without the `feature/<number>.` prefix — this is the
   one location for all feature docs going forward.
 
+## Frontend types are the contract
+
+Types defined in `apps/web/src/types/index.ts` are the **authoritative contract**
+for the entire app. They must not be changed to match the backend.
+
+When wiring a view to a real API:
+- The backend API response **must be shaped to match** the existing frontend types.
+- Map/transform backend DB fields to frontend field names in the API route or service
+  (e.g. `folderId` → `parentId`, `mimeType` → `type`, `updatedAt` → `modifiedAt`).
+- Never add backend-only fields (`areaId`, `s3Key`, `status`, `createdAt`) to
+  frontend types unless the UI explicitly needs them.
+- Never change frontend types to match DB column names.
+
 ## Server & deployment
 
 Production URL: https://bty.xvntr.my.id

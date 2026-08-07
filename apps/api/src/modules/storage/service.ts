@@ -59,23 +59,18 @@ export async function getQuota(userId: string): Promise<{ usedBytes: bigint; lim
 
 // ── Folders ───────────────────────────────────────────────────────────────────
 
+// Matches frontend StorageFolder type in apps/web/src/types/index.ts
 export interface FolderDto {
   id: string
-  areaId: string
-  parentId: string | null
   name: string
-  createdAt: string
-  updatedAt: string
+  parentId: string | null
 }
 
 function folderToDto(row: typeof storageFolder.$inferSelect): FolderDto {
   return {
     id: row.id,
-    areaId: row.areaId,
-    parentId: row.parentId,
     name: row.name,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
+    parentId: row.parentId,
   }
 }
 
@@ -153,31 +148,40 @@ export async function deleteFolder(userId: string, folderId: string): Promise<vo
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 
+type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'
+
+function mimeToType(mimeType: string): StorageFileType {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType === 'application/pdf') return 'pdf'
+  if (mimeType.includes('word') || mimeType.includes('document')) return 'doc'
+  if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'sheet'
+  if (mimeType.includes('zip') || mimeType.includes('gzip')) return 'zip'
+  return 'other'
+}
+
+// Matches frontend StorageFile type in apps/web/src/types/index.ts
 export interface FileDto {
   id: string
-  areaId: string
-  folderId: string | null
   name: string
+  parentId: string | null  // maps from DB folderId
+  type: StorageFileType    // derived from mimeType
+  sizeBytes: number
+  modifiedAt: string       // maps from DB updatedAt
+  // Internal fields kept for S3 operations — not exposed to tree endpoint
   s3Key: string
-  sizeBytes: string // bigint serialized as string
-  mimeType: string
   status: string
-  createdAt: string
-  updatedAt: string
 }
 
 function fileToDto(row: typeof storageFile.$inferSelect): FileDto {
   return {
     id: row.id,
-    areaId: row.areaId,
-    folderId: row.folderId,
     name: row.name,
+    parentId: row.folderId,
+    type: mimeToType(row.mimeType),
+    sizeBytes: Number(row.sizeBytes),
+    modifiedAt: row.updatedAt.toISOString(),
     s3Key: row.s3Key,
-    sizeBytes: row.sizeBytes.toString(),
-    mimeType: row.mimeType,
     status: row.status,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
   }
 }
 
