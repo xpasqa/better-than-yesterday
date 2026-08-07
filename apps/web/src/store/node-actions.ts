@@ -7,6 +7,8 @@ import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
 import { findInbox, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
+import { nextOccurrence } from '@better/core/recurrence'
+import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
 import { resolveOrCreateLabelIds } from './label-actions.ts'
@@ -74,9 +76,46 @@ export async function createTaskFromQuickAdd(
   return node
 }
 
+/**
+ * Completing a recurring task never closes it (1.todo/spec.md §8) — its
+ * due date advances to the next occurrence instead, and one `completion`
+ * row is written as the audit trail. A non-recurring task keeps the plain
+ * toggle-completedAt behavior. Both writes happen in one Dexie transaction
+ * so a crash between them can't leave a completion logged without its
+ * node's due date having actually advanced.
+ */
 export async function toggleTaskComplete(node: Node): Promise<void> {
   const now = new Date().toISOString()
+
+  if (!node.completedAt && node.recurrence && node.dueDate) {
+    const completion: Completion = {
+      id: uuidv7(),
+      userId: '',
+      nodeId: node.id,
+      completedAt: now,
+      occurredOn: node.dueDate,
+      seq: 0,
+    }
+    const advanced: Node = { ...node, dueDate: nextOccurrence(node.recurrence, node.dueDate), updatedAt: now }
+
+    await db.transaction('rw', db.nodes, db.completions, db.outbox, async () => {
+      await db.nodes.put(advanced)
+      await db.outbox.put({ key: `node:${advanced.id}`, entityType: 'node', payload: advanced })
+      await db.completions.put(completion)
+      await db.outbox.put({ key: `completion:${completion.id}`, entityType: 'completion', payload: completion })
+    })
+    triggerSync()
+    return
+  }
+
   await enqueue({ ...node, completedAt: node.completedAt ? null : now, updatedAt: now })
+}
+
+/** Advances a recurring task's due date to the next occurrence without logging a completion — 1.todo/spec.md §8's "skip". No-op on a non-recurring task. */
+export async function skipRecurrence(node: Node): Promise<void> {
+  if (!node.recurrence || !node.dueDate) return
+  const now = new Date().toISOString()
+  await enqueue({ ...node, dueDate: nextOccurrence(node.recurrence, node.dueDate), updatedAt: now })
 }
 
 export async function deleteTask(node: Node): Promise<void> {
