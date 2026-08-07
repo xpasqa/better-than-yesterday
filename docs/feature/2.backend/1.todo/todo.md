@@ -181,8 +181,67 @@ index, bukan mengubah key path store yang sudah ada.**
 
 ## H. Recurring
 
-- [ ] Belum dimulai — `core/recurrence.ts` tidak ada; field `recurrence`
-      selalu `null`
+- [x] `core/recurrence.ts` — parser 8 pola frasa spec §8 (`findRecurrenceCandidates`)
+      + `nextOccurrence()` (akhir bulan, tahun kabisat), 100% branch coverage
+      (dikonfirmasi ulang di Task 9: `recurrence.ts` 100% stmt/branch/func/line)
+- [x] Wired ke `core/parse.ts` — `recurrence` field terisi dari quick-add.
+      `parse.ts` sendiri 100% statement/line/func coverage, **95.23% branch**
+      — 4 baris tak tercakup (176, 186, 218, 224) semuanya di dalam
+      `findDateCandidates`/`hourWithSuffix`, fungsi yang sudah ada *sebelum*
+      plan recurring ini dan tidak disentuh satu task pun di plan ini. Ini gap
+      lama yang sudah diketahui, dicatat sebagai utang teknis terpisah, bukan
+      ditutup di sini — di luar cakupan spec §12's mandat 100% (mandat itu
+      untuk `recurrence.ts`/`parse.ts` sebagai *hasil kerja plan ini*, bukan
+      kode lama yang kebetulan berada di file yang sama)
+- [x] `completion` table sync — push (insert-only, `onConflictDoNothing`) +
+      pull, DTO, isolasi antar-user diverifikasi
+- [x] Dexie `completions` table (v4 migration) + sync-client push/pull
+- [x] `toggleTaskComplete` recurring-aware: majukan `due_date`, tulis
+      `completion`, tidak menutup task; `skipRecurrence` majukan tanpa
+      menulis `completion`
+- [x] **Bug ditemukan & diperbaiki di luar scope rencana awal**: quick-add
+      yang mengetik frasa recurring tanpa tanggal (mis. "setiap senin" tanpa
+      kata hari) akan membuat node dengan `recurrence` terisi tapi `due_date`
+      `null` — melanggar CHECK constraint `node_recur_needs_date` di DB, jadi
+      akan gagal saat sync push (setelah tersimpan optimis di Dexie lokal).
+      Diperbaiki di `createTaskFromQuickAdd` (`apps/web/src/store/
+      node-actions.ts`): `recurrence` di-drop jadi `null` kalau `dueDate`
+      parsed-nya `null`, jadi node yang tercipta selalu valid terhadap
+      constraint tsb
+- [x] **Gap infrastruktur lintas-task ditemukan & diperbaiki**: `packages/
+      core/package.json`'s `exports` map ketinggalan entri `./recurrence` dan
+      `./completion` — kedua modul itu dibuat di Task 1 dan Task 4 tapi
+      lupa didaftarkan sebagai subpath export, jadi import dari luar
+      `packages/core` akan gagal resolve. Diperbaiki di Task 8. **Catatan
+      untuk task berikutnya**: kalau menambah modul baru lagi ke
+      `packages/core/src/`, jangan lupa tambahkan entrinya ke `exports` di
+      `packages/core/package.json` — ini kedua kalinya kelas bug ini muncul
+      di repo ini
+- [ ] **Belum diverifikasi di browser sungguhan** — sepanjang plan recurring
+      ini (Task 1–8), tidak pernah ada Chrome extension tersambung atau
+      Playwright terpasang. Task 8 Step 4 (verifikasi manual di browser)
+      secara eksplisit **dilewati**, bukan dicoba-dan-gagal — jadi belum ada
+      konfirmasi visual/interaktif bahwa recurring bekerja end-to-end di
+      browser sungguhan (quick-add "setiap senin", centang task, cek
+      due_date maju, cek baris `completion` di Postgres). Semua yang di atas
+      hanya terverifikasi lewat tes otomatis (unit + integrasi Postgres asli
+      untuk sync/isolation). **Masih pending** sampai ada sesi dengan
+      tooling browser tersedia
+- [ ] UI indicator recurring di meta row TaskRow — sengaja di luar scope
+      (sudah P3 terpisah di `9.task-row-metadata/todo.md`)
+
+**Tiga temuan Minor ditangguhkan ke code review whole-branch** (bukan
+diperbaiki di sini — sesuai proses plan ini, temuan Minor tidak masuk fix
+loop per-task): (1) komentar header `apps/api/src/modules/sync/routes.ts`
+masih bilang "`nodes` and `labels`" padahal `completion` sudah jadi entitas
+sync ketiga; (2) komentar header `apps/api/test/isolation.test.ts` masih
+bilang "the two synced entities" dengan alasan yang sama; (3)
+`toggleTaskComplete`'s cabang recurring (node-actions.ts baris ~107–112)
+menulis transaksi Dexie-nya sendiri inline (put node + put outbox + put
+completion + put outbox) alih-alih memanggil ulang helper `enqueue()` yang
+sudah ada — duplikasi pola tulis, bukan bug. Ketiganya dikonfirmasi masih
+ada per commit `6f4a869` (HEAD sebelum commit Task 9 ini); controller
+menangani lewat review whole-branch terpisah setelah task ini.
 
 ## I. Reminder & notifikasi
 
