@@ -83,8 +83,11 @@ tidak lanjut ke blok berikutnya sebelum verifikasinya hijau
       `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `SITE_ADDRESS` (nama saja)
 - [ ] Deploy ke VPS; `user add` × 3 akun asli (owner, istri, teman) — **belum
       ada VPS**; tiga akun *test* sudah dibuat secara lokal untuk verifikasi
-- [ ] Cron backup `pg_dump` di host + catatan cara restore ke scratch —
-      menunggu VPS
+- [x] Cron backup `pg_dump` di host + catatan cara restore ke scratch —
+      `scripts/backup-db.sh` (crontab `0 3 * * *`), dump gzip ke
+      `/home/ubuntu/bty/backups/`, retensi 14 hari; restore didokumentasikan
+      di header skrip dan diverifikasi lewat restore penuh ke DB kosong
+      terpisah (issue #21, 2026-08-07)
 - [x] **Verifikasi:** `docker compose up -d` (api + postgres + caddy) — image
       `api` benar-benar di-build (bukan sekadar disimulasikan lewat perintah
       host) dan seluruh stack diuji lewat Caddy di `127.0.0.1:80`:
