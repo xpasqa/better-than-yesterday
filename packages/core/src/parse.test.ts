@@ -300,7 +300,8 @@ describe('parse — recurrence', () => {
   })
 
   it('combines with a date, a label, and a priority in the same input', () => {
-    const result = parse('minum obat setiap hari $kesehatan !2', CTX)
+    const result = parse('minum obat besok setiap hari $kesehatan !2', CTX)
+    expect(result.dueDate).toBe(addDays(TODAY, 1))
     expect(result.recurrence).toBe('FREQ=DAILY')
     expect(result.labelNames).toEqual(['kesehatan'])
     expect(result.priority).toBe(2)
