@@ -8,16 +8,30 @@ import { between } from '@better/core/rank'
 import { findInbox, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
 import { nextOccurrence } from '@better/core/recurrence'
+import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
 import { resolveOrCreateLabelIds } from './label-actions.ts'
 import { resolveOrCreateProjectId } from './project-actions.ts'
 
+/**
+ * Every node write funnels through here (see the file's header comment —
+ * there is no other write path), so this is the one place that can
+ * centrally enforce the DB's `CHECK (recurrence IS NULL OR due_date IS NOT
+ * NULL)` (and the matching due_time constraint): a node whose `dueDate` is
+ * null can never carry a `recurrence` or `dueTime`. Without this guard, any
+ * caller that clears `dueDate` (e.g. `updateNode(id, { dueDate: null })`
+ * from NodeDetailModal's "Clear date" button) without also clearing
+ * `recurrence`/`dueTime` produces a node that crashes the sync push with an
+ * uncaught Postgres error — and since outbox pushes as one batch, that one
+ * poisoned node silently blocks ALL subsequent sync for the user, forever.
+ */
 async function enqueue(node: Node): Promise<void> {
+  const safe: Node = node.dueDate ? node : { ...node, dueTime: null, recurrence: null }
   await db.transaction('rw', db.nodes, db.outbox, async () => {
-    await db.nodes.put(node)
-    await db.outbox.put({ key: `node:${node.id}`, entityType: 'node', payload: node })
+    await db.nodes.put(safe)
+    await db.outbox.put({ key: `node:${safe.id}`, entityType: 'node', payload: safe })
   })
   triggerSync()
 }
@@ -37,11 +51,17 @@ export async function createTaskFromQuickAdd(
 ): Promise<Node> {
   const parsed = parse(input, { now: new Date(), timezone: ctx.timezone, language: ctx.language })
 
-  // A recurrence phrase with no date can't be stored — node_recur_needs_date CHECK
-  // (apps/api/src/db/schema/node.ts) requires dueDate whenever recurrence is set.
-  // Treat "recurring but dateless" as unrecognized rather than create a node that
-  // would fail on sync push.
-  const recurrence = parsed.dueDate ? parsed.recurrence : null
+  // Most of the eight spec.md §8 recurrence patterns ("setiap hari", "setiap
+  // bulan", "setiap tahun", "setiap tanggal N", "setiap N hari", "setiap
+  // hari kerja") have no accompanying date phrase — that's the expected,
+  // normal way to type them ("siram tanaman setiap hari" needs no start
+  // date). Default dueDate to today (in the task's timezone) whenever a
+  // recurrence phrase was recognized but no date was, matching Todoist's
+  // behavior — this also guarantees dueDate is non-null whenever recurrence
+  // is set, satisfying the DB's node_recur_needs_date CHECK
+  // (apps/api/src/db/schema/node.ts), with enqueue()'s own guard as a
+  // second line of defense.
+  const dueDate = parsed.dueDate ?? (parsed.recurrence ? todayInTimezone(ctx.timezone) : null)
 
   const allNodes = await db.nodes.toArray()
   const parentId = parsed.projectQuery
@@ -61,10 +81,10 @@ export async function createTaskFromQuickAdd(
     rank: between(lastRank, null),
     content: parsed.content,
     note: null,
-    dueDate: parsed.dueDate,
+    dueDate,
     dueTime: parsed.dueTime,
     durationMin: parsed.durationMin,
-    recurrence,
+    recurrence: parsed.recurrence,
     priority: parsed.priority,
     labelIds,
     color: null,
