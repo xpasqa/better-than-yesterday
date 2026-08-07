@@ -279,3 +279,37 @@ describe('parse — full example from the spec', () => {
     expect(result.priority).toBe(1)
   })
 })
+
+describe('parse — recurrence', () => {
+  it('extracts a recurrence phrase into result.recurrence', () => {
+    const result = parse('siram tanaman setiap hari', CTX)
+    expect(result.recurrence).toBe('FREQ=DAILY')
+    expect(result.content).toBe('siram tanaman')
+  })
+
+  it('reports a span of kind "recurrence" for the matched phrase', () => {
+    const result = parse('bayar sewa setiap bulan', CTX)
+    const span = result.spans.find((s) => s.kind === 'recurrence')
+    expect(span).toBeDefined()
+    expect('bayar sewa setiap bulan'.slice(span!.start, span!.end)).toBe('setiap bulan')
+  })
+
+  it('is null when no recurrence phrase is present', () => {
+    const result = parse('beli susu besok', CTX)
+    expect(result.recurrence).toBeNull()
+  })
+
+  it('combines with a date, a label, and a priority in the same input', () => {
+    const result = parse('minum obat setiap hari $kesehatan !2', CTX)
+    expect(result.recurrence).toBe('FREQ=DAILY')
+    expect(result.labelNames).toEqual(['kesehatan'])
+    expect(result.priority).toBe(2)
+    expect(result.content).toBe('minum obat')
+  })
+
+  it('resolves "setiap hari kerja" to the outer weekday-set match, not the nested bare "setiap hari" — pickRightmostNonNested\'s containment filter at work (findRecurrenceCandidates itself returns both, see recurrence.test.ts)', () => {
+    const result = parse('cek email setiap hari kerja', CTX)
+    expect(result.recurrence).toBe('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR')
+    expect(result.content).toBe('cek email')
+  })
+})
