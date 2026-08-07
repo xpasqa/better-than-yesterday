@@ -199,16 +199,24 @@ index, bukan mengubah key path store yang sudah ada.**
 - [x] `toggleTaskComplete` recurring-aware: majukan `due_date`, tulis
       `completion`, tidak menutup task; `skipRecurrence` majukan tanpa
       menulis `completion`
-- [x] **Bug ditemukan & diperbaiki di luar scope rencana awal**: quick-add
-      yang mengetik frasa recurring tanpa tanggal (mis. "setiap hari", yang
-      memang wajarnya tidak disertai tanggal eksplisit) akan membuat node
-      dengan `recurrence` terisi tapi `due_date`
-      `null` — melanggar CHECK constraint `node_recur_needs_date` di DB, jadi
-      akan gagal saat sync push (setelah tersimpan optimis di Dexie lokal).
-      Diperbaiki di `createTaskFromQuickAdd` (`apps/web/src/store/
-      node-actions.ts`): `recurrence` di-drop jadi `null` kalau `dueDate`
-      parsed-nya `null`, jadi node yang tercipta selalu valid terhadap
-      constraint tsb
+- [x] **Bug ditemukan & diperbaiki, dua putaran**: quick-add yang mengetik
+      frasa recurring tanpa tanggal eksplisit (mis. "setiap hari", "setiap
+      bulan", "setiap tahun" — enam dari delapan pola spec §8 memang
+      wajarnya tidak disertai tanggal) akan membuat node dengan
+      `recurrence` terisi tapi `due_date` `null` — melanggar CHECK
+      constraint `node_recur_needs_date` di DB. Percobaan pertama (Task 8)
+      men-drop `recurrence` jadi `null` kalau `dueDate` kosong — **ternyata
+      salah**: whole-branch review (setelah Task 9) menemukan ini mematikan
+      6 dari 8 pola sekaligus membuang teks frasa yang sudah diketik user
+      tanpa jejak, karena `parse()` sudah men-strip frasa itu dari judul.
+      Diperbaiki ulang di fix wave setelah review: `dueDate` di-default ke
+      hari ini (`todayInTimezone`) kalau `recurrence` terdeteksi tapi
+      tanggalnya kosong — `recurrence` tidak lagi di-drop. Sebagai lapis
+      kedua, `enqueue()` (satu-satunya jalur tulis node) sekarang menjaga
+      invarian yang sama untuk semua jalur lain (termasuk `updateNode`
+      lewat tombol "Clear date" — tanpa penjaga ini, satu node yang
+      melanggar constraint akan bikin seluruh antrean sync macet permanen
+      karena outbox dikirim sebagai satu batch)
 - [x] **Gap infrastruktur lintas-task ditemukan & diperbaiki**: `packages/
       core/package.json`'s `exports` map ketinggalan entri `./recurrence` dan
       `./completion` — kedua modul itu dibuat di Task 1 dan Task 4 tapi
@@ -228,8 +236,40 @@ index, bukan mengubah key path store yang sudah ada.**
       hanya terverifikasi lewat tes otomatis (unit + integrasi Postgres asli
       untuk sync/isolation). **Masih pending** sampai ada sesi dengan
       tooling browser tersedia
+- [x] **Whole-branch review (setelah Task 9) menemukan & memperbaiki dua
+      lagi**: (1) `nodeDto.recurrence` di DTO sync tadinya `z.string()`
+      bebas — sekarang divalidasi regex bentuk kanonik, karena
+      `nextOccurrence` melempar error untuk apa pun yang tidak dikenali,
+      dan `toggleTaskComplete` dipanggil `void` tanpa `.catch()` di 3
+      tempat UI (error jadi unhandled rejection senyap kalau lolos). (2)
+      `applyIncomingCompletions` (sync route) tadinya insert completion apa
+      pun tanpa cek `nodeId` benar milik user pengirim — sekarang
+      difilter ke node yang benar-benar dimiliki dulu, sejalan dengan
+      Global Constraint "sync selalu di-scope `WHERE user_id`"
 - [ ] UI indicator recurring di meta row TaskRow — sengaja di luar scope
       (sudah P3 terpisah di `9.task-row-metadata/todo.md`)
+
+**Follow-up yang ditangguhkan (bukan blocker, dicatat biar tidak hilang):**
+- `nextOccurrence` untuk `FREQ=MONTHLY`/`FREQ=YEARLY` tanpa `BYMONTHDAY`
+  membaca ulang hari-of-month dari `fromDate` tiap panggilan — task yang
+  jatuh tempo tanggal 29-31 bisa "hanyut" mundur permanen setelah melewati
+  satu bulan pendek (mis. 31 Jan → 28 Feb → 28 Mar, bukan balik ke 31).
+  Perlu keputusan desain: quick-add selalu emit `BYMONTHDAY` eksplisit,
+  atau simpan anchor day terpisah.
+- `nextOccurrence` pada task yang sudah lewat lama hanya maju satu langkah
+  per centang (task harian yang diabaikan 3 minggu perlu 21× klik untuk
+  jadi current) — Todoist maju ke kemunculan pertama setelah hari ini.
+  Pertanyaan level-spec, bukan bug implementasi.
+- Cek kepemilikan `nodeId` di `applyIncomingCompletions` (item di atas)
+  belum punya test regresi khusus yang benar-benar gagal tanpa fix-nya —
+  tes isolasi yang ada kebetulan memakai nodeId milik sendiri. Perlu satu
+  tes baru: user B kirim completion dengan `nodeId` milik user A.
+- `outline-actions.ts` dan `project-actions.ts` masing-masing punya
+  `enqueueNode` sendiri (duplikat, bukan reuse dari `node-actions.ts`)
+  tanpa penjaga dueDate/recurrence/dueTime yang baru ditambahkan ke
+  `enqueue()` di sana. Belum ada jalur nyata yang bisa memicu ini hari
+  ini (diverifikasi), tapi jadi jebakan laten kalau Outline nanti dapat
+  tombol "clear date".
 
 **Tiga temuan Minor ditangguhkan ke code review whole-branch** (bukan
 diperbaiki di sini — sesuai proses plan ini, temuan Minor tidak masuk fix
