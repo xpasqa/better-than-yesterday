@@ -10,7 +10,8 @@ import MailView from './components/MailView'
 import StorageView from './components/StorageView'
 import AgentView from './components/AgentView'
 import Login from './components/Login'
-import CreateProjectModal from './components/CreateProjectModal'
+import ProjectModal from './components/ProjectModal'
+import type { ProjectModalKind } from './components/ProjectModal'
 import NodeDetailModal from './components/NodeDetailModal'
 import AgentSettingsModal from './components/AgentSettingsModal'
 import TodayReal from './components/TodayReal'
@@ -23,6 +24,7 @@ import { fetchMe, logout, type AuthUser } from './store/auth-api'
 import { clearLocalStore } from './store/db'
 import { startSyncLoop } from './store/sync-client'
 import { useAllNodes } from './store/use-nodes'
+import type { Node } from '@better/core/node'
 import './styles/variables.css'
 import './styles/global.css'
 import './App.css'
@@ -59,7 +61,15 @@ function App() {
   const { view: activeView, projectId: activeProjectId } = deriveViewFromPathname(location.pathname)
   const realNodes = useAllNodes()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [createProjectOpen, setCreateProjectOpen] = useState(false)
+
+  // ProjectModal state: null = closed, object = open
+  const [projectModal, setProjectModal] = useState<{
+    mode: 'create' | 'edit'
+    kind: ProjectModalKind
+    node?: Node
+    defaultAreaId?: string | null
+  } | null>(null)
+
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
 
@@ -131,9 +141,14 @@ function App() {
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
-          onAddProject={() => setCreateProjectOpen(true)}
+          onAddProject={() => setProjectModal({ mode: 'create', kind: 'project' })}
           onOpenSettings={() => setAgentSettingsOpen(true)}
           onLogout={handleLogout}
+          onEditNode={(node) => setProjectModal({
+            mode: 'edit',
+            kind: node.kind as ProjectModalKind,
+            node,
+          })}
         />
         {isCompact && drawerOpen && (
           <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
@@ -156,12 +171,19 @@ function App() {
           <ProjectReal user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}
       </div>
-      {createProjectOpen && (
-        <CreateProjectModal
-          onClose={() => setCreateProjectOpen(false)}
+      {projectModal && (
+        <ProjectModal
+          mode={projectModal.mode}
+          kind={projectModal.kind}
+          node={projectModal.node}
+          defaultAreaId={projectModal.defaultAreaId}
+          onClose={() => setProjectModal(null)}
           onCreated={(id) => {
-            setCreateProjectOpen(false)
-            navigate(pathForView('project', id))
+            setProjectModal(null)
+            // Only navigate to project view for projects (areas have no task view)
+            if (projectModal.kind === 'project') {
+              navigate(pathForView('project', id))
+            }
             setDrawerOpen(false)
           }}
         />

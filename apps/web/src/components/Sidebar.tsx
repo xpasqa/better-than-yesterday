@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
-  GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon, SparkleIcon, TrayIcon, XIcon,
+  GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
+  SparkleIcon, StarIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
@@ -37,6 +38,8 @@ interface SidebarProps {
   /** Opens the Agent Settings modal */
   onOpenSettings: () => void
   onLogout: () => void
+  /** Opens the ProjectModal in edit mode for a given area or project node */
+  onEditNode?: (node: TaskNode) => void
 }
 
 const recentChats = [
@@ -54,16 +57,62 @@ const ChevronDown = ({ open }: { open: boolean }) => (
   />
 )
 
+/** A single project row, shared between the Favorites section and area groups. */
+function ProjectRow({
+  project,
+  isActive,
+  allNodes,
+  onProjectChange,
+  onEditNode,
+  indented = false,
+}: {
+  project: TaskNode
+  isActive: boolean
+  allNodes: TaskNode[]
+  onProjectChange: (id: string) => void
+  onEditNode?: (node: TaskNode) => void
+  indented?: boolean
+}) {
+  const count = computeProject(allNodes, project.id).length
+  return (
+    <li>
+      <div className={`sidebar__project-row${indented ? ' sidebar__project-row--indented' : ''}`}>
+        <button
+          className={`sidebar__nav-item sidebar__nav-item--project ${isActive ? 'sidebar__nav-item--active' : ''}`}
+          onClick={() => onProjectChange(project.id)}
+          type="button"
+        >
+          <span className="sidebar__project-hash" style={{ color: project.color ?? undefined }}>#</span>
+          <span className="sidebar__nav-label">{project.content}</span>
+          {count > 0 && <span className="sidebar__nav-count">{count}</span>}
+        </button>
+        {onEditNode && (
+          <button
+            className="sidebar__row-edit"
+            type="button"
+            aria-label={`Edit ${project.content}`}
+            onClick={(e) => { e.stopPropagation(); onEditNode(project) }}
+          >
+            <PencilSimpleIcon size={13} />
+          </button>
+        )}
+      </div>
+    </li>
+  )
+}
+
 export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
   theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
   onViewChange, onProjectChange, onToggleCollapse, onAddProject, onOpenSettings, onLogout,
+  onEditNode,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [chatsExpanded, setChatsExpanded] = useState(true)
-  const [profileOpen, setProfileOpen] = useState(false)
+  const [favoritesExpanded, setFavoritesExpanded] = useState(true)
   const profileRef = useRef<HTMLDivElement>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -82,9 +131,34 @@ export default function Sidebar({
   const todayCount = realToday.overdue.length + realToday.today.length
   const inboxCount = computeInbox(realNodes).length
 
-  const realProjects = realNodes.filter(
-    (n) => n.kind === 'project' && n.deletedAt === null && n.id !== findInbox(realNodes)?.id,
+  const inboxNode = findInbox(realNodes)
+
+  // All non-inbox, non-deleted projects
+  const allProjects = realNodes.filter(
+    (n) => n.kind === 'project' && n.deletedAt === null && n.id !== inboxNode?.id,
   )
+
+  // Favorites section: projects with isFavorite (spec §4.4)
+  const favoriteProjects = allProjects.filter((n) => n.isFavorite)
+
+  // All non-deleted areas, sorted by rank
+  const areas = realNodes
+    .filter((n) => n.kind === 'area' && n.deletedAt === null)
+    .sort((a, b) => (a.rank < b.rank ? -1 : 1))
+
+  // Projects grouped:
+  //   - under an area: projects with parentId === area.id
+  //   - orphans: projects with parentId === null (no area)
+  const projectsByArea = (areaId: string) =>
+    allProjects.filter((n) => n.parentId === areaId).sort((a, b) => (a.rank < b.rank ? -1 : 1))
+
+  const orphanProjects = allProjects
+    .filter((n) => n.parentId === null)
+    .sort((a, b) => (a.rank < b.rank ? -1 : 1))
+
+  // Expanded state per area (default expanded)
+  const [areaExpanded, setAreaExpanded] = useState<Record<string, boolean>>({})
+  const isAreaExpanded = (id: string) => areaExpanded[id] !== false
 
   if (collapsed) {
     return (
@@ -254,7 +328,39 @@ export default function Sidebar({
           </li>
         </ul>
 
-        {/* Projects */}
+        {/* Favorites — only shown when there is at least one favourite project */}
+        {favoriteProjects.length > 0 && (
+          <div className="sidebar__section">
+            <div className="sidebar__section-header">
+              <span className="sidebar__section-icon"><StarIcon size={14} weight="fill" /></span>
+              <span className="sidebar__section-title">Favorites</span>
+              <button
+                className="sidebar__section-chevron"
+                onClick={() => setFavoritesExpanded(e => !e)}
+                title={favoritesExpanded ? 'Collapse' : 'Expand'}
+                type="button"
+              >
+                <ChevronDown open={favoritesExpanded} />
+              </button>
+            </div>
+            {favoritesExpanded && (
+              <ul className="sidebar__nav-list">
+                {favoriteProjects.map(project => (
+                  <ProjectRow
+                    key={`fav-${project.id}`}
+                    project={project}
+                    isActive={activeProjectId === project.id}
+                    allNodes={realNodes}
+                    onProjectChange={onProjectChange}
+                    onEditNode={onEditNode}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Projects — Area→Project hierarchy + orphan projects */}
         <div className="sidebar__section">
           <div className="sidebar__section-header">
             <span className="sidebar__section-title">My Projects</span>
@@ -278,22 +384,78 @@ export default function Sidebar({
           </div>
           {projectsExpanded && (
             <ul className="sidebar__nav-list">
-              {realProjects.map(project => (
-                <li key={project.id}>
-                  <button
-                    className={`sidebar__nav-item ${activeProjectId === project.id ? 'sidebar__nav-item--active' : ''}`}
-                    onClick={() => onProjectChange(project.id)}
-                  >
-                    <span className="sidebar__project-hash" style={{ color: project.color ?? undefined }}>#</span>
-                    <span className="sidebar__nav-label">{project.content}</span>
-                    {computeProject(realNodes, project.id).length > 0 && (
-                      <span className="sidebar__nav-count">{computeProject(realNodes, project.id).length}</span>
+              {/* Areas with their child projects */}
+              {areas.map(area => {
+                const children = projectsByArea(area.id)
+                const expanded = isAreaExpanded(area.id)
+                // Badge: count of all tasks in the entire area subtree
+                // computeProject is already subtree-wide, so sum across children
+                const areaCount = children.reduce(
+                  (sum, p) => sum + computeProject(realNodes, p.id).length,
+                  0,
+                )
+                return (
+                  <li key={area.id}>
+                    {/* Area header row */}
+                    <div className="sidebar__area-row">
+                      <button
+                        className="sidebar__area-header"
+                        type="button"
+                        onClick={() => setAreaExpanded(s => ({ ...s, [area.id]: !expanded }))}
+                        aria-expanded={expanded}
+                      >
+                        <span
+                          className="sidebar__area-dot"
+                          style={{ background: area.color ?? 'var(--text-secondary)' }}
+                        />
+                        <span className="sidebar__nav-label">{area.content}</span>
+                        {areaCount > 0 && <span className="sidebar__nav-count">{areaCount}</span>}
+                        <span className="sidebar__area-chevron">
+                          <ChevronDown open={expanded} />
+                        </span>
+                      </button>
+                      {onEditNode && (
+                        <button
+                          className="sidebar__row-edit"
+                          type="button"
+                          aria-label={`Edit ${area.content}`}
+                          onClick={() => onEditNode(area)}
+                        >
+                          <PencilSimpleIcon size={13} />
+                        </button>
+                      )}
+                    </div>
+                    {/* Child projects — spec §4.4: favorites appear BOTH here AND in Favorites */}
+                    {expanded && children.length > 0 && (
+                      <ul className="sidebar__nav-list">
+                        {children.map(project => (
+                          <ProjectRow
+                            key={project.id}
+                            project={project}
+                            isActive={activeProjectId === project.id}
+                            allNodes={realNodes}
+                            onProjectChange={onProjectChange}
+                            onEditNode={onEditNode}
+                            indented
+                          />
+                        ))}
+                      </ul>
                     )}
-                  </button>
-                </li>
+                  </li>
+                )
+              })}
+
+              {/* Orphan projects (no area) — shown last, no section header */}
+              {orphanProjects.map(project => (
+                <ProjectRow
+                  key={project.id}
+                  project={project}
+                  isActive={activeProjectId === project.id}
+                  allNodes={realNodes}
+                  onProjectChange={onProjectChange}
+                  onEditNode={onEditNode}
+                />
               ))}
-
-
             </ul>
           )}
         </div>

@@ -465,3 +465,108 @@
 .sidebar__project-add-input::placeholder {
   color: var(--text-placeholder);
 }
+
+/* ── Area→Project hierarchy (epic #29) ────────────────────────────── */
+
+/* Section icon (e.g. star for Favorites) */
+.sidebar__section-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  margin-right: 2px;
+}
+
+/* Area row — flex container so the edit pencil can sit at the far right */
+.sidebar__area-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.sidebar__area-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: var(--nav-item-height, 34px);
+  padding: 0 8px 0 17px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-align: left;
+  border-radius: var(--border-radius-small);
+  transition: background 0.08s;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sidebar__area-header:hover {
+  background: rgba(var(--overlay-rgb), 0.04);
+}
+
+.sidebar__area-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sidebar__area-chevron {
+  display: flex;
+  align-items: center;
+  margin-left: 2px;
+  color: var(--text-secondary);
+}
+
+/* Project row wrapper — holds the nav-item + edit pencil */
+.sidebar__project-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.sidebar__project-row .sidebar__nav-item {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Indented project rows (child of an area) */
+.sidebar__project-row--indented .sidebar__nav-item {
+  padding-left: 28px;
+}
+
+/* Edit pencil button — hidden until row is hovered */
+.sidebar__row-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.sidebar__project-row:hover .sidebar__row-edit,
+.sidebar__area-row:hover .sidebar__row-edit {
+  opacity: 1;
+}
+
+.sidebar__row-edit:hover {
+  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--text-primary);
+}
+
+@media (hover: none) {
+  .sidebar__row-edit {
+    opacity: 1;
+  }
+}
