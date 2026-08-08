@@ -34,9 +34,8 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
     if (!trimmed || submitting) return
     setSubmitting(true)
     try {
-      const id = await createProject(trimmed, [...nodes])
-      onCreated(id)
-      onClose()
+      const id = await createProject(trimmed, null, null, [...nodes])
+      if (id) { onCreated(id); onClose() }
     } finally {
       setSubmitting(false)
     }
