@@ -12,8 +12,7 @@ interface ShortcutsModalProps {
  * Must stay in sync with the handler in App.tsx.
  */
 const SHORTCUTS = [
-  { keys: ['q'], description: 'Focus quick add' },
-  { keys: ['a'], description: 'Focus quick add' },
+  { keys: ['q', 'a'], description: 'Focus quick add' },
   { keys: ['/'], description: 'Go to Search' },
   { keys: ['g', 'i'], description: 'Go to Inbox' },
   { keys: ['g', 't'], description: 'Go to Today' },
