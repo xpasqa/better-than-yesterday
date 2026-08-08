@@ -104,9 +104,16 @@ project butuh warna, favorit, dan boleh nested, sementara root non-project
 (nanti: dokumen outline lepas) tidak. Membedakannya dengan kolom `kind` yang
 sudah ada lebih murah daripada menebak dari `parent_id IS NULL`.
 
-**Project tanpa batas, dan boleh nested** — Todoist mengizinkan 4 level.
-Di sini kedalaman tidak dibatasi karena pohonnya memang satu; UI menampilkan
+**Project tanpa batas, dan boleh nested** — ~~Todoist mengizinkan 4 level.
+Di sini kedalaman tidak dibatasi karena pohonnya memang satu~~; UI menampilkan
 hierarki di sidebar.
+
+> **Direvisi 2026-08-08 oleh [`13.project-hierarchy/spec.md`](../../13.project-hierarchy/spec.md).**
+> Dua koreksi:
+> 1. **Fakta salah:** Todoist mengizinkan **3** level indent untuk
+>    sub-project, bukan 4. Angka 4 itu untuk **sub-task**, bukan project.
+> 2. **Keputusan berubah:** kedalaman sekarang **dibatasi satu tingkat sub**
+>    (project → sub-project, selesai). Alasannya di spec fitur 13 §4.
 
 **Subtask tanpa batas kedalaman.** Todoist membatasinya, dan rancangan
 sebelumnya meniru batas itu agar subtask tidak bersaing dengan outline. Di
