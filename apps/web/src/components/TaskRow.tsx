@@ -4,6 +4,7 @@ import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
 import { describeRecurrence } from '@better/core/recurrence'
 import { toggleTaskComplete, deleteTask } from '../store/node-actions'
+import { highlightTokens } from './highlightTokens'
 import './TaskRow.css'
 
 interface TaskRowProps {
@@ -15,6 +16,8 @@ interface TaskRowProps {
   onOpenNode?: (node: Node) => void
   /** User's timezone — needed to catch an overdue recurring task up to "today" on completion (issue #26). */
   timezone: string
+  /** When provided (e.g. from SearchView), matching substrings in title and note are wrapped in <mark>. */
+  tokens?: string[]
 }
 
 const priorityColors: Record<number, string> = {
@@ -38,7 +41,7 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
 }
 
 /** Shared row for every real (store-backed) task view — Today, Inbox, Upcoming, Project. */
-function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone }: TaskRowProps) {
+function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone, tokens }: TaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
@@ -81,8 +84,8 @@ function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone }: TaskRo
         onClick={() => onOpenNode?.(node)}
         style={{ cursor: onOpenNode ? 'pointer' : 'default' }}
       >
-        <p className="task-row__title">{node.content}</p>
-        {node.note && <p className="task-row__description">{node.note}</p>}
+        <p className="task-row__title">{tokens && tokens.length > 0 ? highlightTokens(node.content, tokens) : node.content}</p>
+        {node.note && <p className="task-row__description">{tokens && tokens.length > 0 ? highlightTokens(node.note, tokens) : node.note}</p>}
 
         {/* Meta row */}
         {(dueInfo || node.dueTime || node.recurrence || taskTags.length > 0 || parentProject) && (

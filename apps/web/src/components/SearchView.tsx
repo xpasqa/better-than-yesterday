@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
-import { search } from '@better/core/search'
+import { search, tokenize } from '@better/core/search'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
@@ -23,6 +23,7 @@ function SearchView({ user, onOpenNode }: SearchViewProps) {
 
   // Synchronous, no debounce — matching runs in-memory over already-loaded data
   const results = search(nodes, query)
+  const tokens = tokenize(query)
 
   return (
     <main className="real-view">
@@ -71,6 +72,7 @@ function SearchView({ user, onOpenNode }: SearchViewProps) {
                   tagsById={tagsById}
                   allNodes={nodes}
                   timezone={timezone}
+                  tokens={tokens}
                   onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined}
                 />
               ))}
