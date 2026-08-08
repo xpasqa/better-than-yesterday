@@ -17,7 +17,8 @@
     "./errors": "./src/errors.ts",
     "./inline-markdown": "./src/inline-markdown.ts",
     "./storage-validate": "./src/storage-validate.ts",
-    "./storage-tree": "./src/storage-tree.ts"
+    "./storage-tree": "./src/storage-tree.ts",
+    "./logbook": "./src/logbook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
