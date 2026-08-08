@@ -68,19 +68,22 @@ Ini juga persis yang diminta §6 — *"Task selesai **+ occurrence recurring
 
 ## 4. Hubungannya dengan issue #30
 
-Issue #30 (masih di Inbox) meminta **toggle tampilkan/sembunyikan task selesai
-di Today/Inbox/Upcoming/Project**. Logbook **bukan** penggantinya — keduanya
+**Keputusan: keduanya dikerjakan, bukan salah satu.**
+
+Issue #30 meminta toggle tampilkan/sembunyikan task selesai di
+Today/Inbox/Upcoming/Project. Logbook **bukan penggantinya** — keduanya
 menjawab kebutuhan berbeda:
 
 | | Menjawab |
 |---|---|
-| Toggle #30 | *"Saya baru saja mencentang ini, biarkan terlihat tercoret"* — konteks sesaat, di tempat |
-| Logbook | *"Apa saja yang sudah saya selesaikan minggu lalu?"* — riwayat, terpisah |
+| Toggle (fitur 20) | *"Saya baru mencentang ini, biarkan terlihat tercoret"* — konteks sesaat, di tempat |
+| Logbook (fitur ini) | *"Apa saja yang saya selesaikan minggu lalu?"* — riwayat, terpisah |
 
-Things sendiri **hanya punya Logbook**, tanpa toggle per-view. Jadi #30
-menyimpang dari Things — dan itu tidak apa-apa, karena diminta eksplisit.
-Kalau setelah Logbook jadi ternyata #30 terasa tidak perlu lagi, #30 tinggal
-ditutup; keputusan itu lebih mudah diambil setelah Logbook ada.
+Things sendiri **hanya punya Logbook**, tanpa toggle per-view. Jadi fitur 20
+menyimpang dari Things — dan itu disengaja, diminta eksplisit.
+
+Keduanya membaca sumber yang sama (`completedAt` dan tabel `completion`),
+jadi tidak ada duplikasi data maupun kemungkinan keduanya berbeda pendapat.
 
 ## 5. Keputusan desain
 
