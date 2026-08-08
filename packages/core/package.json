@@ -18,7 +18,8 @@
     "./inline-markdown": "./src/inline-markdown.ts",
     "./storage-validate": "./src/storage-validate.ts",
     "./storage-tree": "./src/storage-tree.ts",
-    "./logbook": "./src/logbook.ts"
+    "./logbook": "./src/logbook.ts",
+    "./search": "./src/search.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
