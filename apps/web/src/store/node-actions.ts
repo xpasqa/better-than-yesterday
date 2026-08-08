@@ -201,6 +201,75 @@ export async function createSubtask(parentId: string, content: string): Promise<
   await enqueue(node)
 }
 
+/**
+ * A section is a column on the board and a heading in the list — the same
+ * row either way. It carries none of an item's scheduling fields; the DB's
+ * CHECK constraints reject a section that has them, and `sanitizeNode`
+ * inside `enqueue` is the second line of defense.
+ */
+export async function createSection(projectId: string, name: string): Promise<Node> {
+  const allNodes = await db.nodes.toArray()
+  const siblings = allNodes.filter((n) => n.parentId === projectId && n.kind === 'section')
+  const lastRank = siblings.length > 0 ? siblings.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+
+  const now = new Date().toISOString()
+  const node: Node = {
+    id: uuidv7(),
+    userId: '', // filled in by the server from the session
+    parentId: projectId,
+    kind: 'section',
+    rank: between(lastRank, null),
+    content: name,
+    note: null,
+    dueDate: null,
+    dueTime: null,
+    durationMin: null,
+    recurrence: null,
+    priority: null,
+    tagIds: [],
+    color: null,
+    isFavorite: false,
+    isInbox: false,
+    isSomeday: false,
+    collapsed: false,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    seq: 0,
+  }
+
+  await enqueue(node)
+  return node
+}
+
+/**
+ * Deleting a section must never delete its tasks. The children are lifted to
+ * the project, where they land in the board's implicit column — visible, not
+ * lost.
+ *
+ * Both writes go in one Dexie transaction: a crash between them would leave
+ * tasks parented to a soft-deleted section, and `board()` shows those in no
+ * column at all.
+ */
+export async function deleteSection(section: Node): Promise<void> {
+  const now = new Date().toISOString()
+  const children = await db.nodes.where('parentId').equals(section.id).toArray()
+
+  await db.transaction('rw', db.nodes, db.outbox, async () => {
+    for (const child of children) {
+      const moved = sanitizeNode({ ...child, parentId: section.parentId, updatedAt: now })
+      await db.nodes.put(moved)
+      await db.outbox.put({ key: `node:${moved.id}`, entityType: 'node', payload: moved })
+    }
+    const removed = sanitizeNode({ ...section, deletedAt: now, updatedAt: now })
+    await db.nodes.put(removed)
+    await db.outbox.put({ key: `node:${removed.id}`, entityType: 'node', payload: removed })
+  })
+
+  triggerSync()
+}
+
 /** Patch a node with the given fields. Uses LWW: sets updatedAt to now.
  *
  * When `patch.dueDate` is provided and the merged node has a recurrence rule,
