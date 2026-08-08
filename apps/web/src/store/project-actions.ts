@@ -61,7 +61,9 @@ export async function createArea(name: string, color: string | null, allNodes: N
     userId: '',
     parentId: null,
     kind: 'area',
-    rank: between(lastSiblingRank(null, allNodes), null),
+    // Rank among area siblings only — orphan projects share the same parentId=null
+    // but are a different kind and should not influence area ordering.
+    rank: between(lastSiblingRank(null, allNodes.filter(n => n.kind === 'area')), null),
     content: trimmed,
     note: null,
     dueDate: null,
@@ -205,14 +207,15 @@ export async function deleteWithDescendants(id: string, allNodes: Node[]): Promi
 }
 
 /**
- * Counts direct project children and all task-like (section/item) descendants
+ * Counts direct project children and all task (item-only) descendants
  * under a given node. Used for the delete confirmation dialog.
+ * Sections are structural headings, not user tasks — excluded from count.
  */
 export function countDescendants(id: string, allNodes: Node[]): { projects: number; tasks: number } {
   const subtree = collectSubtree(id, allNodes).filter((n) => n.id !== id)
   return {
     projects: subtree.filter((n) => n.kind === 'project').length,
-    tasks: subtree.filter((n) => n.kind === 'section' || n.kind === 'item').length,
+    tasks: subtree.filter((n) => n.kind === 'item').length,
   }
 }
 
