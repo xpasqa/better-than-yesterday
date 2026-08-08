@@ -9,20 +9,77 @@ stage below, in order. The board is the output of this pipeline, never an
 inbox for stray thoughts.
 
 ```
-brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
-   Inbox        Backlog            Ready                          Ongoing → Review → Done
+brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  epic on board
+   Inbox        Backlog            Ready                        Ongoing → Review → Done
 ```
+
+**One feature = one epic = one card on the board.** The epic's detailed
+issues are tracked inside it, never as separate cards.
 
 ### The six Status categories
 
-| Status | Means | Entry requirement |
-|---|---|---|
-| **Inbox** | Raw idea. Nothing written yet. | An idea worth keeping. |
-| **Backlog** | `spec.md` exists. | Spec written: the what and the why, with reasons for each decision. |
-| **Ready** | Fully specced, ready to pick up. | `spec.md` **and** `plan.md` **and** `todo.md` all complete, and the epic + issues exist on GitHub. |
-| **Ongoing** | Being worked on right now. | Someone has actually started. |
-| **Review** | Implementation done, awaiting review/verification. | Code merged or in review; verification not yet signed off. |
-| **Done** | Finished. | Merged **and** the issue is closed. |
+Each column has an **entry gate** (all conditions must hold to move in) and
+an **exit gate** (what must be produced to move on). A card that fails its
+own entry gate does not belong in that column — move it back.
+
+#### 1. Inbox — raw idea
+
+- **Enter:** an idea worth keeping. Nothing written yet.
+- **Exit:** `spec.md` written → Backlog.
+- Ideas may sit here indefinitely. This is the only column with no pressure.
+
+#### 2. Backlog — specced, not planned
+
+- **Enter:** `docs/feature/<n>.<slug>/spec.md` exists and states the *what*
+  and the *why*, with a reason for every decision and an explicit
+  out-of-scope list.
+- **Exit:** `plan.md` + `todo.md` written **and** the epic + its detailed
+  issues created on GitHub → Ready.
+- A spec that only says what to build, without why, is not done. The
+  "why" is what stops the next person relitigating it.
+
+#### 3. Ready — fully specced, unstarted
+
+- **Enter:** all four must be true —
+  1. `spec.md` complete
+  2. `plan.md` complete (step-by-step, per block)
+  3. `todo.md` complete
+  4. Epic issue exists and lists every detailed issue as a checklist
+- **Exit:** someone actually starts → Ongoing.
+- Anything here must be pickable **without asking a single question**. If a
+  question comes up while starting, that is a Backlog card wearing a Ready
+  label — send it back and fix the spec.
+
+#### 4. Ongoing — being worked on
+
+- **Enter:** work has genuinely started (branch/worktree exists, first
+  commit made).
+- **Exit:** implementation complete, tests green, pushed → Review.
+- **WIP limit: one feature at a time.** Within that feature, respect the
+  epic's stated dependency order. Parallel half-finished features are how
+  context gets lost.
+
+#### 5. Review — built, not yet trusted
+
+- **Enter:** implementation complete and pushed; `npm run verify` green.
+- **Exit:** review passed **and** verification actually run → Done.
+- Reviewed means a reviewer other than the implementer looked at the diff —
+  self-review does not clear this gate.
+
+#### 6. Done — finished and verified
+
+- **Enter:** all of —
+  1. Merged to `master`
+  2. Issue closed
+  3. `npm run verify` green **on the merged result**, not just on the branch
+  4. Verification either **run**, or the gap explicitly written down as its
+     own open issue
+- Nothing leaves Done.
+
+> Point 6.4 is not bureaucracy. Issue #24 exists precisely because the
+> recurring-tasks feature was merged with browser verification never run —
+> caught and recorded rather than quietly called Done. Repeat that pattern:
+> an unverified claim becomes an issue, not a checked box.
 
 ### Epic and issue structure
 
@@ -44,21 +101,67 @@ brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
   columns as a group. There is **one board** — do not create a separate
   board per feature.
 
+### Only epics go on the board
+
+**One card per feature — the epic. Never its issues.**
+
+The detailed issues exist on GitHub and are linked from the epic's
+checklist, but they are *not* added as board items. A board showing every
+sub-issue is a dirty board: the columns stop showing "which features are in
+flight" and start showing "which files someone is editing".
+
+```
+Board  →  #31 [EPIC] Search       ← the only card
+              ├── #32  Block A     ← real issues, tracked in the epic's
+              ├── #33  Block B        checklist, NOT on the board
+              └── #34  Block C
+```
+
+The epic's column is **derived from its issues, never set by hand**:
+
+| Epic moves to | When |
+|---|---|
+| Ready | all its issues are written and unstarted |
+| Ongoing | **any** issue is started |
+| Review | **every** issue is implemented and pushed |
+| Done | **every** issue is merged and closed |
+
+The epic is therefore always at the *least advanced* state among its
+issues. It cannot be Done while one issue is still open.
+
+### Moving backward
+
+Demotion is normal, not failure. It is what keeps the columns honest.
+
+| Trigger | Action |
+|---|---|
+| A question comes up that the spec doesn't answer | Ready/Ongoing → **Backlog**, fix the spec first |
+| Review finds a design flaw, not just a bug | Review → **Backlog** (spec was wrong), not → Ongoing |
+| Review finds an ordinary bug | Review → **Ongoing** |
+| Work abandoned mid-way | Ongoing → **Ready**, and say so in the issue |
+| Scope grew past what the spec covers | Split: the new part becomes a **fresh Inbox card** — never widen an in-flight card |
+
 ### Hard rules
 
 1. **Every brainstorm ends as issues.** A brainstorming session is not
    finished until it has produced `spec.md`, `plan.md`, `todo.md`, and the
    GitHub epic + its detailed issues. Only then does it enter **Ready**.
-2. **Never add an issue directly to the board.** An issue may only appear on
-   the board as part of a feature that already went through the pipeline. A
-   drive-by issue with no spec does not belong there — it goes to **Inbox**
-   as an idea until it is specced.
-3. **One board; the task list on it is the epic.** A feature's epic and its
-   issues go on the board together and move through the columns as a group.
-   Do not spin up a separate board per feature.
+2. **Never put an issue on the board — only epics.** Detailed issues live on
+   GitHub and are tracked by the epic's checklist. A drive-by issue with no
+   spec and no epic goes to **Inbox** as an idea until it is specced.
+3. **One board, one card per feature.** Do not spin up a separate board per
+   feature, and do not let a feature occupy more than one card.
 4. **Nothing enters Ready half-specced.** Spec without plan means
    **Backlog**, not Ready. This distinction is the entire point of having
    both columns.
+5. **One feature in Ongoing at a time.** Finish or explicitly park before
+   starting the next.
+6. **No column skipping.** Inbox → Backlog → Ready → Ongoing → Review →
+   Done, in order. A trivial fix that seems to deserve a shortcut is
+   evidence it should be an Inbox idea, not a fast-tracked card.
+7. **Done requires verification, or a written record that it is missing.**
+   Never close a card on an unverified claim — turn the gap into its own
+   issue instead.
 
 ### Board commands
 
