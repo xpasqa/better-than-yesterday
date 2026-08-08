@@ -272,6 +272,82 @@ describe('someday', () => {
   })
 })
 
+describe('includeCompleted toggle', () => {
+  const FUTURE = '2026-08-10'
+
+  it('today: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const nodes = [
+      makeNode({ id: 'live', dueDate: TODAY }),
+      makeNode({ id: 'done', dueDate: TODAY, completedAt: '2026-08-05T09:00:00Z' }),
+      makeNode({ id: 'gone', dueDate: TODAY, deletedAt: '2026-08-05T09:00:00Z' }),
+    ]
+    expect(today(nodes, TODAY).today.map((n) => n.id)).toEqual(['live'])
+    expect(today(nodes, TODAY, true).today.map((n) => n.id)).toEqual(['live', 'done'])
+  })
+
+  it('today: overdue block also respects includeCompleted', () => {
+    const nodes = [
+      makeNode({ id: 'live-old', dueDate: '2026-08-01' }),
+      makeNode({ id: 'done-old', dueDate: '2026-08-01', completedAt: '2026-08-02T00:00:00Z' }),
+      makeNode({ id: 'gone-old', dueDate: '2026-08-01', deletedAt: '2026-08-02T00:00:00Z' }),
+    ]
+    expect(today(nodes, TODAY).overdue.map((n) => n.id)).toEqual(['live-old'])
+    expect(today(nodes, TODAY, true).overdue.map((n) => n.id)).toEqual(['live-old', 'done-old'])
+  })
+
+  it('upcoming: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const nodes = [
+      makeNode({ id: 'live', dueDate: FUTURE }),
+      makeNode({ id: 'done', dueDate: FUTURE, completedAt: '2026-08-06T00:00:00Z' }),
+      makeNode({ id: 'gone', dueDate: FUTURE, deletedAt: '2026-08-06T00:00:00Z' }),
+    ]
+    const off = upcoming(nodes, TODAY)
+    expect(off[0]!.items.map((n) => n.id)).toEqual(['live'])
+    const on = upcoming(nodes, TODAY, true)
+    expect(on[0]!.items.map((n) => n.id)).toEqual(['live', 'done'])
+  })
+
+  it('project: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const proj = makeNode({ id: 'p', kind: 'project' })
+    const live = makeNode({ id: 'live', parentId: 'p' })
+    const done = makeNode({ id: 'done', parentId: 'p', completedAt: '2026-08-05T00:00:00Z' })
+    const gone = makeNode({ id: 'gone', parentId: 'p', deletedAt: '2026-08-05T00:00:00Z' })
+    const nodes = [proj, live, done, gone]
+    expect(project(nodes, 'p').map((n) => n.id)).toEqual(['live'])
+    expect(project(nodes, 'p', true).map((n) => n.id)).toEqual(['live', 'done'])
+  })
+
+  it('inbox: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const root = makeNode({ id: 'inbox-root', kind: 'project', isInbox: true })
+    const live = makeNode({ id: 'live', parentId: 'inbox-root' })
+    const done = makeNode({ id: 'done', parentId: 'inbox-root', completedAt: '2026-08-05T00:00:00Z' })
+    const gone = makeNode({ id: 'gone', parentId: 'inbox-root', deletedAt: '2026-08-05T00:00:00Z' })
+    const nodes = [root, live, done, gone]
+    expect(inbox(nodes).map((n) => n.id)).toEqual(['live'])
+    expect(inbox(nodes, true).map((n) => n.id)).toEqual(['live', 'done'])
+  })
+
+  it('anytime: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const nodes = [
+      makeNode({ id: 'live' }),
+      makeNode({ id: 'done', completedAt: '2026-08-05T00:00:00Z' }),
+      makeNode({ id: 'gone', deletedAt: '2026-08-05T00:00:00Z' }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['live'])
+    expect(anytime(nodes, TODAY, true).map((n) => n.id)).toEqual(['live', 'done'])
+  })
+
+  it('someday: toggle off excludes completed, toggle on includes completed (deleted still excluded)', () => {
+    const nodes = [
+      makeNode({ id: 'live', isSomeday: true }),
+      makeNode({ id: 'done', isSomeday: true, completedAt: '2026-08-05T00:00:00Z' }),
+      makeNode({ id: 'gone', isSomeday: true, deletedAt: '2026-08-05T00:00:00Z' }),
+    ]
+    expect(someday(nodes).map((n) => n.id)).toEqual(['live'])
+    expect(someday(nodes, true).map((n) => n.id)).toEqual(['live', 'done'])
+  })
+})
+
 describe('completed', () => {
   it('returns only completed items, most recently completed first', () => {
     const nodes = [
