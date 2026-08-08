@@ -56,21 +56,21 @@ export function subtreeDepthFirst(nodes: Node[], parentId: string | null): Node[
 /**
  * `due_date <= today`, incomplete, at any depth — split into the overdue
  * block (always shown above today's items, never silently dropped) and
- * today's own items.
+ * today's own items. Someday tasks are excluded even when they carry a date.
  */
 export function today(nodes: Node[], todayStr: string): { overdue: Node[]; today: Node[] } {
-  const due = nodes.filter((n) => isActiveItem(n) && n.dueDate !== null && n.dueDate <= todayStr)
+  const due = nodes.filter((n) => isActiveItem(n) && !n.isSomeday && n.dueDate !== null && n.dueDate <= todayStr)
   return {
     overdue: due.filter((n) => n.dueDate! < todayStr).sort(byTodayOrder),
     today: due.filter((n) => n.dueDate === todayStr).sort(byTodayOrder),
   }
 }
 
-/** `due_date > today`, grouped by date, chronological — undated items never appear here. */
+/** `due_date > today`, grouped by date, chronological — undated items never appear here. Someday tasks excluded. */
 export function upcoming(nodes: Node[], todayStr: string): Array<{ date: string; items: Node[] }> {
   const groups = new Map<string, Node[]>()
   for (const n of nodes) {
-    if (!isActiveItem(n) || n.dueDate === null || n.dueDate <= todayStr) continue
+    if (!isActiveItem(n) || n.isSomeday || n.dueDate === null || n.dueDate <= todayStr) continue
     const list = groups.get(n.dueDate)
     if (list) list.push(n)
     else groups.set(n.dueDate, [n])
@@ -78,6 +78,44 @@ export function upcoming(nodes: Node[], todayStr: string): Array<{ date: string;
   return [...groups.entries()]
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([date, items]) => ({ date, items: items.sort(byTodayOrder) }))
+}
+
+/**
+ * Tasks that can be worked on at any time: active, not Someday, and either
+ * undated or with a date that has already arrived (dueDate <= today).
+ * Sorted: dated items first (ascending), undated last, then priority, then rank.
+ */
+export function anytime(nodes: Node[], todayStr: string): Node[] {
+  return nodes
+    .filter((n) => isActiveItem(n) && !n.isSomeday && (n.dueDate === null || n.dueDate <= todayStr))
+    .sort((a, b) => {
+      const da = a.dueDate ?? '9999-99-99'
+      const db = b.dueDate ?? '9999-99-99'
+      if (da !== db) return da < db ? -1 : 1
+      const pa = a.priority ?? 4
+      const pb = b.priority ?? 4
+      if (pa !== pb) return pa - pb
+      return byRank(a, b)
+    })
+}
+
+/**
+ * Tasks explicitly deferred with no current plan — hidden from Today,
+ * Upcoming, and Anytime. Only items with `isSomeday === true`.
+ * Sorted by the same dueDate-asc / priority / rank pattern.
+ */
+export function someday(nodes: Node[]): Node[] {
+  return nodes
+    .filter((n) => isActiveItem(n) && n.isSomeday)
+    .sort((a, b) => {
+      const da = a.dueDate ?? '9999-99-99'
+      const db = b.dueDate ?? '9999-99-99'
+      if (da !== db) return da < db ? -1 : 1
+      const pa = a.priority ?? 4
+      const pb = b.priority ?? 4
+      if (pa !== pb) return pa - pb
+      return byRank(a, b)
+    })
 }
 
 /** Active items anywhere in a project's subtree — sections and the project row itself are structure, not content. */

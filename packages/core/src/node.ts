@@ -24,6 +24,7 @@ export interface Node {
   color: string | null // meaningful on kind='project' only
   isFavorite: boolean
   isInbox: boolean // meaningful on kind='project' only; exactly one true per user
+  isSomeday: boolean // deferred indefinitely — hidden from Today, Upcoming, and Anytime
   collapsed: boolean
 
   completedAt: string | null // ISO timestamp; null = not done

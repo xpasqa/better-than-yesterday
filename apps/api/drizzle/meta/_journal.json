@@ -38,10 +38,10 @@
       "breakpoints": true
     }
     ,{
-      "idx": 5,
+      "idx": 6,
       "version": "7",
-      "when": 1754900000000,
-      "tag": "0005_add_area_kind",
+      "when": 1754986000000,
+      "tag": "0006_add_is_someday",
       "breakpoints": true
     }
   ]

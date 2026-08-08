@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { between } from './rank.ts'
 import type { Node } from './node.ts'
-import { completed, inbox, project, subtreeDepthFirst, today, upcoming } from './views.ts'
+import { anytime, completed, inbox, project, someday, subtreeDepthFirst, today, upcoming } from './views.ts'
 
 let rankCounter: string | null = null
 function nextRank(): string {
@@ -26,6 +26,7 @@ function makeNode(overrides: Partial<Node> & { id: string }): Node {
     color: null,
     isFavorite: false,
     isInbox: false,
+    isSomeday: false,
     collapsed: false,
     completedAt: null,
     createdAt: '2026-08-01T00:00:00Z',
@@ -155,6 +156,119 @@ describe('inbox', () => {
 
   it('returns an empty list when no inbox is flagged yet', () => {
     expect(inbox([makeNode({ id: 'orphan' })])).toEqual([])
+  })
+})
+
+describe('today (isSomeday exclusion)', () => {
+  it('excludes isSomeday tasks even when dueDate <= today', () => {
+    const nodes = [
+      makeNode({ id: 'normal', dueDate: TODAY }),
+      makeNode({ id: 'sd-today', dueDate: TODAY, isSomeday: true }),
+      makeNode({ id: 'sd-overdue', dueDate: '2026-08-01', isSomeday: true }),
+    ]
+    const result = today(nodes, TODAY)
+    expect(result.today.map((n) => n.id)).toEqual(['normal'])
+    expect(result.overdue.map((n) => n.id)).toEqual([])
+  })
+})
+
+describe('upcoming (isSomeday exclusion)', () => {
+  it('excludes isSomeday tasks even when dueDate is in the future', () => {
+    const nodes = [
+      makeNode({ id: 'normal', dueDate: '2026-08-06' }),
+      makeNode({ id: 'sd-future', dueDate: '2026-08-06', isSomeday: true }),
+    ]
+    const groups = upcoming(nodes, TODAY)
+    expect(groups.length).toBe(1)
+    expect(groups[0]!.items.map((n) => n.id)).toEqual(['normal'])
+  })
+})
+
+describe('anytime', () => {
+  it('includes undated active tasks', () => {
+    const nodes = [makeNode({ id: 'undated' })]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['undated'])
+  })
+
+  it('includes tasks with dueDate <= today', () => {
+    const nodes = [
+      makeNode({ id: 'today', dueDate: TODAY }),
+      makeNode({ id: 'overdue', dueDate: '2026-08-01' }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['overdue', 'today'])
+  })
+
+  it('excludes tasks with dueDate > today (future)', () => {
+    const nodes = [
+      makeNode({ id: 'undated' }),
+      makeNode({ id: 'future', dueDate: '2026-08-06' }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['undated'])
+  })
+
+  it('excludes isSomeday tasks', () => {
+    const nodes = [
+      makeNode({ id: 'normal' }),
+      makeNode({ id: 'sd', isSomeday: true }),
+      makeNode({ id: 'sd-dated', dueDate: TODAY, isSomeday: true }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['normal'])
+  })
+
+  it('excludes completed and deleted tasks', () => {
+    const nodes = [
+      makeNode({ id: 'open' }),
+      makeNode({ id: 'done', completedAt: '2026-08-05T09:00:00Z' }),
+      makeNode({ id: 'gone', deletedAt: '2026-08-05T09:00:00Z' }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual(['open'])
+  })
+
+  it('sorts dated items (ascending) before undated, then by priority, then by rank', () => {
+    const nodes = [
+      makeNode({ id: 'undated-p1', priority: 1 }),
+      makeNode({ id: 'undated-none' }),
+      makeNode({ id: 'dated-early', dueDate: '2026-08-01' }),
+      makeNode({ id: 'dated-today', dueDate: TODAY }),
+    ]
+    expect(anytime(nodes, TODAY).map((n) => n.id)).toEqual([
+      'dated-early',
+      'dated-today',
+      'undated-p1',
+      'undated-none',
+    ])
+  })
+})
+
+describe('someday', () => {
+  it('returns only isSomeday tasks', () => {
+    const nodes = [
+      makeNode({ id: 'normal' }),
+      makeNode({ id: 'sd', isSomeday: true }),
+    ]
+    expect(someday(nodes).map((n) => n.id)).toEqual(['sd'])
+  })
+
+  it('excludes completed and deleted isSomeday tasks', () => {
+    const nodes = [
+      makeNode({ id: 'active', isSomeday: true }),
+      makeNode({ id: 'done', isSomeday: true, completedAt: '2026-08-05T09:00:00Z' }),
+      makeNode({ id: 'gone', isSomeday: true, deletedAt: '2026-08-05T09:00:00Z' }),
+    ]
+    expect(someday(nodes).map((n) => n.id)).toEqual(['active'])
+  })
+
+  it('returns empty list when no someday tasks exist', () => {
+    const nodes = [makeNode({ id: 'normal' })]
+    expect(someday(nodes)).toEqual([])
+  })
+
+  it('sorts by dueDate ascending (undated last), then priority, then rank', () => {
+    const nodes = [
+      makeNode({ id: 'sd-undated', isSomeday: true }),
+      makeNode({ id: 'sd-dated', dueDate: '2026-08-10', isSomeday: true }),
+    ]
+    expect(someday(nodes).map((n) => n.id)).toEqual(['sd-dated', 'sd-undated'])
   })
 })
 

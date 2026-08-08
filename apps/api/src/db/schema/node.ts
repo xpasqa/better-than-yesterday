@@ -44,6 +44,7 @@ export const node = pgTable(
     color: text('color'),
     isFavorite: boolean('is_favorite').notNull().default(false),
     isInbox: boolean('is_inbox').notNull().default(false),
+    isSomeday: boolean('is_someday').notNull().default(false),
     collapsed: boolean('collapsed').notNull().default(false),
 
     completedAt: timestamp('completed_at', { withTimezone: true }),

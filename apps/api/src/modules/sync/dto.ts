@@ -27,6 +27,7 @@ export const nodeDto = z.object({
   color: z.string().nullable(),
   isFavorite: z.boolean(),
   isInbox: z.boolean(),
+  isSomeday: z.boolean(),
   collapsed: z.boolean(),
   completedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
