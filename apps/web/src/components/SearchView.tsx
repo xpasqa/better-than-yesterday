@@ -17,6 +17,7 @@ function SearchView({ user, onOpenNode }: SearchViewProps) {
   const tags = useAllTags()
   const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [query, setQuery] = useState('')
+  // Exposed for keyboard shortcut '/' (epic #79) to programmatically focus the input
   const inputRef = useRef<HTMLInputElement>(null)
 
   const timezone = user.timezone ?? 'Asia/Jakarta'
