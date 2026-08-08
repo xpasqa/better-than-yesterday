@@ -29,18 +29,25 @@
       "when": 1786120284000,
       "tag": "0003_remove_saved_filter",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 4,
       "version": "7",
-      "when": 1754668683000,
+      "when": 1786120284001,
       "tag": "0004_label_to_tag",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786120284002,
+      "tag": "0005_add_area_kind",
+      "breakpoints": true
+    },
+    {
       "idx": 6,
       "version": "7",
-      "when": 1754986000000,
+      "when": 1786120284003,
       "tag": "0006_add_is_someday",
       "breakpoints": true
     }
