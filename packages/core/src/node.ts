@@ -37,5 +37,19 @@ export function findInbox(nodes: Node[]): Node | undefined {
   return nodes.find((n) => n.isInbox)
 }
 
+/**
+ * Enforces the DB's `node_recur_needs_date`/`node_time_needs_date` CHECK
+ * constraints before a node is ever written: with no `dueDate`, `recurrence`
+ * and `dueTime` can't be set either. Every write path (Todo's `enqueue`,
+ * Outline's and Project's own `enqueueNode`) should pass every node through
+ * this before persisting — a node that violates this crashes the sync push
+ * with an uncaught Postgres error, and since the outbox pushes as one batch,
+ * that one poisoned node silently blocks ALL subsequent sync for the user
+ * (issue #23/#28).
+ */
+export function sanitizeNode(node: Node): Node {
+  return node.dueDate ? node : { ...node, dueTime: null, recurrence: null }
+}
+
 /** Rows a client can create offline, unpopulated until the sync layer fills them in. */
 export type NewNode = Omit<Node, 'seq'>

@@ -5,9 +5,9 @@
 // data (docs/feature/2.backend/1.todo/todo.md blocks C–J).
 import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
-import { findInbox, type Node } from '@better/core/node'
+import { findInbox, sanitizeNode, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
-import { nextOccurrence } from '@better/core/recurrence'
+import { anchorRecurrence, nextOccurrence } from '@better/core/recurrence'
 import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
@@ -16,19 +16,19 @@ import { resolveOrCreateLabelIds } from './label-actions.ts'
 import { resolveOrCreateProjectId } from './project-actions.ts'
 
 /**
- * Every node write funnels through here (see the file's header comment —
- * there is no other write path), so this is the one place that can
- * centrally enforce the DB's `CHECK (recurrence IS NULL OR due_date IS NOT
- * NULL)` (and the matching due_time constraint): a node whose `dueDate` is
- * null can never carry a `recurrence` or `dueTime`. Without this guard, any
- * caller that clears `dueDate` (e.g. `updateNode(id, { dueDate: null })`
- * from NodeDetailModal's "Clear date" button) without also clearing
- * `recurrence`/`dueTime` produces a node that crashes the sync push with an
- * uncaught Postgres error — and since outbox pushes as one batch, that one
- * poisoned node silently blocks ALL subsequent sync for the user, forever.
+ * Every Todo node write funnels through here (see the file's header
+ * comment — there is no other write path for this store). `sanitizeNode`
+ * (shared with Outline's and Project's own `enqueueNode` — issue #28)
+ * enforces the DB's date/recurrence/time CHECK constraints before the write
+ * lands: without it, any caller that clears `dueDate` (e.g.
+ * `updateNode(id, { dueDate: null })` from NodeDetailModal's "Clear date"
+ * button) without also clearing `recurrence`/`dueTime` produces a node that
+ * crashes the sync push with an uncaught Postgres error — and since outbox
+ * pushes as one batch, that one poisoned node silently blocks ALL
+ * subsequent sync for the user, forever (issue #23).
  */
 async function enqueue(node: Node): Promise<void> {
-  const safe: Node = node.dueDate ? node : { ...node, dueTime: null, recurrence: null }
+  const safe = sanitizeNode(node)
   await db.transaction('rw', db.nodes, db.outbox, async () => {
     await db.nodes.put(safe)
     await db.outbox.put({ key: `node:${safe.id}`, entityType: 'node', payload: safe })
@@ -62,6 +62,11 @@ export async function createTaskFromQuickAdd(
   // (apps/api/src/db/schema/node.ts), with enqueue()'s own guard as a
   // second line of defense.
   const dueDate = parsed.dueDate ?? (parsed.recurrence ? todayInTimezone(ctx.timezone) : null)
+  // Bare "FREQ=MONTHLY"/"FREQ=YEARLY" (from "setiap bulan"/"setiap tahun",
+  // which don't name a day) need an anchor baked in, or nextOccurrence would
+  // re-derive the day-of-month from whatever the *current* due date is on
+  // each call and drift permanently after crossing a short month (issue #25).
+  const recurrence = anchorRecurrence(parsed.recurrence, dueDate)
 
   const allNodes = await db.nodes.toArray()
   const parentId = parsed.projectQuery
@@ -84,7 +89,7 @@ export async function createTaskFromQuickAdd(
     dueDate,
     dueTime: parsed.dueTime,
     durationMin: parsed.durationMin,
-    recurrence: parsed.recurrence,
+    recurrence,
     priority: parsed.priority,
     labelIds,
     color: null,

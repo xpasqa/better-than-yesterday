@@ -6,14 +6,23 @@
 // 1.todo/spec.md §5 ("never discard a recognized token").
 import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
-import type { Node } from '@better/core/node'
+import { sanitizeNode, type Node } from '@better/core/node'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
 
+/**
+ * `sanitizeNode` (shared with node-actions.ts's `enqueue` — issue #28)
+ * enforces the DB's date/recurrence/time CHECK constraints before the write
+ * lands. A true no-op here today (projects below always construct
+ * `recurrence`/`dueTime` as `null` already), kept for consistency with the
+ * other two `enqueue*` functions so this file doesn't quietly drift out of
+ * sync with the invariant if it ever grows a path that doesn't.
+ */
 async function enqueueNode(node: Node): Promise<void> {
+  const safe = sanitizeNode(node)
   await db.transaction('rw', db.nodes, db.outbox, async () => {
-    await db.nodes.put(node)
-    await db.outbox.put({ key: `node:${node.id}`, entityType: 'node', payload: node })
+    await db.nodes.put(safe)
+    await db.outbox.put({ key: `node:${safe.id}`, entityType: 'node', payload: safe })
   })
   triggerSync()
 }

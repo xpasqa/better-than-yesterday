@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findRecurrenceCandidates, nextOccurrence } from './recurrence.ts'
+import { anchorRecurrence, findRecurrenceCandidates, nextOccurrence } from './recurrence.ts'
 
 function values(input: string): string[] {
   return findRecurrenceCandidates(input).map((c) => c.value)
@@ -150,6 +150,33 @@ describe('nextOccurrence', () => {
     expect(nextOccurrence('FREQ=YEARLY', '2028-02-29')).toBe('2029-02-28')
   })
 
+  it('FREQ=MONTHLY;BYMONTHDAY=31 recovers to day 31 after crossing short months — no permanent drift (issue #25)', () => {
+    // Without an anchor baked into the rule, addMonths would re-read the
+    // day off the previous (already-clamped) fromDate on every call, so a
+    // task due the 31st would drift to the 28th and stay there forever.
+    // BYMONTHDAY makes each call re-target 31 independently of what the
+    // previous occurrence landed on.
+    let date = '2027-01-31'
+    const rule = 'FREQ=MONTHLY;BYMONTHDAY=31'
+    const results: string[] = []
+    for (let i = 0; i < 4; i++) {
+      date = nextOccurrence(rule, date)
+      results.push(date)
+    }
+    expect(results).toEqual(['2027-02-28', '2027-03-31', '2027-04-30', '2027-05-31'])
+  })
+
+  it('FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29 recovers to Feb 29 the next time the target year is a leap year (issue #25)', () => {
+    // Without BYMONTH/BYMONTHDAY, addMonths(fromDate, 12) would re-read the
+    // day off fromDate — once clamped to 28 in a non-leap year, it would
+    // stay 28 forever, never recovering even in a later leap year. The
+    // anchored version always re-targets Feb 29 from the rule itself.
+    const rule = 'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29'
+    expect(nextOccurrence(rule, '2028-02-29')).toBe('2029-02-28') // clamped, 2029 not leap
+    expect(nextOccurrence(rule, '2029-02-28')).toBe('2030-02-28') // clamped again, 2030 not leap
+    expect(nextOccurrence(rule, '2031-02-28')).toBe('2032-02-29') // recovers — 2032 is leap
+  })
+
   it('is stable across a DST transition boundary (calendar-date arithmetic, not wall-clock)', () => {
     // Jakarta has no DST, but the underlying UTC-noon-anchored arithmetic in
     // date.ts is what actually prevents DST bugs — this exercises the same
@@ -176,5 +203,29 @@ describe('nextOccurrence', () => {
 
   it('clamps INTERVAL=0 to 1 so it always genuinely advances (reachable from real text like "setiap 0 hari")', () => {
     expect(nextOccurrence('FREQ=DAILY;INTERVAL=0', '2026-08-05')).toBe('2026-08-06')
+  })
+})
+
+describe('anchorRecurrence', () => {
+  it('embeds BYMONTHDAY into a bare FREQ=MONTHLY, derived from dueDate', () => {
+    expect(anchorRecurrence('FREQ=MONTHLY', '2027-01-31')).toBe('FREQ=MONTHLY;BYMONTHDAY=31')
+  })
+
+  it('embeds BYMONTH and BYMONTHDAY into a bare FREQ=YEARLY, derived from dueDate', () => {
+    expect(anchorRecurrence('FREQ=YEARLY', '2028-02-29')).toBe('FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29')
+  })
+
+  it('leaves an already-anchored rule untouched', () => {
+    expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=25', '2026-08-25')).toBe('FREQ=MONTHLY;BYMONTHDAY=25')
+  })
+
+  it('leaves non-MONTHLY/YEARLY rules untouched', () => {
+    expect(anchorRecurrence('FREQ=DAILY', '2026-08-05')).toBe('FREQ=DAILY')
+    expect(anchorRecurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-10')).toBe('FREQ=WEEKLY;BYDAY=MO')
+  })
+
+  it('is a no-op for a null rule or a null dueDate', () => {
+    expect(anchorRecurrence(null, '2026-08-05')).toBeNull()
+    expect(anchorRecurrence('FREQ=MONTHLY', null)).toBe('FREQ=MONTHLY')
   })
 })

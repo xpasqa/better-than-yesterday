@@ -96,6 +96,7 @@ interface ParsedRule {
   interval: number
   byDay: string[] | null
   byMonthDay: number | null
+  byMonth: number | null
 }
 
 function parseRule(rule: string): ParsedRule {
@@ -109,6 +110,7 @@ function parseRule(rule: string): ParsedRule {
     interval: Math.max(1, Number(parts.INTERVAL) || 1),
     byDay: parts.BYDAY ? parts.BYDAY.split(',') : null,
     byMonthDay: parts.BYMONTHDAY ? Number(parts.BYMONTHDAY) : null,
+    byMonth: parts.BYMONTH ? Number(parts.BYMONTH) : null,
   }
 }
 
@@ -133,6 +135,20 @@ function addMonths(dateStr: string, months: number): string {
   return addMonthsToDay(dateStr, months, day)
 }
 
+/**
+ * `dateStr`'s year shifted by `years`, re-targeting a fixed `targetMonth`/
+ * `targetDay` rather than reading them off `dateStr`. This is what lets a
+ * Feb-29-anchored yearly rule recover to Feb 29 the next time the target
+ * year is itself a leap year, instead of staying clamped to Feb 28 forever
+ * once a non-leap year clamps it once (see `nextOccurrence`'s BYMONTH branch).
+ */
+function addYears(dateStr: string, years: number, targetMonth: number, targetDay: number): string {
+  const year = Number(dateStr.split('-')[0])
+  const targetYear = year + years
+  const clampedDay = Math.min(targetDay, daysInMonth(targetYear, targetMonth))
+  return `${String(targetYear).padStart(4, '0')}-${String(targetMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+}
+
 const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 
 /** The next date after `fromDate` (exclusive) whose weekday is in `byDayCodes`. */
@@ -152,10 +168,37 @@ function nextByDay(fromDate: string, byDayCodes: string[]): string {
  * needing special-case handling for it.
  */
 export function nextOccurrence(rule: string, fromDate: string): string {
-  const { freq, interval, byDay, byMonthDay } = parseRule(rule)
+  const { freq, interval, byDay, byMonthDay, byMonth } = parseRule(rule)
   if (freq === 'DAILY') return addDays(fromDate, interval)
   if (freq === 'WEEKLY') return byDay ? nextByDay(fromDate, byDay) : addDays(fromDate, 7)
   if (freq === 'MONTHLY') return byMonthDay ? addMonthsToDay(fromDate, 1, byMonthDay) : addMonths(fromDate, 1)
-  if (freq === 'YEARLY') return addMonths(fromDate, 12)
+  if (freq === 'YEARLY') {
+    return byMonth && byMonthDay ? addYears(fromDate, 1, byMonth, byMonthDay) : addMonths(fromDate, 12)
+  }
   throw new Error(`nextOccurrence: unrecognized or missing FREQ in rule "${rule}"`)
+}
+
+/**
+ * Embeds a fixed anchor (BYMONTHDAY for monthly, BYMONTH+BYMONTHDAY for
+ * yearly) into a bare `FREQ=MONTHLY`/`FREQ=YEARLY` rule, derived from
+ * `dueDate`, the day the task actually falls on — issue #25: without an
+ * anchor, `nextOccurrence` re-derives the day-of-month from whatever the
+ * *current* (possibly already-clamped) due date is on each call, so a task
+ * due the 31st permanently drifts to the 28th/30th after crossing one short
+ * month and never recovers. Storing the anchor in the rule text itself
+ * fixes that — it's what `findRecurrenceCandidates` already does for the
+ * "setiap tanggal N" pattern; this just extends the same fix to the bare
+ * "setiap bulan"/"setiap tahun" patterns, which don't carry a day on their
+ * own since the phrase itself doesn't name one. A no-op for every other
+ * rule shape (already-anchored, or not MONTHLY/YEARLY) and for a null rule
+ * or null dueDate.
+ */
+export function anchorRecurrence(rule: string | null, dueDate: string | null): string | null {
+  if (!rule || !dueDate) return rule
+  const [, monthStr, dayStr] = dueDate.split('-')
+  const month = Number(monthStr)
+  const day = Number(dayStr)
+  if (rule === 'FREQ=MONTHLY') return `FREQ=MONTHLY;BYMONTHDAY=${day}`
+  if (rule === 'FREQ=YEARLY') return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
+  return rule
 }
