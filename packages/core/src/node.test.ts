@@ -19,6 +19,7 @@ function makeNode(overrides: Partial<Node>): Node {
     color: null,
     isFavorite: false,
     isInbox: false,
+    isSomeday: false,
     collapsed: false,
     completedAt: null,
     createdAt: '2026-08-05T00:00:00.000Z',

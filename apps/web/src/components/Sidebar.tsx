@@ -288,6 +288,26 @@ export default function Sidebar({
           </li>
           <li>
             <button
+              className={`sidebar__nav-item ${activeView === 'anytime' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('anytime')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><SparkleIcon size={18} /></span>
+              <span className="sidebar__nav-label">Anytime</span>
+            </button>
+          </li>
+          <li>
+            <button
+              className={`sidebar__nav-item ${activeView === 'someday' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('someday')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><StarIcon size={18} /></span>
+              <span className="sidebar__nav-label">Someday</span>
+            </button>
+          </li>
+          <li>
+            <button
               className={`sidebar__nav-item ${activeView === 'mail' ? 'sidebar__nav-item--active' : ''}`}
               onClick={() => onViewChange('mail')}
               type="button"

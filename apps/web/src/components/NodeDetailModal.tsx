@@ -248,6 +248,20 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
               )}
             </div>
 
+            {/* Someday */}
+            <div className="node-modal__field">
+              <span className="node-modal__field-label">Someday</span>
+              <button
+                className={`node-modal__field-value${node.isSomeday ? ' node-modal__field-value--active' : ''}`}
+                onClick={() => patch({ isSomeday: !node.isSomeday })}
+                type="button"
+                aria-pressed={node.isSomeday}
+              >
+                <HashIcon size={14} />
+                {node.isSomeday ? 'Marked as Someday' : 'Mark as Someday'}
+              </button>
+            </div>
+
             {/* Priority */}
             <div className="node-modal__field">
               <span className="node-modal__field-label">Priority</span>

@@ -95,6 +95,7 @@ export async function createTaskFromQuickAdd(
     color: null,
     isFavorite: false,
     isInbox: false,
+    isSomeday: false,
     collapsed: false,
     completedAt: null,
     createdAt: now,

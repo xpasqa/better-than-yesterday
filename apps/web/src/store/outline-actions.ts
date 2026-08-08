@@ -51,6 +51,7 @@ function blankNode(parentId: string | null, rank: string): Node {
     color: null,
     isFavorite: false,
     isInbox: false,
+    isSomeday: false,
     collapsed: false,
     completedAt: null,
     createdAt: now,
