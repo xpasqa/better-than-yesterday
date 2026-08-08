@@ -48,6 +48,30 @@ export function dayOfWeek(dateStr: string): number {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay()
 }
 
+/**
+ * The 1st of the month after the one containing `dateStr`. December rolls
+ * into January of the following year. Never clamps — the 1st always exists,
+ * which is exactly why spec 21 §4 chose "start of period" over "same day".
+ */
+export function firstOfNextMonth(dateStr: string): string {
+  const [year, month] = dateStr.split('-').map(Number) as [number, number, number]
+  const y = month === 12 ? year + 1 : year
+  const m = month === 12 ? 1 : month + 1
+  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-01`
+}
+
+/**
+ * The last day of the month containing `dateStr`. Day 0 of the next month is
+ * the last day of this one, so the leap-year rules come from the platform
+ * rather than being re-derived here.
+ */
+export function endOfMonth(dateStr: string): string {
+  const [year, month] = dateStr.split('-').map(Number) as [number, number, number]
+  const last = new Date(Date.UTC(year, month, 0, 12))
+  const d = String(last.getUTCDate()).padStart(2, '0')
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${d}`
+}
+
 /** -1 if `a` is earlier than `b`, 1 if later, 0 if the same day. */
 export function compareDates(a: string, b: string): -1 | 0 | 1 {
   if (a < b) return -1

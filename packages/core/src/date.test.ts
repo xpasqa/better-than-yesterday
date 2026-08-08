@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, compareDates, dayOfWeek, localDate, todayInTimezone } from './date.ts'
+import {
+  addDays,
+  compareDates,
+  dayOfWeek,
+  endOfMonth,
+  firstOfNextMonth,
+  localDate,
+  todayInTimezone,
+} from './date.ts'
 
 describe('localDate', () => {
   it('renders a UTC instant in a timezone ahead of UTC, crossing midnight', () => {
@@ -73,6 +81,50 @@ describe('dayOfWeek', () => {
 
   it('reports Wednesday as 3', () => {
     expect(dayOfWeek('2026-08-05')).toBe(3)
+  })
+})
+
+describe('firstOfNextMonth', () => {
+  it('goes to the 1st of the following month', () => {
+    expect(firstOfNextMonth('2026-08-07')).toBe('2026-09-01')
+  })
+  it('works when already on the 1st', () => {
+    expect(firstOfNextMonth('2026-08-01')).toBe('2026-09-01')
+  })
+  it('rolls December into the next year', () => {
+    expect(firstOfNextMonth('2026-12-20')).toBe('2027-01-01')
+    expect(firstOfNextMonth('2026-12-31')).toBe('2027-01-01')
+  })
+  it('works from February in both leap and non-leap years', () => {
+    expect(firstOfNextMonth('2028-02-29')).toBe('2028-03-01')
+    expect(firstOfNextMonth('2026-02-28')).toBe('2026-03-01')
+  })
+})
+
+describe('endOfMonth', () => {
+  it('handles 31-day months', () => {
+    expect(endOfMonth('2026-08-07')).toBe('2026-08-31')
+  })
+  it('handles 30-day months', () => {
+    expect(endOfMonth('2026-09-07')).toBe('2026-09-30')
+  })
+  it('handles February in a leap year', () => {
+    expect(endOfMonth('2028-02-10')).toBe('2028-02-29')
+  })
+  it('handles February in a non-leap year', () => {
+    expect(endOfMonth('2026-02-10')).toBe('2026-02-28')
+  })
+  it('handles the year-2000 rule (divisible by 400 IS a leap year)', () => {
+    expect(endOfMonth('2000-02-10')).toBe('2000-02-29')
+  })
+  it('handles the year-1900 rule (divisible by 100, not 400, is NOT)', () => {
+    expect(endOfMonth('1900-02-10')).toBe('1900-02-28')
+  })
+  it('returns the same date when already on the last day', () => {
+    expect(endOfMonth('2026-08-31')).toBe('2026-08-31')
+  })
+  it('handles December', () => {
+    expect(endOfMonth('2026-12-05')).toBe('2026-12-31')
   })
 })
 
