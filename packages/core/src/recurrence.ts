@@ -220,7 +220,14 @@ export function anchorRecurrence(rule: string | null, dueDate: string | null): s
   const [, monthStr, dayStr] = dueDate.split('-')
   const month = Number(monthStr)
   const day = Number(dayStr)
+  // Bare unanchored patterns — first-time anchor from dueDate
   if (rule === 'FREQ=MONTHLY') return `FREQ=MONTHLY;BYMONTHDAY=${day}`
   if (rule === 'FREQ=YEARLY') return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
+  // Already-anchored MONTHLY — re-anchor to new dueDate (issue #75: chip date
+  // change must update BYMONTHDAY so the rule tracks the new day, not the
+  // original parse-time anchor).
+  if (/^FREQ=MONTHLY;BYMONTHDAY=\d+$/.test(rule)) return `FREQ=MONTHLY;BYMONTHDAY=${day}`
+  // Already-anchored YEARLY — re-anchor both month and day
+  if (/^FREQ=YEARLY;BYMONTH=\d+;BYMONTHDAY=\d+$/.test(rule)) return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
   return rule
 }

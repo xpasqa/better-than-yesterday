@@ -162,10 +162,20 @@ export async function deleteTask(node: Node): Promise<void> {
   await enqueue({ ...node, deletedAt: now, updatedAt: now })
 }
 
-/** Patch a node with the given fields. Uses LWW: sets updatedAt to now. */
+/** Patch a node with the given fields. Uses LWW: sets updatedAt to now.
+ *
+ * When `patch.dueDate` is provided and the merged node has a recurrence rule,
+ * re-anchors the rule to the new date (issue #75: picking a date chip after
+ * the parser already anchored e.g. BYMONTHDAY=8 must update the anchor to
+ * match the new date, otherwise the task permanently fires on the wrong day).
+ */
 export async function updateNode(id: string, patch: Partial<Omit<Node, 'id' | 'userId' | 'createdAt' | 'seq'>>): Promise<void> {
   const existing = await db.nodes.get(id)
   if (!existing) return
   const now = new Date().toISOString()
-  await enqueue({ ...existing, ...patch, id, updatedAt: now })
+  const merged = { ...existing, ...patch, id, updatedAt: now }
+  if ('dueDate' in patch && merged.recurrence) {
+    merged.recurrence = anchorRecurrence(merged.recurrence, merged.dueDate) ?? merged.recurrence
+  }
+  await enqueue(merged)
 }

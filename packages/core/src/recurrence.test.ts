@@ -215,8 +215,16 @@ describe('anchorRecurrence', () => {
     expect(anchorRecurrence('FREQ=YEARLY', '2028-02-29')).toBe('FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29')
   })
 
-  it('leaves an already-anchored rule untouched', () => {
+  it('re-anchors an already-anchored FREQ=MONTHLY rule to a new dueDate (issue #75: date chip change must update BYMONTHDAY)', () => {
+    // Bug scenario: parser infers dueDate=8th → BYMONTHDAY=8; user picks 20th via chip.
+    // anchorRecurrence must update the anchor to 20, not leave it as 8.
+    expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', '2026-08-20')).toBe('FREQ=MONTHLY;BYMONTHDAY=20')
+    // Same-day case: no-op in practice but must still return the correct value
     expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=25', '2026-08-25')).toBe('FREQ=MONTHLY;BYMONTHDAY=25')
+  })
+
+  it('re-anchors an already-anchored FREQ=YEARLY rule to a new dueDate', () => {
+    expect(anchorRecurrence('FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=8', '2026-03-20')).toBe('FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=20')
   })
 
   it('leaves non-MONTHLY/YEARLY rules untouched', () => {
