@@ -243,7 +243,7 @@ function App() {
         ) : activeView === 'logbook' ? (
           <LogbookView />
         ) : activeView === 'project' && activeProjectId ? (
-          <ProjectReal user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
+          <ProjectReal key={activeProjectId} user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : activeView === 'search' ? (
           <SearchView user={user} onOpenNode={setOpenNodeId} />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}
