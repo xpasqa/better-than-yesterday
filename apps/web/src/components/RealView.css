@@ -101,6 +101,14 @@
   color: var(--brand-red-idle);
 }
 
+/* Parse preview shown below the quick-add input */
+.real-view__quick-add-preview {
+  margin: 4px 0 0;
+  font-size: var(--font-size-small);
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
 /* Mobile: reduce top padding */
 @media (max-width: 767px) {
   .real-view__inner {
