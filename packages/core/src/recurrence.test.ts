@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { anchorRecurrence, findRecurrenceCandidates, nextOccurrence } from './recurrence.ts'
+import { anchorRecurrence, findRecurrenceCandidates, nextOccurrence, nextOccurrenceAfter } from './recurrence.ts'
 
 function values(input: string): string[] {
   return findRecurrenceCandidates(input).map((c) => c.value)
@@ -227,5 +227,44 @@ describe('anchorRecurrence', () => {
   it('is a no-op for a null rule or a null dueDate', () => {
     expect(anchorRecurrence(null, '2026-08-05')).toBeNull()
     expect(anchorRecurrence('FREQ=MONTHLY', null)).toBe('FREQ=MONTHLY')
+  })
+})
+
+describe('nextOccurrenceAfter — issue #26, catches an overdue task up to today in one call', () => {
+  it('matches plain nextOccurrence when the task is not overdue (fromDate is today or later)', () => {
+    // Not overdue: a single step already lands after "today", so this
+    // must behave identically to the existing single-step nextOccurrence —
+    // no special-casing needed for the common, non-overdue path.
+    expect(nextOccurrenceAfter('FREQ=DAILY', '2026-08-05', '2026-08-05')).toBe(
+      nextOccurrence('FREQ=DAILY', '2026-08-05'),
+    )
+  })
+
+  it('FREQ=DAILY overdue by three weeks jumps straight to tomorrow, not one call per missed day', () => {
+    expect(nextOccurrenceAfter('FREQ=DAILY', '2026-07-15', '2026-08-05')).toBe('2026-08-06')
+  })
+
+  it('FREQ=WEEKLY;BYDAY=MO overdue by a month jumps to the next real Monday', () => {
+    // 2026-08-05 is a Wednesday; the next Monday on/after it is 2026-08-10.
+    expect(nextOccurrenceAfter('FREQ=WEEKLY;BYDAY=MO', '2026-07-06', '2026-08-05')).toBe('2026-08-10')
+  })
+
+  it('FREQ=MONTHLY;BYMONTHDAY=15 overdue by several months jumps to this month\'s (or next month\'s) 15th', () => {
+    expect(nextOccurrenceAfter('FREQ=MONTHLY;BYMONTHDAY=15', '2026-04-15', '2026-08-05')).toBe('2026-08-15')
+  })
+
+  it('preserves interval-based phase alignment instead of resetting the cadence to today (the reason a loop is needed, not a direct nextOccurrence(rule, today) shortcut)', () => {
+    // Original cadence: Jan 1, 4, 7, 10, 13, 16, 19, 22, 25... every 3 days.
+    // Last known occurrence Jan 10, "today" is Jan 20 — catching up must
+    // land on the next date IN THAT SEQUENCE (Jan 22), not on
+    // nextOccurrence('FREQ=DAILY;INTERVAL=3', '2026-01-20') = Jan 23, which
+    // would silently reset the phase to be relative to today instead.
+    expect(nextOccurrenceAfter('FREQ=DAILY;INTERVAL=3', '2026-01-10', '2026-01-20')).toBe('2026-01-22')
+  })
+
+  it('the result is always strictly after "today", never equal to it', () => {
+    // A task due exactly today, completed today: single-step already
+    // exceeds today, so the loop must not run an unnecessary extra step.
+    expect(nextOccurrenceAfter('FREQ=DAILY', '2026-08-05', '2026-08-05')).toBe('2026-08-06')
   })
 })

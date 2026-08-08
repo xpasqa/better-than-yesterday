@@ -172,7 +172,7 @@ function App() {
       {openNodeId && (() => {
         const openNode = realNodes.find(n => n.id === openNodeId) ?? null
         return openNode ? (
-          <NodeDetailModal node={openNode} onClose={() => setOpenNodeId(null)} />
+          <NodeDetailModal node={openNode} onClose={() => setOpenNodeId(null)} timezone={user.timezone ?? 'Asia/Jakarta'} />
         ) : null
       })()}
       <BottomNav onMorePress={() => setDrawerOpen(true)} />

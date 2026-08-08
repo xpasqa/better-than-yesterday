@@ -12,6 +12,8 @@ interface TaskRowProps {
   allNodes?: Node[]
   /** Called when the user clicks the content area to open the detail modal. */
   onOpenNode?: (node: Node) => void
+  /** User's timezone — needed to catch an overdue recurring task up to "today" on completion (issue #26). */
+  timezone: string
 }
 
 const priorityColors: Record<number, string> = {
@@ -35,7 +37,7 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
 }
 
 /** Shared row for every real (store-backed) task view — Today, Inbox, Upcoming, Project. */
-function TaskRow({ node, labelsById, allNodes = [], onOpenNode }: TaskRowProps) {
+function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: TaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
@@ -63,7 +65,7 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode }: TaskRowProps) 
         type="button"
         className={`task-row__checkbox task-row__checkbox--p${priority}`}
         aria-label={done ? 'Mark as incomplete' : 'Mark as complete'}
-        onClick={() => void toggleTaskComplete(node)}
+        onClick={() => void toggleTaskComplete(node, timezone)}
       >
         {done && (
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">

@@ -179,6 +179,28 @@ export function nextOccurrence(rule: string, fromDate: string): string {
 }
 
 /**
+ * Like `nextOccurrence`, but catches an overdue task up to today in one
+ * call instead of requiring one call per missed occurrence (issue #26,
+ * Todoist-style): loops until the result is strictly after `notAfter`
+ * (typically today), not just one step past `fromDate`. Each step still
+ * advances from the actual previous occurrence rather than jumping
+ * straight to `nextOccurrence(rule, notAfter)` — that shortcut would work
+ * for anchored patterns (weekday/day-of-month/month+day all re-derive
+ * correctly from any date) but would silently reset the phase of an
+ * interval-based rule (`FREQ=DAILY;INTERVAL=N`) to be relative to
+ * `notAfter` instead of to whenever the task actually started. Terminates
+ * because `nextOccurrence` always returns strictly after its input, so the
+ * date is guaranteed to exceed `notAfter` after finitely many steps.
+ */
+export function nextOccurrenceAfter(rule: string, fromDate: string, notAfter: string): string {
+  let next = nextOccurrence(rule, fromDate)
+  while (next <= notAfter) {
+    next = nextOccurrence(rule, next)
+  }
+  return next
+}
+
+/**
  * Embeds a fixed anchor (BYMONTHDAY for monthly, BYMONTH+BYMONTHDAY for
  * yearly) into a bare `FREQ=MONTHLY`/`FREQ=YEARLY` rule, derived from
  * `dueDate`, the day the task actually falls on — issue #25: without an

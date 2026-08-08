@@ -7,7 +7,7 @@ import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
 import { findInbox, sanitizeNode, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
-import { anchorRecurrence, nextOccurrence } from '@better/core/recurrence'
+import { anchorRecurrence, nextOccurrence, nextOccurrenceAfter } from '@better/core/recurrence'
 import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
@@ -114,8 +114,15 @@ export async function createTaskFromQuickAdd(
  * toggle-completedAt behavior. Both writes happen in one Dexie transaction
  * so a crash between them can't leave a completion logged without its
  * node's due date having actually advanced.
+ *
+ * A task that's been overdue a while catches all the way up to today in
+ * this one call (Todoist-style, issue #26) via `nextOccurrenceAfter` —
+ * not one call per missed occurrence. Only one `completion` row is
+ * written regardless of how many occurrences were caught up, with
+ * `occurredOn` set to the original (stale) due date: this logs the
+ * action taken, not a backfilled history of every date that was missed.
  */
-export async function toggleTaskComplete(node: Node): Promise<void> {
+export async function toggleTaskComplete(node: Node, timezone: string): Promise<void> {
   const now = new Date().toISOString()
 
   if (!node.completedAt && node.recurrence && node.dueDate) {
@@ -127,7 +134,8 @@ export async function toggleTaskComplete(node: Node): Promise<void> {
       occurredOn: node.dueDate,
       seq: 0,
     }
-    const advanced: Node = { ...node, dueDate: nextOccurrence(node.recurrence, node.dueDate), updatedAt: now }
+    const nextDueDate = nextOccurrenceAfter(node.recurrence, node.dueDate, todayInTimezone(timezone))
+    const advanced: Node = { ...node, dueDate: nextDueDate, updatedAt: now }
 
     await db.transaction('rw', db.nodes, db.completions, db.outbox, async () => {
       await db.nodes.put(advanced)

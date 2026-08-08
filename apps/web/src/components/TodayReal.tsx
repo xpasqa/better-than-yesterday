@@ -47,7 +47,7 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
             </h2>
             <ul className="real-view__list">
               {overdue.map((n) => (
-                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} />
+                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
               ))}
             </ul>
           </section>
@@ -60,7 +60,7 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
           {dueToday.length > 0 && (
             <ul className="real-view__list">
               {dueToday.map((n) => (
-                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} />
+                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
               ))}
             </ul>
           )}

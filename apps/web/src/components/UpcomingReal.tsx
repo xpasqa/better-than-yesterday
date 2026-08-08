@@ -45,7 +45,7 @@ function UpcomingReal({ user, onOpenNode }: UpcomingRealProps) {
               </h2>
               <ul className="real-view__list">
                 {group.items.map((n) => (
-                  <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} />
+                  <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
                 ))}
               </ul>
             </section>

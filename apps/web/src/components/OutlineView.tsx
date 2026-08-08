@@ -147,7 +147,7 @@ function OutlineNodeRow(props: RowProps) {
 
     if (mod && e.key === 'Enter') {
       e.preventDefault()
-      void toggleTaskComplete(node)
+      void toggleTaskComplete(node, timezone)
     } else if (mod && e.key === '.') {
       e.preventDefault()
       if (hasChildren) void patchNode(node, { collapsed: !node.collapsed })
@@ -207,7 +207,7 @@ function OutlineNodeRow(props: RowProps) {
 
         <button
           className="outline-node__bullet"
-          onClick={() => void toggleTaskComplete(node)}
+          onClick={() => void toggleTaskComplete(node, timezone)}
           tabIndex={-1}
           aria-label="Toggle complete"
         >

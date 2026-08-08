@@ -15,6 +15,8 @@ import './NodeDetailModal.css'
 interface NodeDetailModalProps {
   node: Node
   onClose: () => void
+  /** User's timezone — needed to catch an overdue recurring task up to "today" on completion (issue #26). */
+  timezone: string
 }
 
 const PRIORITIES = [
@@ -38,7 +40,7 @@ function formatISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-export default function NodeDetailModal({ node, onClose }: NodeDetailModalProps) {
+export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailModalProps) {
   const allNodes = useAllNodes()
   const allLabels = useAllLabels()
   const labelsById = new Map(allLabels.map(l => [l.id, l]))
@@ -139,7 +141,7 @@ export default function NodeDetailModal({ node, onClose }: NodeDetailModalProps)
               <button
                 type="button"
                 className={`node-modal__checkbox node-modal__checkbox--p${priority ?? 4}`}
-                onClick={() => void toggleTaskComplete(node)}
+                onClick={() => void toggleTaskComplete(node, timezone)}
                 aria-label={done ? 'Mark as incomplete' : 'Mark as complete'}
               >
                 {done && (

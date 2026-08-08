@@ -38,7 +38,7 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
         {items.length > 0 && (
           <ul className="real-view__list">
             {items.map((n) => (
-              <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} />
+              <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
             ))}
           </ul>
         )}
