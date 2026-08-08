@@ -78,14 +78,15 @@ own entry gate does not belong in that column — move it back.
   1. Merged to `master`
   2. Issue closed
   3. `npm run verify` green **on the merged result**, not just on the branch
-  4. Verification either **run**, or the gap explicitly written down as its
-     own open issue
+  4. Verification for the feature's actual claims **actually run**
 - Nothing leaves Done.
 
-> Point 6.4 is not bureaucracy. Issue #24 exists precisely because the
-> recurring-tasks feature was merged with browser verification never run —
-> caught and recorded rather than quietly called Done. Repeat that pattern:
-> an unverified claim becomes an issue, not a checked box.
+> **Unrun verification keeps a card in Review — it does not qualify for
+> Done.** Writing the gap up as its own issue is how you *track* it, not how
+> you *skip* it. Recurring tasks is the live example: merged to production,
+> `verify` green, every sub-issue closed — but browser verification was
+> never run even once (issue #24). That card sits in **Review**, not Done,
+> because "merged" and "known to work" are different claims.
 
 ### Epic and issue structure
 
