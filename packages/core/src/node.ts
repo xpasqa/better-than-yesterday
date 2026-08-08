@@ -3,7 +3,7 @@
 // no separate Task/Project/Section/OutlineNode type. Mirrors the `node`
 // table in docs/feature/2.backend/1.todo/spec.md §3.1 field for field.
 // node.tagIds stores tag entity ids (never names) — see tag.ts.
-export type NodeKind = 'project' | 'section' | 'item'
+export type NodeKind = 'area' | 'project' | 'section' | 'item'
 
 export interface Node {
   id: string
