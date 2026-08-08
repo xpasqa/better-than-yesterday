@@ -204,6 +204,15 @@ export default function Sidebar({
                 <GearIcon size={15} />
                 Agent settings
               </button>
+              <button
+                className="sidebar__profile-item"
+                role="menuitem"
+                type="button"
+                onClick={() => { setProfileOpen(false); onViewChange('settings') }}
+              >
+                <GearIcon size={15} />
+                Settings
+              </button>
               <div className="sidebar__profile-divider" />
               <button
                 className="sidebar__profile-item sidebar__profile-item--danger"

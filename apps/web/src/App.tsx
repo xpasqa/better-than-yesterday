@@ -24,6 +24,7 @@ import LogbookView from './components/LogbookView'
 import ProjectReal from './components/ProjectReal'
 import SearchView from './components/SearchView'
 import TagsView from './components/TagsView'
+import SettingsView from './components/SettingsView'
 import BottomNav from './components/BottomNav'
 import { pathForView, deriveViewFromPathname } from './routes'
 import { fetchMe, logout, type AuthUser } from './store/auth-api'
@@ -73,12 +74,13 @@ function useAuthGate() {
     void clearLocalStore()
     setUser(null)
   }
+  const handleUserChange = (updated: AuthUser) => setUser(updated)
 
-  return { user, handleLoggedIn, handleLogout }
+  return { user, handleLoggedIn, handleLogout, handleUserChange }
 }
 
 function App() {
-  const { user, handleLoggedIn, handleLogout } = useAuthGate()
+  const { user, handleLoggedIn, handleLogout, handleUserChange } = useAuthGate()
   const navigate = useNavigate()
   const location = useLocation()
   const { view: activeView, projectId: activeProjectId } = deriveViewFromPathname(location.pathname)
@@ -249,6 +251,8 @@ function App() {
           <SearchView user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'tags' ? (
           <TagsView />
+        ) : activeView === 'settings' ? (
+          <SettingsView user={user} onUserChange={handleUserChange} />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}
       </div>
       {projectModal && (

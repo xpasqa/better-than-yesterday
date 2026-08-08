@@ -1,0 +1,15 @@
+.settings {
+  padding: 32px;
+  max-width: 640px;
+}
+
+.settings__title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.settings__field { display: flex; flex-direction: column; gap: 4px; max-width: 320px; margin-bottom: 20px; }
+.settings__field small { color: var(--text-tertiary); font-size: 12px; }
+.settings__error { color: var(--priority-p1); font-size: 13px; }
+.settings__readonly { color: var(--text-tertiary); font-size: 13px; border-top: 1px solid var(--border); padding-top: 12px; }

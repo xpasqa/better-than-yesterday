@@ -36,3 +36,18 @@ export async function login(email: string, password: string): Promise<{ ok: true
 export async function logout(): Promise<void> {
   await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
 }
+
+export async function updateMe(prefs: { timezone?: string }): Promise<AuthUser> {
+  const res = await fetch('/api/me', {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(prefs),
+  })
+  if (!res.ok) {
+    const body = (await parseJson(res)) as { error?: string }
+    throw new Error(body.error ?? `PATCH /api/me failed: ${res.status}`)
+  }
+  const body = (await parseJson(res)) as { user: AuthUser }
+  return body.user
+}
