@@ -4,12 +4,12 @@ Urutan eksekusi [spec.md](spec.md). Tiga blok, masing-masing bisa di-merge
 sendiri: A murni core (tanpa UI), B membuat fiturnya terpakai, C polish yang
 tidak menghalangi apa pun.
 
-Dipecah jadi issue GitHub: epic **#31**, dengan **#32** (blok A), **#33**
-(blok B), **#34** (blok C).
+Dilacak di satu epic GitHub: **[#31](https://github.com/xpasqa/better-than-yesterday/issues/31)**,
+dengan checklist ketiga blok di dalamnya.
 
 ---
 
-## A. Core — `packages/core/src/search.ts` (issue #32)
+## A. Core — `packages/core/src/search.ts`
 
 Fungsi murni, tanpa I/O, 100% branch coverage seperti modul core lain.
 
@@ -22,11 +22,11 @@ Fungsi murni, tanpa I/O, 100% branch coverage seperti modul core lain.
 - [ ] Skor: semua token di judul = 0 · sebagian = 1 · tak ada di judul = 2
 - [ ] Tiebreak: `dueDate` menaik dengan sentinel `'9999-99-99'` untuk yang
       tanpa tanggal (pola sama seperti `'99:99'` di `views.ts`), lalu `rank`
-- [ ] Tes tabel input→output sesuai spec §4.4 (11 kasus)
+- [ ] Tes tabel input→output sesuai spec §4.4
 - [ ] **Verifikasi:** `npm test -w @better/core` hijau, `search.ts` 100%
       branch coverage, tidak ada I/O di modul
 
-## B. View & routing (issue #33)
+## B. View & routing
 
 Bergantung pada A.
 
@@ -43,7 +43,7 @@ Bergantung pada A.
 - [ ] **Verifikasi:** `npm run verify` hijau; `/search` bisa dibuka langsung
       dari URL; seluruh Success Criteria spec §7 kecuali highlight
 
-## C. Highlight kecocokan (issue #34)
+## C. Highlight kecocokan
 
 Polish. Tidak menghalangi B dipakai.
 
