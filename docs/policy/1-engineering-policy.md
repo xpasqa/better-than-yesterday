@@ -7,6 +7,10 @@ kecuali kamu mengubah dokumennya dulu.
 Tiga kata: **bersih, cepat, sederhana.** Urutannya penting. Kalau harus memilih,
 sederhana mengalahkan cepat, dan cepat mengalahkan pintar.
 
+Dokumen ini mengatur *bagaimana menulis kode*. Untuk *kapan kode boleh mulai
+ditulis dan kapan boleh disebut selesai*, lihat
+[2-workflow.md](2-workflow.md) — sama mengikatnya.
+
 ---
 
 ## 1. YAGNI, dan artinya apa
