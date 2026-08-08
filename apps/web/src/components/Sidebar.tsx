@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
-  SparkleIcon, StarIcon, TrayIcon, XIcon,
+  SparkleIcon, StarIcon, TagIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
@@ -318,6 +318,16 @@ export default function Sidebar({
             >
               <span className="sidebar__nav-icon"><CheckCircleIcon size={18} /></span>
               <span className="sidebar__nav-label">Logbook</span>
+            </button>
+          </li>
+          <li>
+            <button
+              className={`sidebar__nav-item ${activeView === 'tags' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('tags')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><TagIcon size={18} /></span>
+              <span className="sidebar__nav-label">Tags</span>
             </button>
           </li>
           <li>

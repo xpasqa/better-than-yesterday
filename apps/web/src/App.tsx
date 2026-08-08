@@ -23,6 +23,7 @@ import SomedayView from './components/SomedayView'
 import LogbookView from './components/LogbookView'
 import ProjectReal from './components/ProjectReal'
 import SearchView from './components/SearchView'
+import TagsView from './components/TagsView'
 import BottomNav from './components/BottomNav'
 import { pathForView, deriveViewFromPathname } from './routes'
 import { fetchMe, logout, type AuthUser } from './store/auth-api'
@@ -246,6 +247,8 @@ function App() {
           <ProjectReal key={activeProjectId} user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : activeView === 'search' ? (
           <SearchView user={user} onOpenNode={setOpenNodeId} />
+        ) : activeView === 'tags' ? (
+          <TagsView />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}
       </div>
       {projectModal && (
