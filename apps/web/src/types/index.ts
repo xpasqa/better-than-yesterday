@@ -1,4 +1,4 @@
-export type ViewType = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'project' | 'outline' | 'mail' | 'storage' | 'agent'
+export type ViewType = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'project' | 'outline' | 'mail' | 'storage' | 'agent' | 'search'
 
 /* 'flagged' is not a folder a message lives in — it's a cross-folder filter over isFlagged */
 export type MailFolder = 'inbox' | 'sent' | 'drafts' | 'junk' | 'trash'

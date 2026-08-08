@@ -249,7 +249,11 @@ export default function Sidebar({
             </button>
           </li>
           <li>
-            <button className="sidebar__nav-item" type="button">
+            <button
+              className={`sidebar__nav-item ${activeView === 'search' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('search')}
+              type="button"
+            >
               <span className="sidebar__nav-icon"><MagnifyingGlassIcon size={18} /></span>
               <span className="sidebar__nav-label">Search</span>
             </button>
