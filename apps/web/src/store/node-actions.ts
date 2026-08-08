@@ -163,6 +163,44 @@ export async function deleteTask(node: Node): Promise<void> {
   await enqueue({ ...node, deletedAt: now, updatedAt: now })
 }
 
+/**
+ * Creates a minimal subtask (child item) under `parentId`.
+ * No quick-add parsing — content is used verbatim (spec §5: no surprise
+ * date/tag extraction inside a checklist).
+ */
+export async function createSubtask(parentId: string, content: string): Promise<void> {
+  const allNodes = await db.nodes.toArray()
+  const siblings = allNodes.filter((n) => n.parentId === parentId && n.kind === 'item' && n.deletedAt === null)
+  const lastRank = siblings.length > 0 ? siblings.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+  const now = new Date().toISOString()
+  const node: Node = {
+    id: uuidv7(),
+    userId: '',
+    parentId,
+    kind: 'item',
+    rank: between(lastRank, null),
+    content: content.trim(),
+    note: null,
+    dueDate: null,
+    dueTime: null,
+    durationMin: null,
+    recurrence: null,
+    priority: null,
+    tagIds: [],
+    color: null,
+    isFavorite: false,
+    isInbox: false,
+    isSomeday: false,
+    collapsed: false,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    seq: 0,
+  }
+  await enqueue(node)
+}
+
 /** Patch a node with the given fields. Uses LWW: sets updatedAt to now.
  *
  * When `patch.dueDate` is provided and the merged node has a recurrence rule,

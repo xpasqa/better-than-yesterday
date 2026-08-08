@@ -7,7 +7,7 @@ import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
-import { toggleTaskComplete, updateNode, deleteTask } from '../store/node-actions'
+import { toggleTaskComplete, updateNode, deleteTask, createSubtask } from '../store/node-actions'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import CreateTagModal from './CreateTagModal'
 import './NodeDetailModal.css'
@@ -50,6 +50,8 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
   const [note, setNote] = useState(node.note ?? '')
   const [openField, setOpenField] = useState<OpenField>(null)
   const [showCreateTag, setShowCreateTag] = useState(false)
+  const [subtaskInput, setSubtaskInput] = useState('')
+  const [showSubtaskInput, setShowSubtaskInput] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const dateFieldRef = useRef<HTMLButtonElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
@@ -112,6 +114,20 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
     patch({ tagIds: next })
   }
 
+  // Direct children only — grandchildren excluded (one level, spec §6)
+  const subtasks = allNodes
+    .filter(n => n.parentId === node.id && n.kind === 'item' && n.deletedAt === null)
+    .sort((a, b) => (a.rank > b.rank ? 1 : a.rank < b.rank ? -1 : 0))
+  const subtaskTotal = subtasks.length
+  const subtaskDone = subtasks.filter(s => s.completedAt !== null).length
+
+  const submitSubtask = () => {
+    const text = subtaskInput.trim()
+    if (text) void createSubtask(node.id, text)
+    setSubtaskInput('')
+    setShowSubtaskInput(false)
+  }
+
   return createPortal(
     <div
       className="node-modal-overlay"
@@ -168,6 +184,75 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
               onBlur={() => { if (note !== (node.note ?? '')) patch({ note: note || null }) }}
               rows={3}
             />
+
+            {/* Subtasks — only rendered when there are children or input is open */}
+            {(subtaskTotal > 0 || showSubtaskInput) && (
+              <div className="node-modal__subtasks">
+                <div className="node-modal__subtasks-header">
+                  <span className="node-modal__subtasks-title">
+                    Subtask {subtaskDone}/{subtaskTotal}
+                  </span>
+                </div>
+                <ul className="node-modal__subtasks-list">
+                  {subtasks.map(sub => {
+                    const subDone = sub.completedAt !== null
+                    return (
+                      <li key={sub.id} className="node-modal__subtask-row">
+                        <button
+                          type="button"
+                          className={`node-modal__subtask-checkbox${subDone ? ' node-modal__subtask-checkbox--done' : ''}`}
+                          onClick={() => void toggleTaskComplete(sub, timezone)}
+                          aria-label={subDone ? 'Mark subtask as incomplete' : 'Mark subtask as complete'}
+                        >
+                          {subDone && (
+                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                        <span className={`node-modal__subtask-content${subDone ? ' node-modal__subtask-content--done' : ''}`}>
+                          {sub.content}
+                        </span>
+                        <button
+                          type="button"
+                          className="node-modal__subtask-delete"
+                          onClick={() => void deleteTask(sub)}
+                          aria-label="Delete subtask"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {/* Add subtask */}
+            {showSubtaskInput ? (
+              <input
+                className="node-modal__subtask-input"
+                placeholder="Subtask baru…"
+                value={subtaskInput}
+                onChange={e => setSubtaskInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); submitSubtask() }
+                  if (e.key === 'Escape') { setSubtaskInput(''); setShowSubtaskInput(false) }
+                }}
+                onBlur={submitSubtask}
+                autoFocus
+              />
+            ) : (
+              <button
+                type="button"
+                className="node-modal__subtask-add-btn"
+                onClick={() => setShowSubtaskInput(true)}
+              >
+                + Tambah subtask
+              </button>
+            )}
           </div>
 
           {/* Properties panel */}

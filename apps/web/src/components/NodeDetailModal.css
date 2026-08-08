@@ -283,6 +283,150 @@
   background: rgba(var(--overlay-rgb), 0.05);
 }
 
+/* Subtasks section */
+.node-modal__subtasks {
+  margin-top: 16px;
+}
+
+.node-modal__subtasks-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.node-modal__subtasks-title {
+  font-size: var(--font-size-xsmall);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.node-modal__subtasks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-modal__subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--border-radius-small);
+  transition: background 0.08s;
+}
+
+.node-modal__subtask-row:hover {
+  background: rgba(var(--overlay-rgb), 0.05);
+}
+
+.node-modal__subtask-checkbox {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--control-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: #fff;
+  transition: background 0.1s, border-color 0.1s;
+  padding: 0;
+}
+
+.node-modal__subtask-checkbox--done {
+  background: var(--control-border);
+}
+
+.node-modal__subtask-content {
+  flex: 1;
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  line-height: 1.4;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.node-modal__subtask-content--done {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.node-modal__subtask-delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--border-radius-small);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.08s, color 0.08s;
+}
+
+.node-modal__subtask-row:hover .node-modal__subtask-delete {
+  display: flex;
+}
+
+.node-modal__subtask-delete:hover {
+  background: rgba(var(--overlay-rgb), 0.08);
+  color: var(--text-danger);
+}
+
+.node-modal__subtask-add-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 6px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: background 0.08s, color 0.08s;
+}
+
+.node-modal__subtask-add-btn:hover {
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--text-secondary);
+}
+
+.node-modal__subtask-input {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-normal);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--divider-primary);
+  border-radius: var(--border-radius-small);
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.node-modal__subtask-input:focus {
+  border-color: var(--accent, var(--control-border));
+}
+
+.node-modal__subtask-input::placeholder {
+  color: var(--text-placeholder);
+}
+
 /* Mobile: bottom sheet 60% height */
 @media (max-width: 767px) {
   .node-modal-overlay {
