@@ -56,8 +56,11 @@ export function extractSessionCookie(response: Response): string {
 // Test-only escape hatch: response bodies here are dynamic JSON asserted on
 // by shape, not run through the real DTO types the app itself uses — one
 // named cast point instead of every call site repeating its own.
-export function readJson(res: Response): Promise<Record<string, unknown>> {
-  return res.json() as Promise<Record<string, unknown>>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TestJson = any
+
+export async function readJson(res: Response): Promise<TestJson> {
+  return res.json() as Promise<TestJson>
 }
 
 export function makeNodeDto(overrides: Record<string, unknown> & { id: string }) {

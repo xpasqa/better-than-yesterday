@@ -54,7 +54,7 @@ async function main() {
       isInbox: false, isFavorite: false, collapsed: false,
       createdAt: now, updatedAt: now,
     })
-    existingNodes.push({ id, userId: user.id, parentId: null, kind: 'project', rank: between(lastRank, null), content, color, isInbox: false, isFavorite: false, collapsed: false, createdAt: now, updatedAt: now, deletedAt: null, note: null, dueDate: null, dueTime: null, durationMin: null, recurrence: null, priority: null, labelIds: [], completedAt: null, seq: 0n })
+    existingNodes.push({ id, userId: user.id, parentId: null, kind: 'project', rank: between(lastRank, null), content, color, isInbox: false, isFavorite: false, collapsed: false, createdAt: now, updatedAt: now, deletedAt: null, note: null, dueDate: null, dueTime: null, durationMin: null, recurrence: null, priority: null, tagIds: [], completedAt: null, seq: 0n })
     console.log(`  created project: ${content}`)
     return id
   }
@@ -81,7 +81,7 @@ async function main() {
     parentId: string
     priority?: 1 | 2 | 3 | null
     dueDate?: string | null
-    labelIds?: string[]
+    tagIds?: string[]
     note?: string | null
   }) {
     const existing = existingNodes.find(n => n.kind === 'item' && n.content === opts.content && n.parentId === opts.parentId)
@@ -96,11 +96,11 @@ async function main() {
       note: opts.note ?? null,
       priority: opts.priority ?? null,
       dueDate: opts.dueDate ?? null,
-      labelIds: opts.labelIds ?? [],
+      tagIds: opts.tagIds ?? [],
       isInbox: false, isFavorite: false, collapsed: false,
       createdAt: now, updatedAt: now,
     })
-    existingNodes.push({ id, userId: user.id, parentId: opts.parentId, kind: 'item', rank: between(lastRank, null), content: opts.content, note: opts.note ?? null, priority: opts.priority ?? null, dueDate: opts.dueDate ?? null, dueTime: null, durationMin: null, recurrence: null, labelIds: opts.labelIds ?? [], color: null, isInbox: false, isFavorite: false, collapsed: false, completedAt: null, createdAt: now, updatedAt: now, deletedAt: null, seq: 0n })
+    existingNodes.push({ id, userId: user.id, parentId: opts.parentId, kind: 'item', rank: between(lastRank, null), content: opts.content, note: opts.note ?? null, priority: opts.priority ?? null, dueDate: opts.dueDate ?? null, dueTime: null, durationMin: null, recurrence: null, tagIds: opts.tagIds ?? [], color: null, isInbox: false, isFavorite: false, collapsed: false, completedAt: null, createdAt: now, updatedAt: now, deletedAt: null, seq: 0n })
     console.log(`  created task: ${opts.content}`)
   }
 
@@ -127,7 +127,7 @@ async function main() {
     parentId: workId,
     priority: 1,
     dueDate: TODAY,
-    labelIds: [importantLabelId],
+    tagIds: [importantLabelId],
     note: 'Go through Q3 numbers and create executive summary for team meeting',
   })
   await findOrCreateTask({
@@ -135,7 +135,7 @@ async function main() {
     parentId: workId,
     priority: 2,
     dueDate: TODAY,
-    labelIds: [emailLabelId],
+    tagIds: [emailLabelId],
   })
   await findOrCreateTask({
     content: 'Prepare presentation for next sprint',
@@ -156,14 +156,14 @@ async function main() {
     parentId: personalId,
     priority: 2,
     dueDate: TODAY,
-    labelIds: [callLabelId],
+    tagIds: [callLabelId],
   })
   await findOrCreateTask({
     content: 'Pay monthly bills',
     parentId: personalId,
     priority: 1,
     dueDate: YESTERDAY,
-    labelIds: [importantLabelId],
+    tagIds: [importantLabelId],
   })
 
   // Shopping tasks
@@ -192,7 +192,7 @@ async function main() {
     parentId: healthId,
     priority: 2,
     dueDate: TOMORROW,
-    labelIds: [callLabelId],
+    tagIds: [callLabelId],
   })
 
   // Inbox tasks
