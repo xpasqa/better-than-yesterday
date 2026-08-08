@@ -172,6 +172,33 @@ describe('cross-user isolation', () => {
     expect(checkB.body.changes.completions).toEqual([])
   })
 
+  it("user B cannot log a completion against user A's node id (issue #27)", async () => {
+    // The two tests above both submit a nodeId the pusher genuinely owns —
+    // neither can actually exercise applyIncomingCompletions' ownership
+    // check. This one submits a *fresh* completion id referencing a node
+    // user B does not own at all.
+    await createTestUser('completion-node-victim@example.com')
+    await createTestUser('completion-node-attacker@example.com')
+    const cookieA = await loginCookie('completion-node-victim@example.com')
+    const cookieB = await loginCookie('completion-node-attacker@example.com')
+
+    const bootA = await sync(cookieA, '0')
+    const nodeIdA = bootA.body.changes.nodes[0].id
+
+    const bootB = await sync(cookieB, '0')
+    const foreignId = uuidv7()
+    const attempt = await sync(cookieB, bootB.body.cursor, [], [], [
+      makeCompletionDto({ id: foreignId, nodeId: nodeIdA, occurredOn: '2026-08-03' }),
+    ])
+    expect(attempt.status).toBe(200)
+
+    const checkB = await sync(cookieB, '0')
+    expect(checkB.body.changes.completions.find((c: { id: string }) => c.id === foreignId)).toBeUndefined()
+
+    const checkA = await sync(cookieA, '0')
+    expect(checkA.body.changes.completions.find((c: { id: string }) => c.id === foreignId)).toBeUndefined()
+  })
+
   it('a session for one user never authorizes as a different userId', async () => {
     await createTestUser('real1@example.com')
     const cookie = await loginCookie('real1@example.com')
