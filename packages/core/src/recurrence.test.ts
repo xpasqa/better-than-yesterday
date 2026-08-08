@@ -241,6 +241,7 @@ describe('anchorRecurrence', () => {
 describe('describeRecurrence', () => {
   const cases: [string | null, string | null][] = [
     ['FREQ=DAILY', 'setiap hari'],
+    ['FREQ=DAILY;INTERVAL=1', 'setiap hari'],  // INTERVAL=1 same as bare FREQ=DAILY
     ['FREQ=DAILY;INTERVAL=3', 'setiap 3 hari'],
     ['FREQ=WEEKLY;BYDAY=MO', 'setiap Senin'],
     ['FREQ=WEEKLY;BYDAY=SU', 'setiap Minggu'],

@@ -71,7 +71,8 @@ export function describeRecurrence(rule: string | null): string | null {
       const interval = parts.get('INTERVAL')
       if (!interval) return 'setiap hari'
       const n = Number(interval)
-      return Number.isInteger(n) && n > 0 ? `setiap ${n} hari` : null
+      if (!Number.isInteger(n) || n < 1) return null
+      return n === 1 ? 'setiap hari' : `setiap ${n} hari`
     }
 
     if (freq === 'WEEKLY') {
