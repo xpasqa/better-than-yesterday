@@ -320,3 +320,87 @@ describe('parse — recurrence', () => {
     expect(dayOfWeek(result.dueDate!)).toBe(0) // Sunday
   })
 })
+
+describe('compound relative dates', () => {
+  const at = (isoDay: string) => ({ now: new Date(`${isoDay}T03:00:00Z`), timezone: 'Asia/Jakarta', language: 'id' as const })
+
+  it('"minggu depan" means next Monday, not next Sunday', () => {
+    const r = parse('rapat minggu depan', at('2026-08-07')) // Friday
+    expect(r.dueDate).toBe('2026-08-10')
+    expect(r.content).toBe('rapat')
+  })
+
+  it('"minggu depan" is still next Monday when today IS Sunday', () => {
+    const r = parse('rapat minggu depan', at('2026-08-09')) // Sunday
+    expect(r.dueDate).toBe('2026-08-10')
+  })
+
+  it('"next week" behaves the same as "minggu depan"', () => {
+    expect(parse('meeting next week', at('2026-08-07')).dueDate).toBe('2026-08-10')
+  })
+
+  it('"hari minggu depan" keeps the Sunday reading', () => {
+    const r = parse('rapat hari minggu depan', at('2026-08-07'))
+    expect(r.dueDate).toBe('2026-08-16')
+    expect(r.content).toBe('rapat hari')
+  })
+
+  it('"bulan depan" is the 1st of next month', () => {
+    expect(parse('bayar sewa bulan depan', at('2026-08-07')).dueDate).toBe('2026-09-01')
+  })
+
+  it('"bulan depan" rolls December into next year', () => {
+    expect(parse('bayar sewa bulan depan', at('2026-12-20')).dueDate).toBe('2027-01-01')
+  })
+
+  it('"next month" behaves the same', () => {
+    expect(parse('pay rent next month', at('2026-08-07')).dueDate).toBe('2026-09-01')
+  })
+
+  it('"akhir bulan" is the last day of the current month', () => {
+    expect(parse('lapor akhir bulan', at('2026-08-07')).dueDate).toBe('2026-08-31')
+  })
+
+  it('"akhir bulan" is leap-year correct', () => {
+    expect(parse('lapor akhir bulan', at('2028-02-10')).dueDate).toBe('2028-02-29')
+  })
+
+  it('"end of month" behaves the same', () => {
+    expect(parse('report end of month', at('2026-08-07')).dueDate).toBe('2026-08-31')
+  })
+
+  it('"N hari lagi" adds N days', () => {
+    const r = parse('kirim 5 hari lagi', at('2026-08-07'))
+    expect(r.dueDate).toBe('2026-08-12')
+    expect(r.content).toBe('kirim')
+  })
+
+  it('"in N days" adds N days, singular and plural', () => {
+    expect(parse('ship in 5 days', at('2026-08-07')).dueDate).toBe('2026-08-12')
+    expect(parse('ship in 1 day', at('2026-08-07')).dueDate).toBe('2026-08-08')
+  })
+
+  it('"N minggu lagi" adds N weeks', () => {
+    expect(parse('cek 2 minggu lagi', at('2026-08-07')).dueDate).toBe('2026-08-21')
+    expect(parse('cek in 2 weeks', at('2026-08-07')).dueDate).toBe('2026-08-21')
+  })
+
+  it('rejects "0 hari lagi" and leaves the text untouched', () => {
+    const r = parse('beli 0 hari lagi', at('2026-08-07'))
+    expect(r.dueDate).toBeNull()
+    expect(r.content).toBe('beli 0 hari lagi')
+  })
+
+  it('composes with time, project and priority', () => {
+    const r = parse('rapat minggu depan jam 9 #Kerja !1', at('2026-08-07'))
+    expect(r.dueDate).toBe('2026-08-10')
+    expect(r.dueTime).toBe('09:00')
+    expect(r.projectQuery).toBe('Kerja')
+    expect(r.priority).toBe(1)
+    expect(r.content).toBe('rapat')
+  })
+
+  it('rightmost mention still wins', () => {
+    expect(parse('besok atau minggu depan', at('2026-08-07')).dueDate).toBe('2026-08-10')
+  })
+})

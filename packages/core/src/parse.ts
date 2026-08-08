@@ -5,14 +5,13 @@
 // $ label, ! priority).
 //
 // Scope of this version: relative day words, named weekdays (bare and
-// "depan"/"next"), explicit d/m and d-m dates, ISO dates, "d month-name"
-// dates, jam/bare/am-pm time phrases, minute durations, priority, the four
-// sigil tokens, and the eight recurrence phrases in spec.md §8. NOT
-// implemented yet: compound relative phrases ("minggu depan" and "bulan
-// depan" on their own, "N hari lagi", "akhir bulan"). Anything not
-// recognized is left in the title untouched, per the parser's one hard
-// rule: never discard text it did not understand.
-import { addDays, dayOfWeek, localDate } from './date.ts'
+// "depan"/"next"), compound relative phrases ("minggu depan", "bulan depan",
+// "N hari lagi", "akhir bulan"), explicit d/m and d-m dates, ISO dates,
+// "d month-name" dates, jam/bare/am-pm time phrases, minute durations,
+// priority, the four sigil tokens, and the eight recurrence phrases in
+// spec.md §8. Anything not recognized is left in the title untouched, per
+// the parser's one hard rule: never discard text it did not understand.
+import { addDays, dayOfWeek, endOfMonth, firstOfNextMonth, localDate } from './date.ts'
 import { findRecurrenceCandidates } from './recurrence.ts'
 
 export type ParseSpanKind =
@@ -185,10 +184,55 @@ function findDateCandidates(input: string, today: string): Candidate<string>[] {
     const target = WEEKDAY_NUMBERS[m[2]!.toLowerCase()]
     if (target === undefined) continue
     const isNextWeek = Boolean(m[1]) || Boolean(m[3])
+    // "minggu depan" means *next week*, not *next Sunday* — see spec 21 §2.
+    // Release the span here so the compound pattern below can claim it.
+    // "hari minggu depan" keeps the weekday reading, so the guard checks for
+    // a preceding "hari ". Do NOT replace this with pattern ordering:
+    // pickRightmostNonNested keeps BOTH candidates when spans are identical,
+    // and the winner would silently depend on push order.
+    const isSundayWord = m[2]!.toLowerCase() === 'minggu'
+    const precededByHari = /\bhari\s+$/i.test(input.slice(0, m.index))
+    if (isSundayWord && isNextWeek && !precededByHari) continue
     const todayDow = dayOfWeek(today)
     let offset = (target - todayDow + 7) % 7
     if (isNextWeek) offset += 7
     candidates.push({ start: m.index, end: m.index + m[0].length, value: addDays(today, offset) })
+  }
+
+  // "minggu depan" / "next week" → next Monday. dayOfWeek: 0=Sun … 6=Sat.
+  // Sunday is only ONE day before Monday, so `8 - dow` would overshoot by a
+  // week — hence the explicit branch.
+  for (const m of input.matchAll(/\b(?:minggu\s+depan|next\s+week)\b/gi)) {
+    const dow = dayOfWeek(today)
+    const toNextMonday = dow === 0 ? 1 : 8 - dow
+    candidates.push({ start: m.index, end: m.index + m[0].length, value: addDays(today, toNextMonday) })
+  }
+
+  // "bulan depan" / "next month" → the 1st. Start-of-period, never clamped.
+  for (const m of input.matchAll(/\b(?:bulan\s+depan|next\s+month)\b/gi)) {
+    candidates.push({ start: m.index, end: m.index + m[0].length, value: firstOfNextMonth(today) })
+  }
+
+  // "akhir bulan" / "end of month".
+  for (const m of input.matchAll(/\b(?:akhir\s+bulan|end\s+of\s+(?:the\s+)?month)\b/gi)) {
+    candidates.push({ start: m.index, end: m.index + m[0].length, value: endOfMonth(today) })
+  }
+
+  // "N hari lagi" / "in N days" / "N minggu lagi" / "in N weeks".
+  // \d{1,3} enforces the 1–999 ceiling from spec 21 §4; N === 0 is dropped
+  // because "0 hari lagi" is not a sentence anyone types on purpose.
+  const countedPatterns: [RegExp, number][] = [
+    [/\b(\d{1,3})\s+hari\s+lagi\b/gi, 1],
+    [/\bin\s+(\d{1,3})\s+days?\b/gi, 1],
+    [/\b(\d{1,3})\s+minggu\s+lagi\b/gi, 7],
+    [/\bin\s+(\d{1,3})\s+weeks?\b/gi, 7],
+  ]
+  for (const [pattern, multiplier] of countedPatterns) {
+    for (const m of input.matchAll(pattern)) {
+      const n = Number(m[1])
+      if (n === 0) continue
+      candidates.push({ start: m.index, end: m.index + m[0].length, value: addDays(today, n * multiplier) })
+    }
   }
 
   // Explicit numeric d/m or d-m.
