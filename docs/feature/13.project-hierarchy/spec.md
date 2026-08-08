@@ -1,4 +1,4 @@
-# Spec: Project hierarchy & appearance
+# Spec: Area → Project — struktur ala Things
 
 **Tanggal:** 2026-08-08
 **Status:** disetujui, siap diimplementasi
@@ -9,226 +9,288 @@
 
 ## 1. Konteks
 
-Issue #29 awalnya cuma soal warna project. Penelusuran menemukan lubang yang
-lebih besar, dan **sudah dijanjikan spec sejak awal**. `1.todo/spec.md` §3.1:
+Issue #29 awalnya cuma soal warna project. Dua putaran penelusuran mengubah
+bentuknya sepenuhnya:
 
-> **`kind='project'`** [...] project butuh warna, favorit, dan **boleh
-> nested** [...] **UI menampilkan hierarki di sidebar.**
+1. Ternyata `1.todo/spec.md` §3.1 sudah menjanjikan **warna, favorit, dan
+   nested project** sejak awal — ketiganya tidak pernah ada di UI.
+2. Lalu diputuskan mengikuti model **Things 3 (Cultured Code)**: bukan
+   "project di dalam project", melainkan **Area → Project → Task**.
 
-Tiga janji di kalimat itu — **warna, favorit, hierarki** — ketiganya belum
-ada di UI, padahal model datanya (`color`, `isFavorite`, `parentId`) sudah
-siap sejak hari pertama.
-
-### Yang sudah gratis
-
-Bagian tersulit ternyata sudah selesai:
-
-| Sudah ada | Di mana |
-|---|---|
-| Kolom `parentId`, `color`, `isFavorite` | `db/schema/node.ts`, `core/node.ts` |
-| Task sub-project **sudah naik** ke view induk | `core/views.ts` `project()` → `subtreeDepthFirst` |
-| Badge sidebar **sudah** menghitung seluruh subtree | `Sidebar.tsx` → `computeProject` |
-| Soft-delete | Kolom `deletedAt` + semua view sudah menyaringnya |
-
-### Yang belum ada — murni UI
-
-| Lubang | Bukti |
-|---|---|
-| Project baru selalu di root | `project-actions.ts:39,79` — `parentId: null` hardcode |
-| Warna selalu kosong | `project-actions.ts:50,90` — `color: null` hardcode |
-| Favorit tidak pernah bisa diset | `isFavorite: false` hardcode, tanpa UI |
-| Sidebar merender daftar datar | `Sidebar.tsx:85` — filter tanpa menyentuh `parentId` |
-| Project tidak bisa diubah maupun dihapus | Tidak ada modal edit sama sekali |
-
-Poin terakhir yang paling menentukan: tanpa modal edit, warna **cuma bisa
-diset saat membuat**. Project yang sudah terlanjur ada tidak akan pernah
-bisa diberi warna — tujuan asli #29 tidak tercapai.
+Perubahan kedua itu yang menentukan, dan justru **menyederhanakan**: dua
+tingkat dengan nama dan makna berbeda jauh lebih jelas daripada satu benda
+yang bersarang di dirinya sendiri.
 
 ---
 
-## 2. Riset: bagaimana Todoist menanganinya
+## 2. Riset: model Things 3
 
-Diverifikasi dari dokumentasi resmi, bukan ingatan:
+Diverifikasi dari dokumentasi resmi Cultured Code, terutama halaman
+Shortcuts Actions yang memuat matriks field per tipe.
 
-| Aspek | Todoist |
-|---|---|
-| Kedalaman sub-project | **3 level indent**, hanya untuk personal project |
-| Kedalaman sub-task | 4 level — **angka yang berbeda**, sering tertukar |
-| Cara membuat sub-project | **Drag-and-drop** — geser kiri/kanan untuk mengubah indent |
-| Kalau melewati batas indent | Todoist menyarankan pakai **section** sebagai gantinya |
-| Favorit | Ditandai saat membuat atau sesudahnya; muncul di sidebar |
-| Hapus vs arsip | Arsip bisa dipulihkan; hapus permanen (pulih hanya lewat backup di paket berbayar) |
-| Project ter-share | Ditawari **"leave"**, bukan hapus |
+### Empat tipe
 
-Dokumentasi Todoist **tidak menyebutkan** apa yang terjadi pada task dan
-sub-project saat induknya dihapus. Jadi bagian itu keputusan kita sendiri
-(§4.3), bukan mencontoh.
+| Tipe | Kata Cultured Code | Selesai? |
+|---|---|---|
+| **Area** | *"grouping all of your projects and to-dos that support an **ongoing ambition**"* — "every hat you wear" (Family, Health, Career) | **tidak pernah** |
+| **Project** | *"things that actually take **more than a single step** to complete"* | ya |
+| **Heading** | pembagi di dalam project — *"categories, milestones"* | (diarsipkan bersama isinya) |
+| **To-Do** | *"your basic building block"* | ya |
 
-**Koreksi ke spec lama:** `1.todo/spec.md` §3.1 menulis *"Todoist
-mengizinkan 4 level"* untuk project — itu keliru, 4 adalah angka sub-task.
-Untuk project Todoist mengizinkan 3. Sudah dicoret di spec itu.
+### Matriks field (dari dokumentasi Shortcuts Actions)
+
+| Field | To-Do | Heading | Project | Area |
+|---|---|---|---|---|
+| Checklist | ✓ | ✗ | ✗ | ✗ |
+| Notes | ✓ | ✗ | ✓ | ✗ |
+| Deadline | ✓ | ✗ | ✓ | ✗ |
+| Tags | ✓ | ✗ | ✓ | ✓ |
+
+Dua hal yang paling menjelaskan filosofinya:
+
+- **Area tidak punya deadline maupun notes.** Karena area bukan pekerjaan —
+  ia wadah. Sesuatu yang tidak pernah selesai tidak butuh tenggat.
+- **Checklist hanya milik To-Do.** *"Some things take several steps to
+  complete but don't require a full-blown project. For those cases we now
+  have checklists."* Checklist adalah jalan tengah antara satu task dan satu
+  project.
+
+**Heading hanya ada di project** — *"This feature is not available in areas
+or any other list."*
+
+**Project tidak bersarang di project.** Dokumentasi Things tidak pernah
+menyebut project di dalam project; hierarkinya Area → Project, titik.
 
 ---
 
-## 3. Scope
+## 3. Pemetaan ke model `node` yang sudah ada
 
-**In:**
-- Project bisa dibuat sebagai anak project lain, **satu tingkat saja**
-- Sidebar menampilkan hierarki dua tingkat
-- Warna dipilih saat membuat **dan** bisa diubah setelahnya
-- Project bisa di-rename, dipindah induknya, **difavoritkan**, dan **dihapus**
-- Section "Favorites" di sidebar
+Kabar baiknya: model `node` di app ini hampir seluruhnya sudah cocok.
 
-**Out (dengan alasan):**
-- **Drag-and-drop untuk memindah project.** Todoist memakai ini, kita tidak:
-  dropdown induk menghasilkan hal yang sama persis dengan pekerjaan berlipat
-  kali lebih sedikit (sensor, drop indicator, penghitungan rank). Kalau nanti
-  terasa kurang, DnD bisa ditambahkan di atas store yang sama.
-- **Arsip project.** Todoist punya arsip *dan* hapus. Kita cuma perlu hapus
-  dulu — arsip adalah kolom baru + view baru + jalur pemulihan, demi kasus
-  yang belum pernah muncul.
-- **Restore project terhapus.** Datanya aman (soft-delete, `deletedAt`), jadi
-  bisa ditambahkan kapan pun tanpa migrasi. Tapi UI-nya belum dibutuhkan.
-- **Merender `kind='section'`.** Milik Board (blok F `1.todo`).
+| Things | Di app ini | Status |
+|---|---|---|
+| Area | `kind='area'` | **BARU** — perlu migrasi enum + CHECK |
+| Project | `kind='project'` | sudah ada |
+| Heading | `kind='section'` | sudah ada (belum dirender — milik Board) |
+| To-Do | `kind='item'` | sudah ada |
+| Notes | `node.note` | **sudah jalan** di `NodeDetailModal` |
+| Checklist item | anak `item` dari sebuah `item` | ada di model, belum dirender |
+| Tags | `node.labelIds` | sudah jalan |
+
+### Satu perbedaan yang disengaja: checklist = subtask
+
+Di Things, checklist item **lebih miskin** dari to-do — dokumentasinya tegas:
+tidak bisa punya tanggal, tag, maupun notes. Things bahkan **tidak punya
+subtask sama sekali**; checklist justru dibuat sebagai jalan tengah supaya
+orang tidak membuat project untuk hal sepele.
+
+Di app ini keputusannya sudah diambil lebih dulu, dan berlawanan —
+`1.todo/spec.md` §3.1:
+
+> **Subtask tanpa batas kedalaman.** Todoist membatasinya [...] Di sini justru
+> sebaliknya — subtask *adalah* outline, jadi batasan itu kehilangan alasannya.
+
+Jadi di sini **checklist dan subtask adalah benda yang sama**: anak `item`
+dari sebuah `item`, node penuh. Membuat tipe "checklist" yang lebih miskin
+berarti melawan keputusan §3.1 sekaligus menambah satu `kind` berikut aturan
+pembatasnya — demi membedakan dua hal yang di app ini memang satu.
+
+Yang berbeda cuma **cara menampilkannya**: checkbox ringkas di dalam task
+detail, bukan baris penuh di daftar.
+
+**Tradeoff yang diterima:** karena subtask adalah node penuh, subtask yang
+diberi tanggal akan muncul sendiri di Today. Di Things itu mustahil. Tapi itu
+sudah jadi perilaku app ini hari ini — bukan masalah baru yang diciptakan
+fitur ini.
+
+**Konsekuensi:** menampilkan subtask bukan bagian spec ini. Ia fitur
+tersendiri — lihat `docs/feature/14.task-subtask-view/`.
 
 ---
 
 ## 4. Keputusan desain
 
-### 4.1 Kedalaman: satu tingkat sub saja
+### 4.1 Area menggantikan sub-project
 
-`1.todo/spec.md` §3.1 semula menulis "kedalaman tidak dibatasi". **Direvisi:**
-project boleh punya sub-project, tapi **sub-project tidak boleh punya anak**.
-Maksimal dua tingkat.
+`1.todo/spec.md` §3.1 semula menulis "project boleh nested, kedalaman tidak
+dibatasi". **Direvisi:** hierarkinya **Area → Project**, dan **project tidak
+pernah bersarang di project**.
 
-Ini lebih ketat dari Todoist (3 tingkat), dan itu disengaja:
+Kenapa ini lebih baik daripada sub-project:
 
-- **Dua tingkat sudah menjawab kebutuhan semantiknya** — `Kerja` → `Klien A`.
-  Tingkat ketiga jarang dipakai, dan Todoist sendiri menyarankan pindah ke
-  section begitu batasnya kena.
-- **Yang paling menentukan: siklus jadi mustahil secara struktural.** Kalau
-  induk hanya boleh project root, dan project yang punya anak tidak boleh
-  dipindah, maka A→B→A tidak bisa terjadi. Itu menghapus seluruh kelas kode:
-  tidak perlu `wouldCreateCycle`, tidak perlu tesnya, tidak perlu pesan
-  errornya. Aturan yang lebih ketat justru **menghapus** kode, bukan menambah.
-- **Indentasi sidebar jadi sepele** — dua tingkat, tidak perlu logika
-  pembatas lebar.
+- **Semantiknya tegas.** "Project di dalam project" tidak menjawab kapan
+  sesuatu layak jadi sub-project. "Area = tanggung jawab berkelanjutan,
+  Project = pekerjaan yang selesai" menjawabnya dengan sendirinya.
+- **Siklus mustahil secara struktural.** Induk sebuah project hanya boleh
+  `area` atau `null`. Karena `area` dan `project` beda `kind`, A→B→A tidak
+  bisa terjadi — tanpa perlu `wouldCreateCycle`, tanpa tes siklus, tanpa
+  pesan error. Aturan yang lebih tegas **menghapus** kode.
+- **Indentasi sidebar sepele** — dua tingkat, tanpa rekursi.
 
-Invarian yang ditegakkan `updateProject`, bukan cuma UI:
+### 4.2 Area tidak punya tanggal dan tidak bisa diselesaikan
 
-> Sebuah project boleh punya `parentId` **hanya jika** calon induknya adalah
-> project root (`parentId === null`), **dan** project itu sendiri tidak punya
-> anak.
+Mengikuti Things, dan alasannya kuat: area adalah wadah, bukan pekerjaan.
+Ditegakkan di UI (tidak ada field tanggal di form area) — **bukan** dengan
+CHECK constraint baru, karena kolomnya memang dipakai `kind` lain di tabel
+yang sama.
 
-### 4.2 Satu modal untuk create, edit, dan hapus
+### 4.3 Hapus = soft-delete beserta seluruh isinya
 
-Formnya identik: nama, warna, induk, favorit. Dua komponen berarti dua tempat
-yang harus diubah tiap kali form berubah. Tombol Hapus ikut di sini pada mode
-`edit` — user sudah berada di tempat yang benar, tidak perlu menu terpisah.
+Dokumentasi Things maupun Todoist tidak menjawab ini, jadi keputusan sendiri.
 
-### 4.3 Hapus = soft-delete project beserta seluruh isinya
+Tiga pilihan: hapus semuanya, pindahkan isinya ke Inbox, atau tolak menghapus
+yang tidak kosong. **Dipilih hapus semuanya** — memindahkan 40 task ke Inbox
+tanpa diminta adalah kejutan yang lebih buruk daripada menghapus, dan menolak
+menghapus membuat wadah mati tidak bisa dibersihkan.
 
-Yang paling perlu dipikirkan, karena dokumentasi Todoist tidak menjawabnya.
+Karena `deletedAt` sudah soft-delete, datanya tetap ada di Postgres.
 
-Pilihannya tiga: hapus semuanya, pindahkan task ke Inbox, atau tolak menghapus
-project yang tidak kosong. **Dipilih: hapus semuanya** — memindahkan 40 task
-ke Inbox tanpa diminta adalah kejutan yang lebih buruk daripada menghapus,
-dan menolak menghapus membuat project mati tidak bisa dibersihkan.
+**Konfirmasi wajib menyebut angka sebenarnya** — "Hapus area *Kerja*? 3
+project dan 27 task ikut terhapus." Dialog "yakin?" tidak memberi informasi
+untuk memutuskan.
 
-Karena `deletedAt` sudah soft-delete, "hapus" berarti menandai project **dan
-seluruh keturunannya** (sub-project, section, task). Datanya tetap ada di
-Postgres; yang hilang cuma dari tampilan.
+### 4.4 Favorit: project saja, bukan area
 
-**Konfirmasi wajib menyebut angka sebenarnya** — "Hapus *Kerja*? 12 task dan
-2 sub-project ikut terhapus." Dialog yang cuma bertanya "yakin?" tidak
-memberi informasi apa pun untuk memutuskan.
+Things mengizinkan tag di area, tapi sidebar-nya sudah mengelompokkan project
+di bawah area — jadi area **sudah** berfungsi sebagai pengelompokan. Favorit
+gunanya menarik **project tertentu** ke atas, melewati areanya.
 
-### 4.4 Favorit muncul di section sendiri
+Memfavoritkan area berarti menaikkan seluruh isinya, yang sama saja dengan
+tidak menyaring apa-apa. Jadi: `isFavorite` hanya bermakna di `kind='project'`.
 
-`isFavorite` sudah ada di skema tapi tidak pernah punya tempat. Ditambahkan:
-section **Favorites** di atas "My Projects" di sidebar.
+Project favorit **tetap muncul juga** di bawah areanya — menghilangkannya
+menambah kasus khusus dan membuat orang bingung mencari project yang "hilang".
 
-Project favorit **tetap muncul juga** di My Projects — sama seperti Todoist.
-Menghilangkannya dari daftar utama berarti menambah kasus khusus, dan membuat
-orang bingung mencari project yang "hilang".
+### 4.5 Dropdown, bukan drag-and-drop
 
-### 4.5 Yang tetap disalin, bukan diabstraksi
+Things dan Todoist dua-duanya memakai drag. Kita tidak: dropdown menghasilkan
+hal yang sama persis dengan pekerjaan berlipat kali lebih sedikit (sensor,
+drop indicator, penghitungan rank). Bisa ditambahkan nanti di atas store yang
+sama.
 
-`COLOR_SWATCHES` disalin dari `CreateLabelModal.tsx`. `1-engineering-policy.md`
-§1: *"Jangan bikin abstraksi sebelum pemakaian ketiga. Dua tempat yang mirip
-itu kebetulan."* Ini pemakaian kedua.
+### 4.6 Yang tetap disalin, bukan diabstraksi
+
+`COLOR_SWATCHES` disalin dari `CreateLabelModal.tsx`.
+`1-engineering-policy.md` §1: *"Jangan bikin abstraksi sebelum pemakaian
+ketiga."* Ini pemakaian kedua.
 
 ---
 
-## 5. Blok kerja
+## 5. Scope
 
-### A. Store — `apps/web/src/store/project-actions.ts`
+**In:**
+- `kind='area'` — migrasi, tipe core, DTO sync
+- Area bisa dibuat, di-rename, diberi warna, dihapus
+- Project bisa ditempatkan di dalam area, dipindah antar-area, difavoritkan
+- Sidebar: Area → Project, plus section Favorites
+- Hapus (area maupun project) beserta seluruh isinya
+
+**Out (dengan alasan):**
+- **Menampilkan subtask di dalam task** — fitur tersendiri, `14.task-subtask-view`. Tidak
+  berbagi satu baris kode pun dengan spec ini.
+- **Merender `kind='section'`** (heading) — milik Board, blok F `1.todo`.
+- **Arsip.** Things dan Todoist punya arsip *dan* hapus. Kita cukup hapus
+  dulu — arsip adalah kolom baru + view baru + jalur pemulihan, demi kasus
+  yang belum pernah muncul.
+- **Restore yang terhapus** — datanya aman (soft-delete), bisa ditambah kapan
+  pun tanpa migrasi; UI-nya belum dibutuhkan.
+- **Drag-and-drop.**
+- **Deadline di project.** Things punya, kita belum — `dueDate` sudah ada di
+  kolomnya, tapi menampilkannya di project butuh keputusan sendiri soal apa
+  artinya project "lewat tenggat".
+
+---
+
+## 6. Blok kerja
+
+### A. Migrasi & core — `kind='area'`
+
+Empat tempat mengunci daftar `kind`, semuanya harus diperbarui:
+
+| Tempat | Perubahan |
+|---|---|
+| `apps/api/src/db/schema/node.ts:32` | `enum: ['area','project','section','item']` |
+| `apps/api/src/db/schema/node.ts:64` | CHECK `in ('area','project','section','item')` |
+| `packages/core/src/node.ts:5` | `NodeKind` tambah `'area'` |
+| `apps/api/src/modules/sync/dto.ts:9` | `z.enum([...])` tambah `'area'` |
+
+Plus migrasi SQL: `DROP CONSTRAINT node_kind_check` lalu `ADD CONSTRAINT`
+dengan daftar baru. Kolom `kind` sendiri `text`, jadi tidak ada perubahan tipe.
+
+### B. Store — `apps/web/src/store/project-actions.ts`
 
 ```ts
+export async function createArea(name: string, color: string, allNodes: Node[]): Promise<string>
+
 export async function createProject(
-  name: string, color: string, parentId: string | null, allNodes: Node[],
+  name: string, color: string, areaId: string | null, allNodes: Node[],
 ): Promise<string>
 
-export async function updateProject(
+export async function updateNodeMeta(
   id: string,
   patch: { name?: string; color?: string; parentId?: string | null; isFavorite?: boolean },
   allNodes: Node[],
 ): Promise<void>
 
-/** Soft-delete project + seluruh keturunannya. */
-export async function deleteProject(id: string, allNodes: Node[]): Promise<void>
+/** Soft-delete node + seluruh keturunannya. */
+export async function deleteWithDescendants(id: string, allNodes: Node[]): Promise<void>
 
-/** Berapa yang akan ikut terhapus — untuk dialog konfirmasi. */
-export function countDescendants(id: string, allNodes: Node[]): { tasks: number; subProjects: number }
+/** Untuk dialog konfirmasi. */
+export function countDescendants(id: string, allNodes: Node[]): { projects: number; tasks: number }
 ```
 
-- `rank` dihitung di antara **saudara sekandung**, bukan selalu di root
-- `updateProject` menegakkan invarian §4.1; kalau dilanggar → tidak menulis apa pun
-- `deleteProject` menulis `deletedAt` ke project dan seluruh keturunannya
-  dalam **satu transaksi Dexie**, masing-masing masuk outbox
-- `resolveOrCreateProjectId` (quick-add `#project`) tetap root + warna default
+Invarian yang ditegakkan `updateNodeMeta`:
 
-### B. Modal — `apps/web/src/components/ProjectModal.tsx`
+> `parentId` sebuah **project** hanya boleh `null` atau id node ber-`kind='area'`.
+> Sebuah **area** selalu `parentId: null`.
 
-Menggantikan `CreateProjectModal.tsx`.
+Ini yang membuat siklus mustahil. Tulis alasannya di komentar supaya tidak
+ada yang "melengkapi" dengan cycle-check yang tidak berguna.
 
-Field: **nama**, **warna** (swatch), **induk** (dropdown, hanya project root,
-kecuali diri sendiri), **favorit** (checkbox).
+### C. Modal — `ProjectModal.tsx`
 
-Mode `edit` menambah tombol **Hapus** dengan konfirmasi yang menyebut angka
-dari `countDescendants`.
+Satu komponen, dua mode (`create` | `edit`) **dan** dua tipe (`area` |
+`project`) — form yang sama, field yang aktif berbeda:
 
-Dropdown induk **dinonaktifkan** kalau project ini punya anak, dengan
-keterangan singkat kenapa — mencegah lebih baik daripada menolak setelah
-dipilih.
+| Field | Area | Project |
+|---|---|---|
+| Nama | ✓ | ✓ |
+| Warna | ✓ | ✓ |
+| Area induk | — | ✓ (dropdown, default "Tanpa area") |
+| Favorit | — | ✓ |
+| Hapus (mode edit) | ✓ | ✓ |
 
-### C. Sidebar — `apps/web/src/components/Sidebar.tsx`
+### D. Sidebar
 
-- Section **Favorites** di atas My Projects
-- My Projects merender dua tingkat: root lalu anak-anaknya, indentasi satu langkah
-- Tiap baris punya aksi edit → `ProjectModal` mode `edit`
-- Badge hitungan **tidak disentuh** — sudah subtree-wide
+- Section **Favorites** di atas, isi project ber-`isFavorite`
+- Lalu daftar **Area**, masing-masing dengan project di bawahnya (indentasi
+  satu langkah)
+- Project tanpa area tampil di kelompok terakhir tanpa judul
+- Aksi edit per baris → `ProjectModal`
+- Badge hitungan **tidak disentuh** — `computeProject` sudah subtree-wide,
+  jadi hitungan area otomatis mencakup seluruh project di dalamnya
 
 ---
 
-## 6. Success Criteria
+## 7. Success Criteria
 
-- [ ] Bisa membuat project baru sebagai anak project root
-- [ ] Sub-project **tidak bisa** diberi anak lagi (tidak muncul sebagai pilihan induk)
-- [ ] Project yang punya anak tidak bisa dipindah jadi sub-project
-- [ ] Sidebar menampilkan dua tingkat dengan indentasi benar
-- [ ] Warna dipilih saat membuat, dan bisa diubah di project yang sudah ada
-- [ ] Favorit bisa di-toggle; project favorit muncul di section Favorites **dan** My Projects
-- [ ] Hapus project menghapus seluruh task dan sub-project di bawahnya
-- [ ] Dialog konfirmasi menyebut jumlah task dan sub-project yang ikut terhapus
-- [ ] Badge hitungan induk mencakup task sub-project-nya
-- [ ] Project lama (`color: null`, `parentId: null`) tetap tampil normal
+- [ ] Bisa membuat area, memberinya nama dan warna
+- [ ] Bisa membuat project di dalam area, dan memindahnya antar-area
+- [ ] Project **tidak bisa** dijadikan induk project lain
+- [ ] Sidebar menampilkan Area → Project dengan indentasi benar
+- [ ] Project tanpa area tetap tampil (kelompok tanpa judul)
+- [ ] Favorit bisa di-toggle di project; muncul di Favorites **dan** di areanya
+- [ ] Hapus area menghapus seluruh project dan task di bawahnya
+- [ ] Konfirmasi hapus menyebut jumlah project dan task yang ikut terhapus
+- [ ] Badge hitungan area mencakup task dari seluruh project di dalamnya
+- [ ] Project lama (`parentId: null`) tetap tampil normal
 - [ ] `npm run verify` hijau
 
 ---
 
 ## Sumber
 
-- [Introduction to Todoist projects](https://www.todoist.com/help/articles/introduction-to-todoist-projects-TLTjNftLM)
-- [Create a sub-project in Todoist](https://www.todoist.com/help/articles/create-a-sub-project-in-todoist-aTA15C70)
-- [Introduction to sub-tasks](https://www.todoist.com/help/articles/introduction-to-sub-tasks-kMamDo)
+- [Things Shortcuts Actions](https://culturedcode.com/things/support/articles/9596775/) — matriks field per tipe
+- [Getting Productive with Things](https://culturedcode.com/things/guide/) — definisi Area vs Project
+- [What's New in the all-new Things](https://culturedcode.com/things/features/) — checklist & headings
+- [Using Headings in Projects](https://culturedcode.com/things/support/articles/2803577/)

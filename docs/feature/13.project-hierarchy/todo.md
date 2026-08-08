@@ -1,19 +1,24 @@
-# Todo: Project hierarchy & appearance
+# Todo: Area → Project
 
-Checklist hidup ada di GitHub. Epic **[#29](https://github.com/xpasqa/better-than-yesterday/issues/29)** adalah daftar isinya; detail teknis tiap blok ada di issue-nya masing-masing.
+Checklist hidup ada di GitHub. Epic **[#29](https://github.com/xpasqa/better-than-yesterday/issues/29)** adalah daftar isinya.
 
 | Blok | Issue | Isi |
 |---|---|---|
-| A | [#35](https://github.com/xpasqa/better-than-yesterday/issues/35) | `project-actions` — `createProject` terima `color` + `parentId`, tambah `updateProject` |
-| B | [#36](https://github.com/xpasqa/better-than-yesterday/issues/36) | `ProjectModal` — satu modal untuk create + edit |
-| C | [#37](https://github.com/xpasqa/better-than-yesterday/issues/37) | Sidebar hierarki dengan indentasi |
+| A | [#38](https://github.com/xpasqa/better-than-yesterday/issues/38) | Migrasi `kind='area'` — enum, CHECK, tipe core, DTO sync |
+| B | [#35](https://github.com/xpasqa/better-than-yesterday/issues/35) | Store — create/update/delete area & project |
+| C | [#36](https://github.com/xpasqa/better-than-yesterday/issues/36) | `ProjectModal` — create/edit/hapus area & project |
+| D | [#37](https://github.com/xpasqa/better-than-yesterday/issues/37) | Sidebar — Area → Project + section Favorites |
 
-Urutan: A → B → C. A murni store (bisa merge sendiri). Setelah B, warna dan sub-project sudah bisa dibuat & diubah — hierarkinya baru terlihat setelah C.
+Urutan A → B → C → D. Tanpa A, tiga blok lain tidak bisa menyimpan apa pun.
 
-Rincian langkah per blok: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
+Menampilkan subtask di dalam task **bukan** bagian fitur ini — lihat
+[`14.task-subtask-view`](../14.task-subtask-view/spec.md) / epic #39.
+
+Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — store
-- [ ] B — modal
-- [ ] C — sidebar
+- [ ] A — migrasi & core
+- [ ] B — store
+- [ ] C — modal
+- [ ] D — sidebar
