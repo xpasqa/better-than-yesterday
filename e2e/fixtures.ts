@@ -5,7 +5,11 @@ import { execFileSync } from 'node:child_process'
 // much slower, and separate files already cannot see each other's data.
 export const test = base.extend<{ userEmail: string }>({
   userEmail: async ({ page }, use, testInfo) => {
-    const email = `e2e-${testInfo.title.replace(/\W+/g, '-')}-${testInfo.workerIndex}@test.local`
+    // Derive a stable slug from the spec file path so all tests in the same
+    // file share one user — faster than per-test isolation, safe because
+    // separate files already cannot see each other's data.
+    const fileSlug = testInfo.file.replace(/.*\//, '').replace(/\W+/g, '-').replace(/\.ts$/, '')
+    const email = `e2e-${fileSlug}-${testInfo.workerIndex}@test.local`
 
     // `npm run user -- add <email> [name]` creates the user + seeds their
     // Inbox root. If the user already exists (second run), the script exits
