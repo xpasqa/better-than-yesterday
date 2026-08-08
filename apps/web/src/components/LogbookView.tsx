@@ -48,7 +48,7 @@ function LogbookView() {
           <h1>Logbook</h1>
           <p className="real-view__subtitle">
             <CheckCircleIcon size={14} />
-            {entries.length} {entries.length === 1 ? 'entri' : 'entri'}
+            {entries.length} entri
             <SyncStatusBadge />
           </p>
         </div>
@@ -69,7 +69,7 @@ function LogbookView() {
                   {items.map((entry, i) => (
                     <li
                       key={`${entry.node.id}-${entry.completedAt}-${i}`}
-                      className="real-view__list-item real-view__list-item--completed"
+                      className="real-view__list-item"
                     >
                       <span className="real-view__check-icon">
                         <CheckCircleIcon size={16} weight="fill" />

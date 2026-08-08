@@ -32,6 +32,10 @@ export interface LogEntry {
  *
  * Entries whose node is not found or is soft-deleted are silently skipped.
  * Result is sorted by `completedAt` descending (most recent first).
+ *
+ * Note: `nodes` may be pre-filtered (e.g. `deletedAt === null` only). The
+ * deleted-node guard in Source 2 handles both pre-filtered and unfiltered
+ * callers correctly — it is not dead code even when nodes are pre-filtered.
  */
 export function logbook(nodes: Node[], completions: Completion[]): LogEntry[] {
   const nodeById = new Map<string, Node>()
