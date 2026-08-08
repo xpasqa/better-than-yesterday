@@ -47,16 +47,18 @@ function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
               <CheckCircleIcon size={14} />
               {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
               <SyncStatusBadge />
-              <button
-                className="real-view__toggle-completed"
-                onClick={toggleShowCompleted}
-                type="button"
-                aria-pressed={showCompleted}
-                title={showCompleted ? 'Hide completed tasks' : 'Show completed tasks'}
-              >
-                {showCompleted ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
-                {showCompleted ? 'Hide completed' : 'Show completed'}
-              </button>
+              {mode === 'list' && (
+                <button
+                  className="real-view__toggle-completed"
+                  onClick={toggleShowCompleted}
+                  type="button"
+                  aria-pressed={showCompleted}
+                  title={showCompleted ? 'Hide completed tasks' : 'Show completed tasks'}
+                >
+                  {showCompleted ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
+                  {showCompleted ? 'Hide completed' : 'Show completed'}
+                </button>
+              )}
               <button
                 className={`real-view__toggle-completed${mode === 'list' ? ' real-view__toggle-completed--active' : ''}`}
                 type="button"

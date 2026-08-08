@@ -251,6 +251,13 @@ export async function createSection(projectId: string, name: string): Promise<No
  * Both writes go in one Dexie transaction: a crash between them would leave
  * tasks parented to a soft-deleted section, and `board()` shows those in no
  * column at all.
+ *
+ * Exception to the "all writes via enqueue()" rule: calling enqueue() twice
+ * in sequence is not atomic — a crash between the two calls would orphan
+ * children. The transaction replicates enqueue()'s exact write pattern
+ * (db.nodes.put + db.outbox.put with the same key schema) so that sync
+ * behaviour is identical. If enqueue() ever gains extra logic, this function
+ * must be updated in sync.
  */
 export async function deleteSection(section: Node): Promise<void> {
   const now = new Date().toISOString()
