@@ -21,6 +21,9 @@ dist-ssr
 # Font source dropbox — served copies live in public/fonts, which are tracked
 better-font
 
+# Claude Code worktree scratch space
+.claude/worktrees/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
