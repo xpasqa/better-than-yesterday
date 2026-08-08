@@ -1,6 +1,6 @@
-// Seed sample tasks, labels, and projects for a given user.
+// Seed sample tasks, tags, and projects for a given user.
 // Idempotent: skips rows that already exist (matched by content + userId for tasks,
-// name for labels, content for projects).
+// name for tags, content for projects).
 //
 // Usage:
 //   npm run seed -- pasqa@xvntr.my.id
@@ -12,8 +12,8 @@ import { between } from '@better/core/rank'
 import { db } from '@better/api/db/client'
 import { appUser } from '@better/api/db/schema/user'
 import { node } from '@better/api/db/schema/node'
-// Import label directly from source since it's not exported from @better/api
-import { label } from '../apps/api/src/db/schema/label.ts'
+// Import tag directly from source since it's not exported from @better/api
+import { tag } from '../apps/api/src/db/schema/tag.ts'
 
 const EMAIL = process.argv[2] ?? 'pasqa@xvntr.my.id'
 
@@ -30,9 +30,9 @@ async function main() {
   }
   console.log(`Seeding data for ${user.email} (${user.id})`)
 
-  // 2. Get existing nodes/labels
+  // 2. Get existing nodes/tags
   const existingNodes = await db.select().from(node).where(and(eq(node.userId, user.id), isNull(node.deletedAt)))
-  const existingLabels = await db.select().from(label).where(and(eq(label.userId, user.id), isNull(label.deletedAt)))
+  const existingLabels = await db.select().from(tag).where(and(eq(tag.userId, user.id), isNull(tag.deletedAt)))
 
   const inboxNode = existingNodes.find(n => n.isInbox)
   if (!inboxNode) {
@@ -59,19 +59,19 @@ async function main() {
     return id
   }
 
-  // Helper: find or insert label
+  // Helper: find or insert tag
   async function findOrCreateLabel(name: string, color: string): Promise<string> {
     const existing = existingLabels.find(l => l.name === name)
-    if (existing) { console.log(`  label exists: ${name}`); return existing.id }
+    if (existing) { console.log(`  tag exists: ${name}`); return existing.id }
     const lastRank = existingLabels.length > 0 ? existingLabels.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
     const now = new Date()
     const id = uuidv7()
-    await db.insert(label).values({
+    await db.insert(tag).values({
       id, userId: user.id, name, color, isFavorite: false,
       rank: between(lastRank, null), createdAt: now, updatedAt: now,
     })
     existingLabels.push({ id, userId: user.id, name, color, isFavorite: false, rank: between(lastRank, null), createdAt: now, updatedAt: now, deletedAt: null, seq: 0n })
-    console.log(`  created label: ${name}`)
+    console.log(`  created tag: ${name}`)
     return id
   }
 
@@ -111,8 +111,8 @@ async function main() {
   const shoppingId = await findOrCreateProject('Shopping', '#eb8909')
   const healthId = await findOrCreateProject('Health & Fitness', '#692ec2')
 
-  // 4. Create labels
-  console.log('\n--- Labels ---')
+  // 4. Create tags
+  console.log('\n--- Tags ---')
   const emailLabelId = await findOrCreateLabel('email', '#246fe0')
   const callLabelId = await findOrCreateLabel('call', '#eb8909')
   const importantLabelId = await findOrCreateLabel('important', '#dc4c3e')
