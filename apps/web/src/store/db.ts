@@ -4,6 +4,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { Node } from '@better/core/node'
 import type { Label } from '@better/core/label'
+import type { Completion } from '@better/core/completion'
 
 /**
  * A local write not yet confirmed by the server, keyed `${entityType}:${id}`
@@ -12,8 +13,8 @@ import type { Label } from '@better/core/label'
  */
 export interface OutboxEntry {
   key: string
-  entityType: 'node' | 'label'
-  payload: Node | Label
+  entityType: 'node' | 'label' | 'completion'
+  payload: Node | Label | Completion
 }
 
 export interface MetaEntry {
@@ -29,6 +30,7 @@ interface OutboxEntryV1 {
 export class BetterDb extends Dexie {
   nodes!: Table<Node, string>
   labels!: Table<Label, string>
+  completions!: Table<Completion, string>
   outbox!: Table<OutboxEntry, string>
   meta!: Table<MetaEntry, string>
 
@@ -78,6 +80,16 @@ export class BetterDb extends Dexie {
           await tx.table('outbox').put(row)
         }
       })
+    // v4 adds completions — the audit trail for recurring-task completions
+    // (1.todo/spec.md §8). No upgrade() needed: this is a brand new store,
+    // nothing to migrate into it.
+    this.version(4).stores({
+      nodes: 'id, parentId, dueDate, [parentId+rank], isInbox',
+      labels: 'id, name',
+      completions: 'id, nodeId',
+      outbox: 'key, entityType',
+      meta: 'key',
+    })
   }
 }
 
@@ -85,9 +97,10 @@ export const db = new BetterDb()
 
 /** Wipes all local data — called on logout, or on login as a different user than whatever was cached (single-device-sharing safety net). */
 export async function clearLocalStore(): Promise<void> {
-  await db.transaction('rw', db.nodes, db.labels, db.outbox, db.meta, async () => {
+  await db.transaction('rw', db.nodes, db.labels, db.completions, db.outbox, db.meta, async () => {
     await db.nodes.clear()
     await db.labels.clear()
+    await db.completions.clear()
     await db.outbox.clear()
     await db.meta.clear()
   })

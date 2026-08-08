@@ -101,3 +101,11 @@ export function makeLabelDto(overrides: Record<string, unknown> & { id: string }
     ...overrides,
   }
 }
+
+export function makeCompletionDto(overrides: Record<string, unknown> & { id: string; nodeId: string }) {
+  return {
+    completedAt: new Date().toISOString(),
+    occurredOn: null,
+    ...overrides,
+  }
+}

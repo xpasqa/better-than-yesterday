@@ -16,7 +16,10 @@ export const nodeDto = z.object({
     .regex(/^\d{2}:\d{2}(:\d{2})?$/)
     .nullable(),
   durationMin: z.number().int().positive().nullable(),
-  recurrence: z.string().nullable(),
+  recurrence: z
+    .string()
+    .regex(/^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;INTERVAL=\d+|;BYDAY=[A-Z]{2}(,[A-Z]{2})*|;BYMONTHDAY=\d{1,2})?$/)
+    .nullable(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   labelIds: z.array(z.string()),
   color: z.string().nullable(),
@@ -43,6 +46,16 @@ export const labelDto = z.object({
 })
 export type LabelDto = z.infer<typeof labelDto>
 
+// A completion row never changes after it's written (1.todo/spec.md §8) —
+// no updatedAt/deletedAt here, unlike node and label.
+export const completionDto = z.object({
+  id: z.string().uuid(),
+  nodeId: z.string().uuid(),
+  completedAt: z.string().datetime(),
+  occurredOn: z.string().date().nullable(),
+})
+export type CompletionDto = z.infer<typeof completionDto>
+
 const MAX_BATCH = 500
 
 export const syncRequest = z.object({
@@ -50,6 +63,7 @@ export const syncRequest = z.object({
   changes: z.object({
     nodes: z.array(nodeDto).max(MAX_BATCH).default([]),
     labels: z.array(labelDto).max(MAX_BATCH).default([]),
+    completions: z.array(completionDto).max(MAX_BATCH).default([]),
   }),
 })
 export type SyncRequest = z.infer<typeof syncRequest>

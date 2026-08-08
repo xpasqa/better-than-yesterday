@@ -6,14 +6,14 @@
 //
 // Scope of this version: relative day words, named weekdays (bare and
 // "depan"/"next"), explicit d/m and d-m dates, ISO dates, "d month-name"
-// dates, jam/bare/am-pm time phrases, minute durations, priority, and the
-// four sigil tokens. NOT implemented yet: compound relative phrases
-// ("minggu depan" and "bulan depan" on their own, "N hari lagi", "akhir
-// bulan") and recurrence phrases — `recurrence` below is always null until
-// `core/recurrence.ts` exists. Anything not recognized is left in the title
-// untouched, per the parser's one hard rule: never discard text it did not
-// understand.
+// dates, jam/bare/am-pm time phrases, minute durations, priority, the four
+// sigil tokens, and the eight recurrence phrases in spec.md §8. NOT
+// implemented yet: compound relative phrases ("minggu depan" and "bulan
+// depan" on their own, "N hari lagi", "akhir bulan"). Anything not
+// recognized is left in the title untouched, per the parser's one hard
+// rule: never discard text it did not understand.
 import { addDays, dayOfWeek, localDate } from './date.ts'
+import { findRecurrenceCandidates } from './recurrence.ts'
 
 export type ParseSpanKind =
   | 'date'
@@ -295,6 +295,7 @@ export function parse(input: string, ctx: ParseContext): ParseResult {
   const dateCandidate = pickRightmostNonNested(findDateCandidates(input, today))
   const timeCandidate = pickRightmostNonNested(findTimeCandidates(input))
   const durationCandidate = pickRightmostNonNested(findDurationCandidates(input))
+  const recurrenceCandidate = pickRightmostNonNested(findRecurrenceCandidates(input))
   const priorityCandidate = pickRightmostNonNested(findPriorityCandidates(input))
   const projectCandidate = pickRightmostNonNested(findSigilCandidates(input, '#'))
   const labelCandidates = findSigilCandidates(input, '$')
@@ -305,6 +306,9 @@ export function parse(input: string, ctx: ParseContext): ParseResult {
   if (timeCandidate) spans.push({ start: timeCandidate.start, end: timeCandidate.end, kind: 'time' })
   if (durationCandidate) {
     spans.push({ start: durationCandidate.start, end: durationCandidate.end, kind: 'duration' })
+  }
+  if (recurrenceCandidate) {
+    spans.push({ start: recurrenceCandidate.start, end: recurrenceCandidate.end, kind: 'recurrence' })
   }
   if (priorityCandidate) {
     spans.push({ start: priorityCandidate.start, end: priorityCandidate.end, kind: 'priority' })
@@ -331,7 +335,7 @@ export function parse(input: string, ctx: ParseContext): ParseResult {
     dueDate: dateCandidate?.value ?? null,
     dueTime: timeCandidate?.value ?? null,
     durationMin: durationCandidate?.value ?? null,
-    recurrence: null,
+    recurrence: recurrenceCandidate?.value ?? null,
     projectQuery: projectCandidate?.value ?? null,
     labelNames: labelCandidates.map((c) => c.value),
     mentionQueries: mentionCandidates.map((c) => c.value),

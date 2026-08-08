@@ -3,6 +3,7 @@
 // trip just leaves the outbox for the next attempt.
 import type { Node } from '@better/core/node'
 import type { Label } from '@better/core/label'
+import type { Completion } from '@better/core/completion'
 import { db, getCursor, setCursor } from './db.ts'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline'
@@ -51,13 +52,14 @@ export async function syncOnce(): Promise<void> {
     const outboxEntries = await db.outbox.toArray()
     const nodes = outboxEntries.filter((e) => e.entityType === 'node').map((e) => e.payload as Node)
     const labels = outboxEntries.filter((e) => e.entityType === 'label').map((e) => e.payload as Label)
+    const completions = outboxEntries.filter((e) => e.entityType === 'completion').map((e) => e.payload as Completion)
     const cursor = await getCursor()
 
     const res = await fetch('/api/sync', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cursor, changes: { nodes, labels } }),
+      body: JSON.stringify({ cursor, changes: { nodes, labels, completions } }),
     })
 
     if (!res.ok) {
@@ -65,14 +67,22 @@ export async function syncOnce(): Promise<void> {
       return
     }
 
-    const body = (await res.json()) as { cursor: string; changes: { nodes: Node[]; labels: Label[] } }
+    const body = (await res.json()) as {
+      cursor: string
+      changes: { nodes: Node[]; labels: Label[]; completions: Completion[] }
+    }
 
-    await db.transaction('rw', db.nodes, db.labels, db.outbox, async () => {
+    await db.transaction('rw', db.nodes, db.labels, db.completions, db.outbox, async () => {
       if (outboxEntries.length > 0) {
         await db.outbox.bulkDelete(outboxEntries.map((e) => e.key))
       }
       await mergeIncoming(db.nodes, body.changes.nodes)
       await mergeIncoming(db.labels, body.changes.labels)
+      // Completions are write-once (no updatedAt to compare) — a plain put
+      // is correct and idempotent, unlike mergeIncoming's LWW comparison.
+      for (const row of body.changes.completions) {
+        await db.completions.put(row)
+      }
     })
     await setCursor(body.cursor)
     setStatus('idle')

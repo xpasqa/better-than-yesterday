@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
+coverage
 
 # Backend — real secrets never committed; .env.example holds names only
 .env

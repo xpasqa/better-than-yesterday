@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays } from './date.ts'
+import { addDays, dayOfWeek } from './date.ts'
 import { parse } from './parse.ts'
 
 // Wednesday 2026-08-05 — a real day chosen because it is neither a Sunday
@@ -277,5 +277,46 @@ describe('parse — full example from the spec', () => {
     expect(result.projectQuery).toBe('Travel')
     expect(result.labelNames).toEqual(['penting'])
     expect(result.priority).toBe(1)
+  })
+})
+
+describe('parse — recurrence', () => {
+  it('extracts a recurrence phrase into result.recurrence', () => {
+    const result = parse('siram tanaman setiap hari', CTX)
+    expect(result.recurrence).toBe('FREQ=DAILY')
+    expect(result.content).toBe('siram tanaman')
+  })
+
+  it('reports a span of kind "recurrence" for the matched phrase', () => {
+    const result = parse('bayar sewa setiap bulan', CTX)
+    const span = result.spans.find((s) => s.kind === 'recurrence')
+    expect(span).toBeDefined()
+    expect('bayar sewa setiap bulan'.slice(span!.start, span!.end)).toBe('setiap bulan')
+  })
+
+  it('is null when no recurrence phrase is present', () => {
+    const result = parse('beli susu besok', CTX)
+    expect(result.recurrence).toBeNull()
+  })
+
+  it('combines with a date, a label, and a priority in the same input', () => {
+    const result = parse('minum obat besok setiap hari $kesehatan !2', CTX)
+    expect(result.dueDate).toBe(addDays(TODAY, 1))
+    expect(result.recurrence).toBe('FREQ=DAILY')
+    expect(result.labelNames).toEqual(['kesehatan'])
+    expect(result.priority).toBe(2)
+    expect(result.content).toBe('minum obat')
+  })
+
+  it('resolves "setiap hari kerja" to the outer weekday-set match, not the nested bare "setiap hari" — pickRightmostNonNested\'s containment filter at work (findRecurrenceCandidates itself returns both, see recurrence.test.ts)', () => {
+    const result = parse('cek email setiap hari kerja', CTX)
+    expect(result.recurrence).toBe('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR')
+    expect(result.content).toBe('cek email')
+  })
+
+  it('"setiap minggu" composes with date-word matching to anchor on the next Sunday — documents the actual behavior, not a claim that it never happens', () => {
+    const result = parse('laporan setiap minggu', CTX)
+    expect(result.recurrence).toBe('FREQ=WEEKLY')
+    expect(dayOfWeek(result.dueDate!)).toBe(0) // Sunday
   })
 })
