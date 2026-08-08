@@ -458,9 +458,20 @@ view aktif dan kembali utuh saat parent dibuka lagi.
 
 ---
 
-## 7. Filter Tersimpan
+## 7. ~~Filter Tersimpan~~ — DIBATALKAN (epic #41)
 
-Bahasa query kecil, di-parse `core/filter.ts` menjadi predikat murni:
+> **Catatan 2026-08-08:** Bagian ini dibatalkan. Tabel `saved_filter` dan
+> bahasa query `core/filter.ts` tidak akan dibangun. Alasan: filter tersimpan
+> sebagai entitas tersendiri (simpan, beri nama, favoritkan) melanggar prinsip
+> Things 3 — Things tidak punya filter tersimpan, hanya pencarian teks dan
+> view bawaan. Fitur ini menambah kompleksitas skema (tabel baru, sync baru)
+> untuk kebutuhan yang bisa dilayani pencarian biasa. Tetap tercatat di sini
+> agar alasannya terdokumentasi dan tidak diusulkan ulang dari nol.
+>
+> Pencarian teks tetap masuk scope (blok G di `todo.md`), tapi sebagai
+> pencarian stateless — tanpa penyimpanan query.
+
+~~Bahasa query kecil, di-parse `core/filter.ts` menjadi predikat murni:~~
 
 ```
 expr   := or
@@ -475,20 +486,13 @@ term   := 'today' | 'tomorrow' | 'overdue' | 'no date' | 'no priority'
         | 'search: '<teks>
 ```
 
-```
-today & !1                       →  yang mendesak hari ini
-#Kerja* & -$nunggu               →  seluruh subtree Kerja, kecuali yang menunggu
-(overdue | today) & $fokus
-next 7 days & no priority
-```
-
-**Negasi memakai `-`, bukan `!`** — mengikuti konvensi token: `!` sudah
+~~**Negasi memakai `-`, bukan `!`** — mengikuti konvensi token: `!` sudah
 berarti prioritas di seluruh aplikasi, dan `-` adalah tanda negasi yang sudah
-dikenal dari kotak pencarian mana pun.
+dikenal dari kotak pencarian mana pun.~~
 
-Query salah tidak pernah menghasilkan halaman kosong yang membingungkan: ia
+~~Query salah tidak pernah menghasilkan halaman kosong yang membingungkan: ia
 menampilkan pesan yang menunjuk posisi karakter yang gagal di-parse. Filter
-tersimpan bisa difavoritkan ke sidebar.
+tersimpan bisa difavoritkan ke sidebar.~~
 
 ---
 

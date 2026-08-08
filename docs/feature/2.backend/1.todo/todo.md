@@ -178,7 +178,7 @@ pola resmi Dexie (tabel baru `pending` di versi 2 sambil migrasi data dari
 tipe `Node`/`Label` di kemudian hari harus lewat `.stores()` yang menambah
 index, bukan mengubah key path store yang sudah ada.**
 
-## G. Filter tersimpan & pencarian
+## G. Pencarian
 
 - [ ] Belum dimulai — `core/filter.ts` tidak ada
 

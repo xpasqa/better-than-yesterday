@@ -1,7 +1,7 @@
 // POST /api/sync — the one endpoint behind Todo and Outline (spec induk
 // §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes`, `labels`,
-// and `completions`. saved_filter/reminder/notification sync are not wired
-// yet — they follow the identical upsert-with-LWW shape once needed.
+// and `completions`. reminder/notification sync are not wired yet — they
+// follow the identical upsert-with-LWW shape once needed.
 import { Hono } from 'hono'
 import { and, eq, gt, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
