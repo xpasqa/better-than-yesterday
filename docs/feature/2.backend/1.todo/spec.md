@@ -1,10 +1,11 @@
 # Spec: Backend Todo — Paritas Todoist
 
 > Project tanpa batas, section, label, prioritas, tanggal natural saat
-> mengetik, ~~list & kanban, filter tersimpan,~~ recurring, reminder &
+> mengetik, list & kanban, ~~filter tersimpan,~~ recurring, reminder &
 > notifikasi. Semua di atas satu pohon `node` yang juga dipakai Outline.
 >
-> **Catatan 2026-08-08:** kanban dan filter tersimpan dibatalkan — lihat
+> **Catatan 2026-08-08:** filter tersimpan dibatalkan; kanban **tetap
+> dibangun**, tapi kolomnya selalu section — lihat
 > [`docs/policy/3-product-policy.md`](../../policy/3-product-policy.md).
 
 **Status:** v1 · **Fase:** 1 · **Bergantung pada:**
@@ -37,8 +38,8 @@ kedalaman · prioritas P1–P4 · due date + jam + durasi · **recurring** ·
 label first-class (nama, warna, rename global) · **parsing tanggal natural
 saat mengetik** (ID + EN) · quick add dengan token `#` `@` `$` `!`
 ([konvensi lintas-domain](../spec.md)) · view Inbox,
-Today, Upcoming, Project, Label, ~~Filter~~, Completed · ~~**list view &
-kanban board** · filter tersimpan dengan bahasa query~~ · pencarian · drag reorder
+Today, Upcoming, Project, Label, ~~Filter~~, Completed · **list view &
+kanban board** · ~~filter tersimpan dengan bahasa query~~ · pencarian · drag reorder
 lintas section/project · **reminder + notifikasi web push** · keyboard
 shortcut · sync offline-first multi-entitas · isolasi antar user.
 
@@ -412,36 +413,42 @@ sekarang. Task tanpa tanggal hidup di project-nya; itulah gunanya pohon.
 Setiap view punya penghitung (badge sidebar) dan **empty state** — ikon,
 satu kalimat, dan aksi yang menyelesaikannya.
 
-### ~~Pengelompokan & tampilan~~ — DIBATALKAN
+### Tampilan list ↔ board
 
-> **Dibatalkan 2026-08-08** oleh
-> [`docs/policy/3-product-policy.md`](../../policy/3-product-policy.md):
-> Things 3 adalah acuan utama, dan di mana Things bertentangan dengan
-> Todoist, Things menang.
+> **Direvisi 2026-08-08** oleh
+> [`docs/policy/3-product-policy.md`](../../policy/3-product-policy.md).
+> Bagian ini sempat dibatalkan seluruhnya; sekarang dipisah dua, karena
+> keduanya ternyata bukan satu hal:
 >
-> **Board (kanban) dihapus.** Things tidak punya tampilan papan sama sekali —
-> ia hanya daftar. Board juga bergantung pada perenderan `kind='section'`
-> yang berbentuk Todoist. Kodenya sendiri sudah dihapus di issue #20 karena
-> satu-satunya jalan ke sana selalu kosong; ini menutup rencananya juga.
+> **Board (kanban) tetap dibangun.** Board tidak mengubah model — ia cuma
+> cara lain merender data yang sama, dan kolomnya adalah `kind='section'`
+> yang sudah ada di model Things (Things menyebutnya *heading*). Ini
+> "duduk di atas model", bukan "mengubah model".
 >
-> **Grouping & sorting yang bisa dikonfigurasi dihapus.** Ini justru poros
-> perbedaan keduanya: Todoist menambah kontrol, Things menggantinya dengan
-> struktur yang sudah memutuskan lebih dulu apa yang pantas dilihat. Lima
-> list bawaan (Inbox, Today, Upcoming, Anytime, Someday) plus Area → Project
-> mengerjakan tugas yang sama tanpa satu pun menu.
+> **Grouping & sorting yang bisa dikonfigurasi tetap dibatalkan.** Ini yang
+> benar-benar bertabrakan: Todoist menambah kontrol, Things menggantinya
+> dengan struktur yang sudah memutuskan lebih dulu apa yang pantas dilihat.
+> Lima list bawaan plus Area → Project mengerjakan tugas yang sama tanpa
+> satu pun menu.
 >
-> Rancangan aslinya dibiarkan tercoret di bawah supaya tidak diusulkan lagi
-> dari nol.
+> Konsekuensinya untuk board: **kolom selalu section**, titik. Tidak ada
+> menu "kelompokkan berdasarkan tanggal/prioritas". Rancangan lama yang
+> menawarkan kolom-dari-field lain dibiarkan tercoret di bawah.
 
-~~Tiap view bisa: **grouping** (tanggal · prioritas · project · label ·
-section), **sorting** (manual/`rank` · tanggal · prioritas · nama · waktu
-dibuat), dan **tampilan list ↔ board**.~~
+Tiap view project bisa ditampilkan sebagai **list** atau **board**. Daftar
+bawaan (Inbox/Today/Upcoming/Anytime/Someday) selalu list — tidak punya
+section, jadi tidak punya kolom.
 
-~~**Board (kanban):** kolom = `kind='section'`; task tanpa section masuk
-kolom implisit tanpa judul di kiri. Kolom bisa di-rename, di-reorder,
-ditambah, dihapus. Grouping alternatif di board (tanggal, prioritas)
-menghasilkan kolom baca-tulis untuk field itu — menyeret kartu antar kolom
-mengubah field yang dikelompokkan.~~
+**Board (kanban):** kolom = `kind='section'` milik project itu; task tanpa
+section masuk kolom implisit tanpa judul di kiri. Kolom bisa di-rename,
+di-reorder, ditambah, dihapus — semuanya operasi section biasa. Menyeret
+kartu antar kolom **mengubah `parentId`**, sama seperti drag di Outline.
+
+~~Grouping alternatif di board (tanggal, prioritas) menghasilkan kolom
+baca-tulis untuk field itu — menyeret kartu antar kolom mengubah field yang
+dikelompokkan.~~ ~~**grouping** (tanggal · prioritas · project · label ·
+section) dan **sorting** (manual/`rank` · tanggal · prioritas · nama · waktu
+dibuat) yang bisa dipilih per view.~~ — **dibatalkan, lihat catatan di atas**
 
 **Drag = ubah `parent_id` + `rank`** — implementasi yang sama persis dengan
 indent di Outline. Satu perpindahan menulis satu baris.
@@ -628,7 +635,7 @@ reschedule. Ia mungkin karena semua penghapusan adalah `deleted_at`, bukan
 |---|---|---|
 | Unit — **wajib** | Vitest | `rank.between` (duplikat, pertumbuhan panjang, rebalance) · `tree` (indent/outdent/move lintas parent, siklus ditolak) · **`parse` sebagai tabel input→output**, termasuk `spans`, keempat sigil, harga (`$5`) dan seruan (`bagus!`) yang bukan token, kalimat yang hampir mirip token, dan dua tanggal · `recurrence` (parse + `next()` melintasi akhir bulan, tahun kabisat, DST) · `filter` (parser + predikat, query salah) · `views` (semua filter & grouping) |
 | Integrasi | Vitest + Postgres asli | Sync multi-entitas (LWW, tombstone, cursor tertinggal, batch > 500) · **isolasi antar user** (kasus baru di `test/isolation.test.ts`) · scheduler reminder (idempoten, tidak dobel setelah restart, tidak menembak task terhapus) |
-| E2E | Playwright | Quick add "beli tiket besok jam 9 #Travel p1" → muncul di Today dengan tanggal & jam benar → dicentang → hilang · ~~drag kartu antar kolom board~~ · buat label, pakai, rename, terlihat di semua task |
+| E2E | Playwright | Quick add "beli tiket besok jam 9 #Travel p1" → muncul di Today dengan tanggal & jam benar → dicentang → hilang · drag kartu antar kolom board · buat label, pakai, rename, terlihat di semua task |
 
 `parse` dan `recurrence` adalah dua modul yang bugnya **diam** — keduanya
 wajib 100% branch coverage, seperti `rank`.
@@ -654,7 +661,9 @@ wajib 100% branch coverage, seperti `rank`.
 - [ ] Task ber-`due_date` di kedalaman 5 muncul di Today
 - [ ] Overdue tampil di blok atas Today
 - [ ] Upcoming tidak lagi memuat task tanpa tanggal
-- [ ] ~~Grouping & sorting bekerja di list dan board; menyeret kartu antar kolom~~ **(dibatalkan — policy 3)**
+- [ ] Board menampilkan kolom per section; menyeret kartu antar kolom memindahkan
+      task (`parentId`) dan urutannya bertahan setelah reload
+- [ ] ~~Grouping & sorting yang bisa dikonfigurasi per view~~ **(dibatalkan — policy 3)**
       prioritas mengubah prioritasnya
 - [ ] Reorder di project 500 task menulis **satu** baris
 - [ ] "Hari ini" berganti di tengah malam **timezone user**, bukan UTC

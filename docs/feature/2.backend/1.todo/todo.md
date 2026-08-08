@@ -134,7 +134,7 @@ sisanya menambah lapisan.
       sudah bisa dimulai untuk Today**, tapi fitur di atas (highlight,
       autocomplete, shortcut) menyusul
 
-## F. Project, section, label, ~~board~~
+## F. Project, section, label, board
 
 - [ ] CRUD project/section lewat UI — **sebagian**: bikin project sekarang
       bisa lewat `CreateProjectModal.tsx` (fitur terpisah, issue #13/
@@ -143,11 +143,10 @@ sisanya menambah lapisan.
       Quick-add's `#project` resolusi masih hanya pencarian substring
       case-insensitive di `node-actions.ts`
 - [ ] Drag lintas section/project — belum (Today belum punya drag)
-- [x] ~~Board~~ — **DIBATALKAN.** Kode mock-nya sudah dihapus di #20, dan
-      rencananya dibatalkan 2026-08-08 oleh
-      [`policy/3-product-policy.md`](../../policy/3-product-policy.md):
-      Things tidak punya tampilan papan sama sekali, ia hanya daftar. Tidak
-      ada yang perlu dibangun
+- [ ] Board — kode mock-nya dihapus di #20; yang dibangun sekarang adalah
+      board sungguhan di atas `kind='section'`. Kolom **selalu** section
+      (bukan menu grouping) — lihat
+      [`policy/3-product-policy.md`](../../policy/3-product-policy.md) §2/§3
 - [x] **Manajemen label — sekarang benar-benar berfungsi**, bukan cuma
       terlihat jalan: `db/schema/label.ts` dapat route sync sendiri
       (`modules/sync/routes.ts` mendukung entitas `labels` di envelope

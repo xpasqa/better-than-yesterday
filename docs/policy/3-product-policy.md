@@ -10,86 +10,90 @@ menang — kecuali kamu mengubah dokumennya dulu.
 
 ---
 
-## 1. Things 3 adalah acuan utama
+## 1. Things adalah pondasi, Todoist adalah tambahan
 
-**Kalau rancangan Things 3 (Cultured Code) dan Todoist bertentangan, Things
-menang.** Fitur bergaya Todoist yang bentrok dihapus, bukan didampingkan.
+**Things 3 menentukan strukturnya. Todoist menyumbang kemampuan di atasnya.**
 
-App ini lahir meniru Todoist, lalu berpindah haluan ke Things. Membiarkan
-keduanya hidup berdampingan menghasilkan app yang punya dua jawaban untuk
-satu pertanyaan — dan itu lebih buruk daripada memilih salah satu dengan
-tegas.
+Bukan "salah satu menang". Keduanya bagus di hal yang berbeda:
 
-### Kenapa Things, bukan Todoist
-
-Todoist menambah kontrol: prioritas, filter, grouping, board, sorting.
-Things menghapusnya, dan menggantinya dengan struktur — Area, Project,
-dan lima list bawaan yang memutuskan lebih dulu apa yang pantas kamu lihat.
-
-(Dari daftar itu, **prioritas tetap dipertahankan** di sini — alasannya di
-§3. Sisanya dihapus.)
-
-Yang dikutip Cultured Code sendiri: menolak permintaan fitur dan memilih apa
-yang **tidak** dibangun adalah yang membedakan produk dari gumpalan tanpa
-bentuk.
-
-Untuk app satu pengguna, arah itu lebih tepat. Setiap kontrol tambahan adalah
-keputusan yang harus diambil ulang tiap kali membuka app.
-
-## 2. Cara menerapkannya
-
-Bedakan dua hal, karena penanganannya berbeda:
-
-| | Artinya | Tindakan |
+| | Kekuatannya | Perannya di sini |
 |---|---|---|
-| **Bentrok** | Dua rancangan menjawab pertanyaan yang sama dengan cara yang tidak bisa hidup bersama | Yang Todoist **dihapus** |
-| **Sekadar tidak ada di Things** | Things tidak punya fiturnya, tapi tidak ada yang bertabrakan | Ditimbang kasus per kasus, defaultnya **jangan bangun** |
+| **Things** | Struktur yang memutuskan lebih dulu apa yang pantas kamu lihat | **Pondasi** — model data dan daftar bawaan |
+| **Todoist** | Kemampuan yang matang: kanban, prioritas, tanggal natural, recurring | **Tambahan** di atas pondasi itu |
 
-Contoh bentrok yang sudah diputuskan:
+Yang diambil dari Things: Area → Project → Task → subtask, dan lima daftar
+bawaan (Inbox, Today, Upcoming, Anytime, Someday) plus Logbook.
 
-| Pertanyaan | Todoist | Things | Hasil |
-|---|---|---|---|
-| Bagaimana project dikelompokkan? | project bersarang di project | Area → Project | Area menang (fitur 13) |
-| Bagaimana menyaring lintas daftar? | bahasa query filter tersimpan | tidak ada; Tag + pencarian | Filter dihapus (fitur 15) |
-| Apa sebutan penanda lintas-daftar? | label | tag | Tag menang (fitur 16) |
-| Bagaimana task ditampilkan? | list **dan** papan kanban | hanya list | Board dihapus (`1.todo/spec.md` §6) |
-| Bagaimana daftar diatur? | grouping & sorting yang bisa dikonfigurasi | struktur yang sudah memutuskan lebih dulu | Grouping/sorting dihapus (`1.todo/spec.md` §6) |
+Yang diambil dari Todoist: prioritas, tampilan kanban, parsing tanggal
+natural saat mengetik, dan recurring.
 
-## 3. Yang tetap boleh menyimpang
+## 2. Ujiannya: mengubah model, atau duduk di atasnya?
 
-Menyalin Things persis-persis bukan tujuannya. Menyimpang **boleh, asal
-alasannya ditulis di spec**. Yang sudah diputuskan begitu:
+Ini garis yang memisahkan "tambahan yang bagus" dari "dua jawaban untuk satu
+pertanyaan".
+
+> **Kalau sebuah fitur mengubah cara data ditata, ia harus tunduk pada
+> Things.**
+> **Kalau ia cuma duduk di atas model yang sudah ada, ia boleh diambil dari
+> mana pun — asal memang bagus.**
+
+### Ditolak: mengubah model
+
+| Fitur Todoist | Kenapa ditolak | Penggantinya |
+|---|---|---|
+| Project bersarang di project | Menjawab pertanyaan "bagaimana project dikelompokkan" dengan cara yang bertabrakan dengan Area | Area → Project (fitur 13) |
+| Bahasa query filter tersimpan | Memperkenalkan mekanisme penataan kedua yang bersaing dengan daftar bawaan | Dihapus (fitur 15); Tag + Search sudah menjawabnya |
+| Sebutan "label" | Dua kosakata untuk satu benda | Tag (fitur 16) |
+
+### Diterima: duduk di atas model
+
+| Fitur Todoist | Kenapa diterima |
+|---|---|
+| **Prioritas P1–P4** | Sebuah field di task. Tidak mengubah cara apa pun ditata — cuma menambah satu sumbu pengurutan. |
+| **Tampilan kanban** | Cara lain merender data yang **sama persis**. Kolomnya adalah `kind='section'` yang memang sudah ada di model Things (Things menyebutnya *heading*). |
+| **Tanggal natural saat mengetik** | Murni kenyamanan input. Hasil akhirnya sama dengan mengetik tanggal manual. |
+| **Recurring** | Things punya juga. Bukan pilihan antara dua, cuma soal seberapa lengkap. |
+
+Perhatikan bahwa yang diterima **tidak satu pun** menambah tempat baru untuk
+menyimpan atau menata sesuatu. Itu ujiannya.
+
+## 3. Yang tetap dijaga dari Things
+
+Menambah kemampuan bukan alasan menambah kontrol tanpa batas. Yang berikut ini
+tetap **tidak** dibangun, karena justru merusak yang membuat Things berharga:
+
+- **Grouping & sorting yang bisa dikonfigurasi per view.** Kanban boleh, tapi
+  kolomnya **selalu** section — bukan menu "kelompokkan berdasarkan
+  tanggal/prioritas/label". Begitu tiap daftar punya menu penataannya
+  sendiri, struktur yang sudah memutuskan lebih dulu kehilangan gunanya.
+- **Menu penyaringan di tiap daftar.** Daftar bawaan sudah menyaring; itu
+  memang tugasnya.
+
+Cultured Code sendiri menyebut memilih apa yang **tidak** dibangun sebagai
+yang membedakan produk dari gumpalan tanpa bentuk. Yang dijaga di sini
+strukturnya, bukan kemiskinan fiturnya.
+
+## 4. Menyimpang dari keduanya juga boleh
+
+Asal alasannya ditulis di spec. Yang sudah diputuskan begitu:
 
 - **Warna tag** — Things tidak punya; di sini sudah ada dan berfungsi.
-  Membuang fitur yang jalan demi menyamai app lain adalah meniru tanpa alasan.
-- **Sigil `$nama` di quick-add** — Things tidak punya konsep sigil. Punya kita
+- **Sigil `$nama` di quick-add** — Things tidak punya konsep sigil; punya kita
   sudah mapan dan dijaga 57 tes.
 - **Subtask adalah node penuh** — Things sengaja membuat checklist item lebih
   miskin; `1.todo/spec.md` §3.1 memutuskan sebaliknya lebih dulu, dengan
   alasan yang masih berlaku (subtask *adalah* outline).
-- **Toggle tampilkan task selesai** — Things hanya punya Logbook. Toggle
-  diminta eksplisit dan menjawab kebutuhan berbeda (fitur 20).
-- **Prioritas P1–P4** — Things sengaja tidak punya level prioritas;
-  penjadwalan dan list Today-lah mekanisme prioritasnya. **Di sini
-  dipertahankan** (diputuskan 2026-08-08).
+- **Toggle tampilkan task selesai** — Things hanya punya Logbook; toggle
+  menjawab kebutuhan berbeda (fitur 20).
 
-  Alasannya justru pembedaan di §2: prioritas **tidak bentrok** dengan apa
-  pun di rancangan Things — tidak ada dua jawaban untuk satu pertanyaan, ia
-  cuma tambahan. Yang dihapus adalah yang bertabrakan, bukan segala sesuatu
-  yang absen dari Things.
+## 5. Kalau ragu
 
-  Ini juga menandai batas aturannya: "Things menang" berlaku saat **harus
-  memilih**, bukan sebagai perintah memangkas app sampai persis menyerupai
-  Things.
+Dua pertanyaan, berurutan:
 
-Polanya: menyimpang karena **ada alasan yang lebih kuat di konteks kita**,
-bukan karena belum sempat menyesuaikan.
+1. **Apakah ini menambah tempat baru untuk menyimpan atau menata sesuatu?**
+   Kalau ya — ia harus tunduk pada model Things, atau tidak dibangun.
+2. **Kalau tidak: apakah tanpa ini app-nya jadi lebih buruk untuk dipakai
+   sehari-hari?** Kalau tidak juga — jangan bangun.
 
-## 4. Kalau ragu
-
-Pertanyaannya bukan *"apakah fitur ini berguna?"* — hampir semua fitur
-berguna bagi seseorang. Pertanyaannya:
-
-> Apakah tanpa ini app-nya jadi tidak bisa dipakai?
-
-Kalau tidak, jangan bangun. Itu yang membuat Things tetap Things.
+Pertanyaan pertama menjaga strukturnya. Yang kedua menjaga supaya "ambil yang
+bagus dari keduanya" tidak berubah jadi "ambil semuanya".

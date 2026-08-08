@@ -2,12 +2,13 @@
 
 ## Product direction — MANDATORY
 
-**Things 3 (Cultured Code) is the reference. Where Things and Todoist
-conflict, Things wins and the Todoist-shaped feature is removed, not kept
-alongside.** Full rules and the list of settled conflicts:
+**Things 3 sets the structure; Todoist contributes capabilities on top.**
+The test: a feature that changes *how data is organised* must follow Things;
+one that merely *sits on top of* the existing model can come from anywhere —
+if it's genuinely good. Full rules and the settled decisions:
 [`docs/policy/3-product-policy.md`](docs/policy/3-product-policy.md).
 
-Deviating from Things is allowed — but the reason goes in the spec.
+Deviating from both is allowed — but the reason goes in the spec.
 
 ## Workflow — MANDATORY
 
