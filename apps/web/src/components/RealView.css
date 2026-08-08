@@ -133,6 +133,66 @@
   color: var(--text-secondary);
 }
 
+/* Logbook list item — a read-only completed entry */
+.real-view__list-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider-primary);
+  list-style: none;
+}
+
+.real-view__list-item:last-child {
+  border-bottom: none;
+}
+
+.real-view__check-icon {
+  flex-shrink: 0;
+  color: var(--control-border);
+  display: flex;
+  align-items: center;
+}
+
+.real-view__task-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-content);
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--strike-color, var(--text-tertiary));
+  word-break: break-word;
+}
+
+.real-view__occurrence-badge {
+  flex-shrink: 0;
+  font-size: var(--font-size-xsmall);
+  color: var(--text-tertiary);
+}
+
+/* "Muat lebih banyak" / load-more button */
+.real-view__load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: var(--spacing-large);
+  padding: 8px 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-content);
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-idle);
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.real-view__load-more:hover {
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--text-primary);
+}
+
 /* Mobile: reduce top padding */
 @media (max-width: 767px) {
   .real-view__inner {

@@ -19,6 +19,7 @@ import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
 import AnytimeView from './components/AnytimeView'
 import SomedayView from './components/SomedayView'
+import LogbookView from './components/LogbookView'
 import ProjectReal from './components/ProjectReal'
 import BottomNav from './components/BottomNav'
 import { pathForView, deriveViewFromPathname } from './routes'
@@ -173,6 +174,8 @@ function App() {
           <AnytimeView user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'someday' ? (
           <SomedayView user={user} onOpenNode={setOpenNodeId} />
+        ) : activeView === 'logbook' ? (
+          <LogbookView />
         ) : activeView === 'project' && activeProjectId ? (
           <ProjectReal user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}

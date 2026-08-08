@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, EnvelopeSimpleIcon, FolderIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
   SparkleIcon, StarIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react'
@@ -304,6 +304,16 @@ export default function Sidebar({
             >
               <span className="sidebar__nav-icon"><StarIcon size={18} /></span>
               <span className="sidebar__nav-label">Someday</span>
+            </button>
+          </li>
+          <li>
+            <button
+              className={`sidebar__nav-item ${activeView === 'logbook' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('logbook')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><CheckCircleIcon size={18} /></span>
+              <span className="sidebar__nav-label">Logbook</span>
             </button>
           </li>
           <li>
