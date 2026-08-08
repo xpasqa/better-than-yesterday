@@ -116,7 +116,7 @@
   color: var(--brand-red-idle);
 }
 
-.task-row__label {
+.task-row__tag {
   font-size: var(--font-size-xsmall);
   color: var(--text-secondary);
 }

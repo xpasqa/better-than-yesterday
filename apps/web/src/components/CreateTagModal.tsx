@@ -71,6 +71,7 @@ export default function CreateTagModal({ onClose, onCreated }: CreateTagModalPro
             className="create-tag-modal__input"
             placeholder="tag-name"
             value={name}
+            maxLength={60}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') void handleSubmit() }}
           />
