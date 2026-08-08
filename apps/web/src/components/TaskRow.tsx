@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, NotePencilIcon, TrashIcon } from '@phosphor-icons/react'
+import { ArrowsClockwiseIcon, CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, NotePencilIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Node } from '@better/core/node'
 import type { Label } from '@better/core/label'
+import { describeRecurrence } from '@better/core/recurrence'
 import { toggleTaskComplete, deleteTask } from '../store/node-actions'
 import './TaskRow.css'
 
@@ -84,7 +85,7 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
         {node.note && <p className="task-row__description">{node.note}</p>}
 
         {/* Meta row */}
-        {(dueInfo || node.dueTime || taskLabels.length > 0 || parentProject) && (
+        {(dueInfo || node.dueTime || node.recurrence || taskLabels.length > 0 || parentProject) && (
           <div className="task-row__meta">
             {dueInfo && (
               <span className={[
@@ -103,6 +104,15 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
                 <span className="task-row__due-time">{node.dueTime}</span>
               </span>
             )}
+            {node.recurrence && (() => {
+              const label = describeRecurrence(node.recurrence)
+              return label ? (
+                <span className="task-row__recurrence" title={label}>
+                  <ArrowsClockwiseIcon size={12} />
+                  {label}
+                </span>
+              ) : null
+            })()}
             {taskLabels.map(label => (
               <span key={label.id} className="task-row__label" style={{ color: label.color }}>
                 @ {label.name}

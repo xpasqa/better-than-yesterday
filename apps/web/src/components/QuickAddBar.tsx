@@ -8,12 +8,14 @@ interface QuickAddBarProps {
   defaultParentId?: string | null
 }
 
-/** Formats a YYYY-MM-DD string as "10 Agu", "Today", or "Tomorrow". */
+/** Formats a YYYY-MM-DD string as "10 Agu", "Hari ini", or "Besok". */
 function formatPreviewDate(date: string): string {
   const today = new Date().toISOString().split('T')[0]
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
-  if (date === today) return 'Today'
-  if (date === tomorrow) return 'Tomorrow'
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrow = tomorrowDate.toISOString().split('T')[0]
+  if (date === today) return 'Hari ini'
+  if (date === tomorrow) return 'Besok'
   const d = new Date(date + 'T00:00:00')
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }

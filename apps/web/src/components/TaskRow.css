@@ -131,6 +131,8 @@
   color: var(--text-secondary);
 }
 
+.task-row__recurrence { display: inline-flex; align-items: center; gap: 3px; color: var(--text-tertiary); font-size: 12px; }
+
 /* Hover actions */
 .task-row__actions {
   display: flex;
