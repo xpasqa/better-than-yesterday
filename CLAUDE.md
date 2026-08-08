@@ -24,18 +24,35 @@ brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
 | **Review** | Implementation done, awaiting review/verification. | Code merged or in review; verification not yet signed off. |
 | **Done** | Finished. | Merged **and** the issue is closed. |
 
+### Epic and issue structure
+
+```
+1 feature  =  1 epic  +  N detailed issues
+                ↓
+        the epic IS the project
+```
+
+- **Detailed issues carry the work.** Each is independently implementable
+  and reviewable, with its own interfaces, edge cases, and acceptance
+  criteria spelled out. Split freely — more detail beats fewer issues.
+- **The epic is the table of contents.** It lists every issue as a
+  checklist (`- [ ] #32 — ...`), states their order and dependencies, and
+  holds the shared design decisions plus what is deliberately out of scope.
+  It does not duplicate the issues' technical detail — that would drift.
+- **The epic defines the project.** One epic → one project board, carrying
+  that epic and its issues and nothing else.
+
 ### Hard rules
 
 1. **Every brainstorm ends as issues.** A brainstorming session is not
    finished until it has produced `spec.md`, `plan.md`, `todo.md`, and the
-   GitHub epic + issues. Only then does it enter **Ready**.
+   GitHub epic + its detailed issues. Only then does it enter **Ready**.
 2. **Never add an issue directly to the board.** An issue may only appear on
    the board as part of a feature that already went through the pipeline. A
    drive-by issue with no spec does not belong there — it goes to **Inbox**
    as an idea until it is specced.
-3. **One project = one feature.** Each project board tracks exactly one
-   feature, made of **one epic plus its issues**. Do not mix unrelated
-   features into the same board.
+3. **One project = one feature = one epic.** Do not mix unrelated features
+   into the same board.
 4. **Nothing enters Ready half-specced.** Spec without plan means
    **Backlog**, not Ready. This distinction is the entire point of having
    both columns.
