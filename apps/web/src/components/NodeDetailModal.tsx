@@ -235,14 +235,13 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
               <input
                 className="node-modal__subtask-input"
                 placeholder="Subtask baru…"
-                value={subtaskInput}
-                onChange={e => setSubtaskInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') { e.preventDefault(); submitSubtask() }
-                  if (e.key === 'Escape') { setSubtaskInput(''); setShowSubtaskInput(false) }
-                }}
-                onBlur={submitSubtask}
-                autoFocus
+                 value={subtaskInput}
+                 onChange={e => setSubtaskInput(e.target.value)}
+                 onKeyDown={e => {
+                   if (e.key === 'Enter') { e.preventDefault(); submitSubtask() }
+                   if (e.key === 'Escape') { setSubtaskInput(''); setShowSubtaskInput(false) }
+                 }}
+                 autoFocus
               />
             ) : (
               <button
