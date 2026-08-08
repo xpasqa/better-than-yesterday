@@ -63,8 +63,14 @@ own entry gate does not belong in that column — move it back.
 
 - **Enter:** implementation complete and pushed; `npm run verify` green.
 - **Exit:** review passed **and** verification actually run → Done.
-- Reviewed means a reviewer other than the implementer looked at the diff —
-  self-review does not clear this gate.
+- **Self-review and AI review both clear this gate.** No second human is
+  required.
+- For anything risky, prefer a **fresh-context** review — an agent that has
+  not seen the implementation conversation — over re-reading your own diff.
+  In this repo that difference is measurable: the recurring-tasks
+  whole-branch review caught two serious bugs (a sync deadlock, and a
+  quick-add "fix" that had silently broken 6 of 8 recurrence patterns) that
+  nine consecutive per-task reviews had all missed.
 
 #### 6. Done — finished and verified
 
