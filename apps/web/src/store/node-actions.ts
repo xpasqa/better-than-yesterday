@@ -12,7 +12,7 @@ import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
-import { resolveOrCreateLabelIds } from './label-actions.ts'
+import { resolveOrCreateTagIds } from './tag-actions.ts'
 import { resolveOrCreateProjectId } from './project-actions.ts'
 
 /**
@@ -75,7 +75,7 @@ export async function createTaskFromQuickAdd(
 
   const siblings = allNodes.filter((n) => n.parentId === parentId)
   const lastRank = siblings.length > 0 ? siblings.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
-  const labelIds = await resolveOrCreateLabelIds(parsed.labelNames)
+  const tagIds = await resolveOrCreateTagIds(parsed.tagNames)
 
   const now = new Date().toISOString()
   const node: Node = {
@@ -91,7 +91,7 @@ export async function createTaskFromQuickAdd(
     durationMin: parsed.durationMin,
     recurrence,
     priority: parsed.priority,
-    labelIds,
+    tagIds,
     color: null,
     isFavorite: false,
     isInbox: false,

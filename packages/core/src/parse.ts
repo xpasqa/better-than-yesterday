@@ -45,7 +45,7 @@ export interface ParseResult {
   durationMin: number | null
   recurrence: string | null
   projectQuery: string | null
-  labelNames: string[]
+  tagNames: string[]
   mentionQueries: string[]
   priority: 1 | 2 | 3 | null
 }
@@ -337,7 +337,7 @@ export function parse(input: string, ctx: ParseContext): ParseResult {
     durationMin: durationCandidate?.value ?? null,
     recurrence: recurrenceCandidate?.value ?? null,
     projectQuery: projectCandidate?.value ?? null,
-    labelNames: labelCandidates.map((c) => c.value),
+    tagNames: labelCandidates.map((c) => c.value),
     mentionQueries: mentionCandidates.map((c) => c.value),
     priority: priorityCandidate?.value ?? null,
   }

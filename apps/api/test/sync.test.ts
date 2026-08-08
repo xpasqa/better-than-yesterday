@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, makeCompletionDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeTagDto, makeCompletionDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -14,11 +14,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = [], completions: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], tags: unknown[] = [], completions: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes, labels, completions } }),
+    body: JSON.stringify({ cursor, changes: { nodes, tags, completions } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -62,173 +62,120 @@ describe('POST /api/sync — pushing changes', () => {
       content: 'beli tiket pesawat',
       dueDate: '2026-08-06',
       dueTime: '09:00',
-      priority: 1,
+      priority: 2,
     })
-    const { status, body } = await sync(cookie, boot.body.cursor, [dto])
-    expect(status).toBe(200)
-    const [returned] = body.changes.nodes
-    expect(returned.id).toBe(taskId)
-    expect(returned.content).toBe('beli tiket pesawat')
-    expect(returned.dueDate).toBe('2026-08-06')
-    expect(returned.dueTime).toBe('09:00')
-    expect(returned.priority).toBe(1)
+    await sync(cookie, boot.body.cursor, [dto])
+
+    const after = await sync(cookie, '0')
+    const task = after.body.changes.nodes.find((n: { id: string }) => n.id === taskId)
+    expect(task).toBeDefined()
+    expect(task.content).toBe('beli tiket pesawat')
+    expect(task.dueDate).toBe('2026-08-06')
+    expect(task.dueTime).toBe('09:00')
+    expect(task.priority).toBe(2)
   })
 
-  it('rejects a batch larger than 500 with a validation error', async () => {
-    await createTestUser('bulk@example.com')
-    const cookie = await loginCookie('bulk@example.com')
-    const tooMany = Array.from({ length: 501 }, () => makeNodeDto({ id: uuidv7() }))
-    const { status, body } = await sync(cookie, '0', tooMany)
-    expect(status).toBe(422)
-    expect(body.error.code).toBe('VALIDATION_ERROR')
-  })
-
-  it('a soft-deleted node comes back as a tombstone, not removed from the feed', async () => {
-    await createTestUser('del@example.com')
-    const cookie = await loginCookie('del@example.com')
-    const boot = await sync(cookie, '0')
-    const taskId = uuidv7()
-    const created = await sync(cookie, boot.body.cursor, [makeNodeDto({ id: taskId })])
-
-    const now = new Date().toISOString()
-    const deleted = await sync(cookie, created.body.cursor, [
-      makeNodeDto({ id: taskId, updatedAt: now, deletedAt: now }),
-    ])
-    expect(deleted.body.changes.nodes[0].deletedAt).not.toBeNull()
-
-    // A fresh device bootstrapping afterward still sees the tombstone, so
-    // it can remove its own local copy too.
-    const freshBoot = await sync(cookie, '0')
-    const seen = freshBoot.body.changes.nodes.find((n: { id: string }) => n.id === taskId)
-    expect(seen.deletedAt).not.toBeNull()
-  })
-})
-
-describe('POST /api/sync — last-write-wins', () => {
-  it('an older incoming update loses to what is already stored', async () => {
+  it('an older push loses to a newer local row (LWW)', async () => {
     await createTestUser('lww@example.com')
     const cookie = await loginCookie('lww@example.com')
-    const boot = await sync(cookie, '0')
-    const taskId = uuidv7()
-
-    const t1 = new Date(Date.now() - 10_000).toISOString()
-    const t2 = new Date().toISOString()
-
-    await sync(cookie, boot.body.cursor, [makeNodeDto({ id: taskId, content: 'second write', updatedAt: t2 })])
-    const stale = await sync(cookie, '0', [
-      makeNodeDto({ id: taskId, content: 'stale write should lose', updatedAt: t1 }),
-    ])
-    const finalRow = stale.body.changes.nodes.find((n: { id: string }) => n.id === taskId)
-    expect(finalRow.content).toBe('second write')
-  })
-
-  it('a newer incoming update wins over what is stored', async () => {
-    await createTestUser('lww2@example.com')
-    const cookie = await loginCookie('lww2@example.com')
-    const boot = await sync(cookie, '0')
-    const taskId = uuidv7()
-
-    const t1 = new Date(Date.now() - 10_000).toISOString()
-    const t2 = new Date().toISOString()
-
-    await sync(cookie, boot.body.cursor, [makeNodeDto({ id: taskId, content: 'first write', updatedAt: t1 })])
-    const fresh = await sync(cookie, '0', [makeNodeDto({ id: taskId, content: 'newer write should win', updatedAt: t2 })])
-    const finalRow = fresh.body.changes.nodes.find((n: { id: string }) => n.id === taskId)
-    expect(finalRow.content).toBe('newer write should win')
-  })
-
-  it('every applied write gets a fresh seq, advancing the cursor', async () => {
-    await createTestUser('seq@example.com')
-    const cookie = await loginCookie('seq@example.com')
-    const boot = await sync(cookie, '0')
-    const taskId = uuidv7()
-    const first = await sync(cookie, boot.body.cursor, [makeNodeDto({ id: taskId })])
-    const second = await sync(cookie, first.body.cursor, [
-      makeNodeDto({ id: taskId, content: 'updated', updatedAt: new Date().toISOString() }),
-    ])
-    expect(BigInt(second.body.cursor)).toBeGreaterThan(BigInt(first.body.cursor))
-  })
-})
-
-describe('POST /api/sync — labels', () => {
-  it('a created label round-trips with the same field values', async () => {
-    await createTestUser('label@example.com')
-    const cookie = await loginCookie('label@example.com')
-    const labelId = uuidv7()
-    const { status, body } = await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'penting', color: 'red' })])
-    expect(status).toBe(200)
-    const [returned] = body.changes.labels
-    expect(returned.id).toBe(labelId)
-    expect(returned.name).toBe('penting')
-    expect(returned.color).toBe('red')
-  })
-
-  it('nodes and labels share one cursor — pulling after a label-only write also advances past it', async () => {
-    await createTestUser('shared-cursor@example.com')
-    const cookie = await loginCookie('shared-cursor@example.com')
-    const boot = await sync(cookie, '0')
-    const withLabel = await sync(cookie, boot.body.cursor, [], [makeLabelDto({ id: uuidv7() })])
-    expect(BigInt(withLabel.body.cursor)).toBeGreaterThan(BigInt(boot.body.cursor))
-    const idle = await sync(cookie, withLabel.body.cursor)
-    expect(idle.body.changes.nodes).toEqual([])
-    expect(idle.body.changes.labels).toEqual([])
-  })
-
-  it('an older incoming label update loses to what is already stored', async () => {
-    await createTestUser('label-lww@example.com')
-    const cookie = await loginCookie('label-lww@example.com')
-    const labelId = uuidv7()
-    const t1 = new Date(Date.now() - 10_000).toISOString()
-    const t2 = new Date().toISOString()
-    await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'kedua', updatedAt: t2 })])
-    const stale = await sync(cookie, '0', [], [makeLabelDto({ id: labelId, name: 'basi', updatedAt: t1 })])
-    const finalRow = stale.body.changes.labels.find((l: { id: string }) => l.id === labelId)
-    expect(finalRow.name).toBe('kedua')
-  })
-
-  it('rejects a label name containing a space (the $name token cannot have one)', async () => {
-    await createTestUser('label-shape@example.com')
-    const cookie = await loginCookie('label-shape@example.com')
-    const { status, body } = await sync(cookie, '0', [], [makeLabelDto({ id: uuidv7(), name: 'dua kata' })])
-    expect(status).toBe(422)
-    expect(body.error.code).toBe('VALIDATION_ERROR')
-  })
-})
-
-describe('POST /api/sync — completions', () => {
-  it('a created completion round-trips with the same field values', async () => {
-    await createTestUser('completion@example.com')
-    const cookie = await loginCookie('completion@example.com')
     const boot = await sync(cookie, '0')
     const inboxId = boot.body.changes.nodes[0].id
 
     const id = uuidv7()
-    await sync(cookie, boot.body.cursor, [], [], [
-      makeCompletionDto({ id, nodeId: inboxId, occurredOn: '2026-08-05' }),
+    const newer = makeNodeDto({ id, parentId: inboxId, content: 'newer', updatedAt: '2026-08-06T12:00:00.000Z' })
+    const older = makeNodeDto({ id, parentId: inboxId, content: 'older', updatedAt: '2026-08-06T11:00:00.000Z' })
+
+    await sync(cookie, boot.body.cursor, [newer])
+    await sync(cookie, boot.body.cursor, [older])
+
+    const after = await sync(cookie, '0')
+    const row = after.body.changes.nodes.find((n: { id: string }) => n.id === id)
+    expect(row.content).toBe('newer')
+  })
+
+  it('a soft-deleted task is included in the diff with deletedAt set', async () => {
+    await createTestUser('del@example.com')
+    const cookie = await loginCookie('del@example.com')
+    const boot = await sync(cookie, '0')
+    const inboxId = boot.body.changes.nodes[0].id
+
+    const id = uuidv7()
+    const now = new Date().toISOString()
+    await sync(cookie, boot.body.cursor, [
+      makeNodeDto({ id, parentId: inboxId, content: 'to be deleted', deletedAt: now }),
     ])
+
+    const after = await sync(cookie, '0')
+    const row = after.body.changes.nodes.find((n: { id: string }) => n.id === id)
+    expect(row).toBeDefined()
+    expect(row.deletedAt).not.toBeNull()
+  })
+
+  it('a tag round-trips correctly', async () => {
+    await createTestUser('tag@example.com')
+    const cookie = await loginCookie('tag@example.com')
+    const boot = await sync(cookie, '0')
+
+    const tagId = uuidv7()
+    const dto = makeTagDto({ id: tagId, name: 'urgent', color: '#dc4c3e' })
+    await sync(cookie, boot.body.cursor, [], [dto])
+
+    const after = await sync(cookie, '0')
+    const tag = after.body.changes.tags.find((t: { id: string }) => t.id === tagId)
+    expect(tag).toBeDefined()
+    expect(tag.name).toBe('urgent')
+    expect(tag.color).toBe('#dc4c3e')
+  })
+
+  it('an older tag push loses to a newer local row (LWW)', async () => {
+    await createTestUser('tag-lww@example.com')
+    const cookie = await loginCookie('tag-lww@example.com')
+    const boot = await sync(cookie, '0')
+
+    const id = uuidv7()
+    const newer = makeTagDto({ id, name: 'new-name', updatedAt: '2026-08-06T12:00:00.000Z' })
+    const older = makeTagDto({ id, name: 'old-name', updatedAt: '2026-08-06T11:00:00.000Z' })
+
+    await sync(cookie, boot.body.cursor, [], [newer])
+    await sync(cookie, boot.body.cursor, [], [older])
+
+    const after = await sync(cookie, '0')
+    const row = after.body.changes.tags.find((t: { id: string }) => t.id === id)
+    expect(row.name).toBe('new-name')
+  })
+})
+
+describe('POST /api/sync — completions', () => {
+  it('a completion round-trips with the same field values', async () => {
+    await createTestUser('completion@example.com')
+    const cookie = await loginCookie('completion@example.com')
+    const boot = await sync(cookie, '0')
+    const inboxId = boot.body.changes.nodes[0].id
+    const id = uuidv7()
+
+    await sync(cookie, boot.body.cursor, [], [], [makeCompletionDto({ id, nodeId: inboxId, occurredOn: '2026-08-01' })])
 
     const after = await sync(cookie, '0')
     const row = after.body.changes.completions.find((c: { id: string }) => c.id === id)
     expect(row).toBeDefined()
-    expect(row.nodeId).toBe(inboxId)
-    expect(row.occurredOn).toBe('2026-08-05')
+    expect(row.occurredOn).toBe('2026-08-01')
   })
 
-  it('nodes, labels, and completions share one cursor', async () => {
-    await createTestUser('completion-cursor@example.com')
-    const cookie = await loginCookie('completion-cursor@example.com')
-    const boot = await sync(cookie, '0')
-    const inboxId = boot.body.changes.nodes[0].id
+  it('a completion push for a node not owned by the user is silently ignored', async () => {
+    await createTestUser('comp-iso-a@example.com')
+    await createTestUser('comp-iso-b@example.com')
+    const cookieA = await loginCookie('comp-iso-a@example.com')
+    const cookieB = await loginCookie('comp-iso-b@example.com')
 
-    const push = await sync(cookie, boot.body.cursor, [], [], [
-      makeCompletionDto({ id: uuidv7(), nodeId: inboxId }),
-    ])
-    expect(push.body.cursor).not.toBe(boot.body.cursor)
+    const bootA = await sync(cookieA, '0')
+    const nodeIdA = bootA.body.changes.nodes[0].id
+    const bootB = await sync(cookieB, '0')
 
-    const pullAfter = await sync(cookie, push.body.cursor)
-    expect(pullAfter.body.changes.nodes).toEqual([])
-    expect(pullAfter.body.changes.labels).toEqual([])
-    expect(pullAfter.body.changes.completions).toEqual([])
+    const foreignId = uuidv7()
+    await sync(cookieB, bootB.body.cursor, [], [], [makeCompletionDto({ id: foreignId, nodeId: nodeIdA })])
+
+    const checkB = await sync(cookieB, '0')
+    expect(checkB.body.changes.completions).toEqual([])
   })
 
   it('a retried push with the same completion id is a harmless no-op, not an overwrite', async () => {

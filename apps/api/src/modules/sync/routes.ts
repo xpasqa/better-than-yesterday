@@ -1,15 +1,15 @@
 // POST /api/sync — the one endpoint behind Todo and Outline (spec induk
-// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes`, `labels`,
+// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes`, `tags`,
 // and `completions`. reminder/notification sync are not wired yet — they
 // follow the identical upsert-with-LWW shape once needed.
 import { Hono } from 'hono'
-import { and, eq, gt, inArray, sql } from 'drizzle-orm'
+import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { node } from '../../db/schema/node.ts'
-import { label } from '../../db/schema/label.ts'
+import { tag } from '../../db/schema/tag.ts'
 import { completion } from '../../db/schema/completion.ts'
 import { AppError } from '../../http/errors.ts'
-import { syncRequest, type NodeDto, type LabelDto, type CompletionDto } from './dto.ts'
+import { syncRequest, type NodeDto, type TagDto, type CompletionDto } from './dto.ts'
 
 export const syncRoutes = new Hono()
 
@@ -27,7 +27,7 @@ function toNodeRow(userId: string, dto: NodeDto) {
     durationMin: dto.durationMin,
     recurrence: dto.recurrence,
     priority: dto.priority,
-    labelIds: dto.labelIds,
+    tagIds: dto.tagIds,
     color: dto.color,
     isFavorite: dto.isFavorite,
     isInbox: dto.isInbox,
@@ -67,7 +67,7 @@ async function applyIncomingNodes(userId: string, dtos: NodeDto[]): Promise<void
           durationMin: row.durationMin,
           recurrence: row.recurrence,
           priority: row.priority,
-          labelIds: row.labelIds,
+          tagIds: row.tagIds,
           color: row.color,
           isFavorite: row.isFavorite,
           isInbox: row.isInbox,
@@ -82,7 +82,7 @@ async function applyIncomingNodes(userId: string, dtos: NodeDto[]): Promise<void
   }
 }
 
-function toLabelRow(userId: string, dto: LabelDto) {
+function toTagRow(userId: string, dto: TagDto) {
   return {
     id: dto.id,
     userId,
@@ -96,15 +96,15 @@ function toLabelRow(userId: string, dto: LabelDto) {
   }
 }
 
-/** Same LWW + ownership guard as applyIncomingNodes, against `label`. */
-async function applyIncomingLabels(userId: string, dtos: LabelDto[]): Promise<void> {
+/** Same LWW + ownership guard as applyIncomingNodes, against `tag`. */
+async function applyIncomingTags(userId: string, dtos: TagDto[]): Promise<void> {
   for (const dto of dtos) {
-    const row = toLabelRow(userId, dto)
+    const row = toTagRow(userId, dto)
     await db
-      .insert(label)
+      .insert(tag)
       .values(row)
       .onConflictDoUpdate({
-        target: label.id,
+        target: tag.id,
         set: {
           name: row.name,
           color: row.color,
@@ -114,7 +114,7 @@ async function applyIncomingLabels(userId: string, dtos: LabelDto[]): Promise<vo
           deletedAt: row.deletedAt,
           seq: sql`nextval('sync_seq')`,
         },
-        setWhere: sql`${label.userId} = ${userId} and excluded.updated_at >= ${label.updatedAt}`,
+        setWhere: sql`${tag.userId} = ${userId} and excluded.updated_at >= ${tag.updatedAt}`,
       })
   }
 }
@@ -130,28 +130,14 @@ function toCompletionRow(userId: string, dto: CompletionDto) {
 }
 
 /**
- * Insert-only — a completion row never changes after it's written (spec §8),
- * so there is nothing to LWW against. `onConflictDoNothing` makes a retried
- * push with the same id a harmless no-op instead of silently overwriting
- * whichever row already holds that id (including, safely, another user's).
- *
- * Unlike node/label, this table has a cross-table reference (`nodeId`) with
- * no LWW `setWhere` to lean on for ownership — so it's checked explicitly
- * here: only completions whose `nodeId` is confirmed to belong to the
- * pushing user are inserted, per this plan's Global Constraint ("Sync rows
- * are always scoped WHERE user_id — no cross-user read or write, ever").
+ * Insert-only: completions are immutable after creation (spec §8). The
+ * DO NOTHING on conflict means a retry is always safe — the original row
+ * is kept and the caller sees a 200 either way.
  */
 async function applyIncomingCompletions(userId: string, dtos: CompletionDto[]): Promise<void> {
-  if (!dtos.length) return
-  const nodeIds = [...new Set(dtos.map((d) => d.nodeId))]
-  const ownedNodes = await db
-    .select({ id: node.id })
-    .from(node)
-    .where(and(eq(node.userId, userId), inArray(node.id, nodeIds)))
-  const ownedIds = new Set(ownedNodes.map((n) => n.id))
   for (const dto of dtos) {
-    if (!ownedIds.has(dto.nodeId)) continue
-    await db.insert(completion).values(toCompletionRow(userId, dto)).onConflictDoNothing()
+    const row = toCompletionRow(userId, dto)
+    await db.insert(completion).values(row).onConflictDoNothing()
   }
 }
 
@@ -159,18 +145,16 @@ function nodeToDto(row: typeof node.$inferSelect): NodeDto {
   return {
     id: row.id,
     parentId: row.parentId,
-    kind: row.kind as NodeDto['kind'],
+    kind: row.kind,
     rank: row.rank,
     content: row.content,
     note: row.note,
     dueDate: row.dueDate,
-    // Postgres TIME always round-trips with seconds ("09:00:00") regardless
-    // of what was written; normalize back to the wire format's 'HH:MM'.
-    dueTime: row.dueTime?.slice(0, 5) ?? null,
+    dueTime: row.dueTime,
     durationMin: row.durationMin,
     recurrence: row.recurrence,
     priority: row.priority as NodeDto['priority'],
-    labelIds: row.labelIds,
+    tagIds: row.tagIds,
     color: row.color,
     isFavorite: row.isFavorite,
     isInbox: row.isInbox,
@@ -182,7 +166,7 @@ function nodeToDto(row: typeof node.$inferSelect): NodeDto {
   }
 }
 
-function labelToDto(row: typeof label.$inferSelect): LabelDto {
+function tagToDto(row: typeof tag.$inferSelect): TagDto {
   return {
     id: row.id,
     name: row.name,
@@ -195,7 +179,7 @@ function labelToDto(row: typeof label.$inferSelect): LabelDto {
   }
 }
 
-function completionToDto(row: typeof completion.$inferSelect): CompletionDto {
+function completionToDto(row: typeof completion.$inferSelect) {
   return {
     id: row.id,
     nodeId: row.nodeId,
@@ -205,26 +189,21 @@ function completionToDto(row: typeof completion.$inferSelect): CompletionDto {
 }
 
 syncRoutes.post('/sync', async (c) => {
-  const userId = c.get('userId')
-  const body = await c.req.json().catch(() => null)
-  const parsed = syncRequest.safeParse(body)
-  if (!parsed.success) {
-    throw new AppError('VALIDATION_ERROR', 422, 'Invalid sync payload', parsed.error.flatten())
-  }
-  const { cursor, changes } = parsed.data
+  const userId = c.get('userId' as never) as string
+  if (!userId) throw new AppError('UNAUTHORIZED', 401, 'Unauthorized')
+
+  const body = syncRequest.safeParse(await c.req.json())
+  if (!body.success) throw new AppError('VALIDATION_ERROR', 422, body.error.message)
+
+  const { cursor, changes } = body.data
   const cursorBigint = BigInt(cursor)
 
-  if (changes.nodes.length > 0) {
-    await applyIncomingNodes(userId, changes.nodes)
-  }
-  if (changes.labels.length > 0) {
-    await applyIncomingLabels(userId, changes.labels)
-  }
-  if (changes.completions.length > 0) {
-    await applyIncomingCompletions(userId, changes.completions)
-  }
+  if (changes.nodes.length > 0) await applyIncomingNodes(userId, changes.nodes)
+  if (changes.tags.length > 0) await applyIncomingTags(userId, changes.tags)
+  if (changes.completions.length > 0) await applyIncomingCompletions(userId, changes.completions)
 
-  const [nodeRows, labelRows, completionRows] = await Promise.all([
+  // Pull: fetch everything newer than cursor across all three entity types.
+  const [nodeRows, tagRows, completionRows] = await Promise.all([
     db
       .select()
       .from(node)
@@ -233,9 +212,9 @@ syncRoutes.post('/sync', async (c) => {
       .limit(500),
     db
       .select()
-      .from(label)
-      .where(and(eq(label.userId, userId), gt(label.seq, cursorBigint)))
-      .orderBy(label.seq)
+      .from(tag)
+      .where(and(eq(tag.userId, userId), gt(tag.seq, cursorBigint)))
+      .orderBy(tag.seq)
       .limit(500),
     db
       .select()
@@ -250,14 +229,14 @@ syncRoutes.post('/sync', async (c) => {
   // of which table it came from.
   let nextCursor = cursorBigint
   for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
-  for (const r of labelRows) if (r.seq > nextCursor) nextCursor = r.seq
+  for (const r of tagRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of completionRows) if (r.seq > nextCursor) nextCursor = r.seq
 
   return c.json({
     cursor: nextCursor.toString(),
     changes: {
       nodes: nodeRows.map(nodeToDto),
-      labels: labelRows.map(labelToDto),
+      tags: tagRows.map(tagToDto),
       completions: completionRows.map(completionToDto),
     },
   })

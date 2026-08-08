@@ -8,7 +8,7 @@
     "./db/client": "./src/db/client.ts",
     "./db/schema/user": "./src/db/schema/user.ts",
     "./db/schema/node": "./src/db/schema/node.ts",
-    "./db/schema/label": "./src/db/schema/label.ts",
+    "./db/schema/tag": "./src/db/schema/tag.ts",
     "./modules/auth/password": "./src/modules/auth/password.ts"
   },
   "scripts": {

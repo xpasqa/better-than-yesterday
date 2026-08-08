@@ -3,7 +3,7 @@ import postgres from 'postgres'
 import { config } from '../config.ts'
 import * as appUser from './schema/user.ts'
 import * as node from './schema/node.ts'
-import * as label from './schema/label.ts'
+import * as tag from './schema/tag.ts'
 import * as reminder from './schema/reminder.ts'
 import * as notification from './schema/notification.ts'
 import * as pushSubscription from './schema/push-subscription.ts'
@@ -18,7 +18,7 @@ import * as storage from './schema/storage.ts'
 export const schema = {
   ...appUser,
   ...node,
-  ...label,
+  ...tag,
   ...reminder,
   ...notification,
   ...pushSubscription,

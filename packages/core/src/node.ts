@@ -2,6 +2,7 @@
 // a node with a due_date; a project is a node with kind='project'; there is
 // no separate Task/Project/Section/OutlineNode type. Mirrors the `node`
 // table in docs/feature/2.backend/1.todo/spec.md §3.1 field for field.
+// node.tagIds stores tag entity ids (never names) — see tag.ts.
 export type NodeKind = 'project' | 'section' | 'item'
 
 export interface Node {
@@ -19,7 +20,7 @@ export interface Node {
   recurrence: string | null // RRULE subset; requires dueDate
 
   priority: 1 | 2 | 3 | null // null = Todoist's P4, "no priority"
-  labelIds: string[]
+  tagIds: string[]
   color: string | null // meaningful on kind='project' only
   isFavorite: boolean
   isInbox: boolean // meaningful on kind='project' only; exactly one true per user

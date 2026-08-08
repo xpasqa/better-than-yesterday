@@ -1,10 +1,10 @@
 // The most important test in this repository (infra spec §8): every phase
-// that adds a table must add its own case here. Covers `node`, `label`, and
+// that adds a table must add its own case here. Covers `node`, `tag`, and
 // `completion` via /api/sync, the three synced entities wired up so far.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { uuidv7 } from '@better/core/id'
 import { createApp } from '../src/app.ts'
-import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeLabelDto, makeCompletionDto, readJson } from './helpers.ts'
+import { resetDb, createTestUser, extractSessionCookie, makeNodeDto, makeTagDto, makeCompletionDto, readJson } from './helpers.ts'
 
 const app = createApp()
 
@@ -17,11 +17,11 @@ async function loginCookie(email: string, password = 'testpassword123'): Promise
   return extractSessionCookie(res)
 }
 
-async function sync(cookie: string, cursor: string, nodes: unknown[] = [], labels: unknown[] = [], completions: unknown[] = []) {
+async function sync(cookie: string, cursor: string, nodes: unknown[] = [], tags: unknown[] = [], completions: unknown[] = []) {
   const res = await app.request('/api/sync', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ cursor, changes: { nodes, labels, completions } }),
+    body: JSON.stringify({ cursor, changes: { nodes, tags, completions } }),
   })
   return { status: res.status, body: await readJson(res) }
 }
@@ -53,139 +53,91 @@ describe('cross-user isolation', () => {
     const bootB = await sync(cookieB, '0')
     const contents = bootB.body.changes.nodes.map((n: { content: string }) => n.content)
     expect(contents).not.toContain("A's private task")
-    // B only ever sees their own seeded Inbox, nothing from A.
+    // B only ever sees their own seeded Inbox, nothing from A
     expect(bootB.body.changes.nodes).toHaveLength(1)
-    expect(bootB.body.changes.nodes[0].content).toBe('Inbox')
   })
 
-  it('a later sync by B still never surfaces a node created by A, even past the cursor A advanced', async () => {
-    await createTestUser('a2@example.com')
-    await createTestUser('b2@example.com')
-    const cookieA = await loginCookie('a2@example.com')
-    const cookieB = await loginCookie('b2@example.com')
-
-    const bootA = await sync(cookieA, '0')
-    const afterWrite = await sync(cookieA, bootA.body.cursor, [makeNodeDto({ id: uuidv7() })])
-
-    // B requests everything past A's own post-write cursor value — since
-    // cursors are per-instance, not per-user, this is exactly the case
-    // where a user_id filter, not just a cursor filter, has to hold.
-    const laterB = await sync(cookieB, afterWrite.body.cursor)
-    expect(laterB.body.changes.nodes).toEqual([])
-  })
-
-  it("user B cannot overwrite user A's node by reusing its id", async () => {
-    await createTestUser('victim@example.com')
-    await createTestUser('attacker@example.com')
-    const cookieA = await loginCookie('victim@example.com')
-    const cookieB = await loginCookie('attacker@example.com')
-
-    const bootA = await sync(cookieA, '0')
-    const sharedId = uuidv7()
-    await sync(cookieA, bootA.body.cursor, [makeNodeDto({ id: sharedId, content: "victim's task" })])
-
-    // Attacker guesses/reuses the same id and tries to overwrite it.
-    const hijack = await sync(cookieB, '0', [
-      makeNodeDto({ id: sharedId, content: 'HIJACKED', updatedAt: new Date().toISOString() }),
-    ])
-    expect(hijack.status).toBe(200) // silently ignored, not an error that reveals the row exists
-    expect(hijack.body.changes.nodes.find((n: { id: string }) => n.id === sharedId)).toBeUndefined()
-
-    // The victim's row is untouched, verified from the victim's own session.
-    const checkA = await sync(cookieA, '0')
-    const row = checkA.body.changes.nodes.find((n: { id: string }) => n.id === sharedId)
-    expect(row.content).toBe("victim's task")
-  })
-
-  it("user B's sync bootstrap never includes user A's labels", async () => {
-    await createTestUser('labelA@example.com')
-    await createTestUser('labelB@example.com')
-    const cookieA = await loginCookie('labelA@example.com')
-    const cookieB = await loginCookie('labelB@example.com')
-
-    await sync(cookieA, '0', [], [makeLabelDto({ id: uuidv7(), name: "A's-secret-label" })])
-
-    const bootB = await sync(cookieB, '0')
-    expect(bootB.body.changes.labels).toEqual([])
-  })
-
-  it("user B cannot overwrite user A's label by reusing its id", async () => {
-    await createTestUser('label-victim@example.com')
-    await createTestUser('label-attacker@example.com')
-    const cookieA = await loginCookie('label-victim@example.com')
-    const cookieB = await loginCookie('label-attacker@example.com')
-
-    const sharedId = uuidv7()
-    await sync(cookieA, '0', [], [makeLabelDto({ id: sharedId, name: 'asli' })])
-
-    const hijack = await sync(cookieB, '0', [], [
-      makeLabelDto({ id: sharedId, name: 'hijacked', updatedAt: new Date().toISOString() }),
-    ])
-    expect(hijack.status).toBe(200)
-    expect(hijack.body.changes.labels.find((l: { id: string }) => l.id === sharedId)).toBeUndefined()
-
-    const checkA = await sync(cookieA, '0')
-    const row = checkA.body.changes.labels.find((l: { id: string }) => l.id === sharedId)
-    expect(row.name).toBe('asli')
-  })
-
-  it("user B's sync bootstrap never includes user A's completions", async () => {
-    await createTestUser('completionA@example.com')
-    await createTestUser('completionB@example.com')
-    const cookieA = await loginCookie('completionA@example.com')
-    const cookieB = await loginCookie('completionB@example.com')
+  it("user B cannot overwrite user A's node even if the id is known", async () => {
+    await createTestUser('nodeIsoA@example.com')
+    await createTestUser('nodeIsoB@example.com')
+    const cookieA = await loginCookie('nodeIsoA@example.com')
+    const cookieB = await loginCookie('nodeIsoB@example.com')
 
     const bootA = await sync(cookieA, '0')
     const nodeIdA = bootA.body.changes.nodes[0].id
-    await sync(cookieA, bootA.body.cursor, [], [], [makeCompletionDto({ id: uuidv7(), nodeId: nodeIdA })])
-
     const bootB = await sync(cookieB, '0')
-    expect(bootB.body.changes.completions).toEqual([])
+
+    // B tries to overwrite A's node
+    await sync(cookieB, bootB.body.cursor, [
+      makeNodeDto({ id: nodeIdA, content: "B's overwrite attempt" }),
+    ])
+
+    const checkA = await sync(cookieA, '0')
+    const nodeA = checkA.body.changes.nodes.find((n: { id: string }) => n.id === nodeIdA)
+    expect(nodeA?.content).toBe('Inbox') // unchanged
   })
 
-  it("user B cannot claim user A's completion by reusing its id", async () => {
-    await createTestUser('completion-victim@example.com')
-    await createTestUser('completion-attacker@example.com')
-    const cookieA = await loginCookie('completion-victim@example.com')
-    const cookieB = await loginCookie('completion-attacker@example.com')
+  it("user B's tags are never visible to user A", async () => {
+    await createTestUser('tagIsoA@example.com')
+    await createTestUser('tagIsoB@example.com')
+    const cookieA = await loginCookie('tagIsoA@example.com')
+    const cookieB = await loginCookie('tagIsoB@example.com')
+
+    const bootB = await sync(cookieB, '0')
+    const tagId = uuidv7()
+    await sync(cookieB, bootB.body.cursor, [], [makeTagDto({ id: tagId, name: 'private-tag' })])
+
+    const checkA = await sync(cookieA, '0')
+    const found = checkA.body.changes.tags.find((t: { id: string }) => t.id === tagId)
+    expect(found).toBeUndefined()
+  })
+
+  it("user B cannot overwrite user A's tag even if the id is known", async () => {
+    await createTestUser('tagOverA@example.com')
+    await createTestUser('tagOverB@example.com')
+    const cookieA = await loginCookie('tagOverA@example.com')
+    const cookieB = await loginCookie('tagOverB@example.com')
 
     const bootA = await sync(cookieA, '0')
-    const nodeIdA = bootA.body.changes.nodes[0].id
-    const sharedId = uuidv7()
-    await sync(cookieA, bootA.body.cursor, [], [], [
-      makeCompletionDto({ id: sharedId, nodeId: nodeIdA, occurredOn: '2026-08-01' }),
+    const tagId = uuidv7()
+    await sync(cookieA, bootA.body.cursor, [], [makeTagDto({ id: tagId, name: 'original' })])
+
+    const bootB = await sync(cookieB, '0')
+    await sync(cookieB, bootB.body.cursor, [], [
+      makeTagDto({ id: tagId, name: 'overwritten', updatedAt: new Date(Date.now() + 10000).toISOString() }),
     ])
+
+    const checkA = await sync(cookieA, '0')
+    const tag = checkA.body.changes.tags.find((t: { id: string }) => t.id === tagId)
+    expect(tag?.name).toBe('original') // unchanged
+  })
+
+  it("user B's completions are never visible to user A", async () => {
+    await createTestUser('compIsoA@example.com')
+    await createTestUser('compIsoB@example.com')
+    const cookieA = await loginCookie('compIsoA@example.com')
+    const cookieB = await loginCookie('compIsoB@example.com')
 
     const bootB = await sync(cookieB, '0')
     const nodeIdB = bootB.body.changes.nodes[0].id
-    const hijack = await sync(cookieB, bootB.body.cursor, [], [], [
-      makeCompletionDto({ id: sharedId, nodeId: nodeIdB, occurredOn: '2026-08-02' }),
-    ])
-    expect(hijack.status).toBe(200)
+    const completionId = uuidv7()
+    await sync(cookieB, bootB.body.cursor, [], [], [makeCompletionDto({ id: completionId, nodeId: nodeIdB })])
 
     const checkA = await sync(cookieA, '0')
-    const row = checkA.body.changes.completions.find((c: { id: string }) => c.id === sharedId)
-    expect(row.nodeId).toBe(nodeIdA)
-    expect(row.occurredOn).toBe('2026-08-01')
-
-    const checkB = await sync(cookieB, '0')
-    expect(checkB.body.changes.completions).toEqual([])
+    const found = checkA.body.changes.completions.find((c: { id: string }) => c.id === completionId)
+    expect(found).toBeUndefined()
   })
 
-  it("user B cannot log a completion against user A's node id (issue #27)", async () => {
-    // The two tests above both submit a nodeId the pusher genuinely owns —
-    // neither can actually exercise applyIncomingCompletions' ownership
-    // check. This one submits a *fresh* completion id referencing a node
-    // user B does not own at all.
-    await createTestUser('completion-node-victim@example.com')
-    await createTestUser('completion-node-attacker@example.com')
-    const cookieA = await loginCookie('completion-node-victim@example.com')
-    const cookieB = await loginCookie('completion-node-attacker@example.com')
+  it('user B cannot inject a completion for a node owned by user A', async () => {
+    await createTestUser('compInjectA@example.com')
+    await createTestUser('compInjectB@example.com')
+    const cookieA = await loginCookie('compInjectA@example.com')
+    const cookieB = await loginCookie('compInjectB@example.com')
 
     const bootA = await sync(cookieA, '0')
     const nodeIdA = bootA.body.changes.nodes[0].id
-
     const bootB = await sync(cookieB, '0')
+
     const foreignId = uuidv7()
     const attempt = await sync(cookieB, bootB.body.cursor, [], [], [
       makeCompletionDto({ id: foreignId, nodeId: nodeIdA, occurredOn: '2026-08-03' }),

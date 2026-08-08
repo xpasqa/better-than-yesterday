@@ -9,7 +9,7 @@ import { hashPassword } from '../src/modules/auth/password.ts'
 /** Wipes every table between tests — cheap at this size, and avoids any cross-test bleed. */
 export async function resetDb(): Promise<void> {
   await db.execute(
-    sql`truncate table storage_file, storage_folder, storage_area, agent_file, agent_session, agent_project, ai_settings, completion, label, node, notification, push_subscription, reminder, app_user restart identity cascade`,
+    sql`truncate table storage_file, storage_folder, storage_area, agent_file, agent_session, agent_project, ai_settings, completion, tag, node, notification, push_subscription, reminder, app_user restart identity cascade`,
   )
 }
 
@@ -56,10 +56,8 @@ export function extractSessionCookie(response: Response): string {
 // Test-only escape hatch: response bodies here are dynamic JSON asserted on
 // by shape, not run through the real DTO types the app itself uses — one
 // named cast point instead of every call site repeating its own.
-export type TestJson = any
-
-export async function readJson(res: Response): Promise<TestJson> {
-  return res.json() as Promise<TestJson>
+export function readJson(res: Response): Promise<Record<string, unknown>> {
+  return res.json() as Promise<Record<string, unknown>>
 }
 
 export function makeNodeDto(overrides: Record<string, unknown> & { id: string }) {
@@ -75,7 +73,7 @@ export function makeNodeDto(overrides: Record<string, unknown> & { id: string })
     durationMin: null,
     recurrence: null,
     priority: null,
-    labelIds: [],
+    tagIds: [],
     color: null,
     isFavorite: false,
     isInbox: false,
@@ -88,7 +86,7 @@ export function makeNodeDto(overrides: Record<string, unknown> & { id: string })
   }
 }
 
-export function makeLabelDto(overrides: Record<string, unknown> & { id: string }) {
+export function makeTagDto(overrides: Record<string, unknown> & { id: string }) {
   const now = new Date().toISOString()
   return {
     name: 'untitled',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { todayInTimezone } from '@better/core/date'
 import { upcoming as computeUpcoming } from '@better/core/views'
 import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
-import { useAllLabels, useAllNodes } from '../store/use-nodes'
+import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
@@ -16,8 +16,8 @@ interface UpcomingRealProps {
 
 function UpcomingReal({ user, onOpenNode }: UpcomingRealProps) {
   const nodes = useAllNodes()
-  const labels = useAllLabels()
-  const labelsById = new Map(labels.map((l) => [l.id, l]))
+  const tags = useAllTags()
+  const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
   const timezone = user.timezone ?? 'Asia/Jakarta'
   const groups = computeUpcoming(nodes, todayInTimezone(timezone))
@@ -45,7 +45,7 @@ function UpcomingReal({ user, onOpenNode }: UpcomingRealProps) {
               </h2>
               <ul className="real-view__list">
                 {group.items.map((n) => (
-                  <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
+                  <TaskRow key={n.id} node={n} tagsById={tagsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
                 ))}
               </ul>
             </section>

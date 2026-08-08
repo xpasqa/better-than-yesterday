@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { inbox as computeInbox } from '@better/core/views'
 import { findInbox } from '@better/core/node'
 import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
-import { useAllLabels, useAllNodes } from '../store/use-nodes'
+import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
@@ -16,8 +16,8 @@ interface InboxRealProps {
 
 function InboxReal({ user, onOpenNode }: InboxRealProps) {
   const nodes = useAllNodes()
-  const labels = useAllLabels()
-  const labelsById = new Map(labels.map((l) => [l.id, l]))
+  const tags = useAllTags()
+  const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
 
   const items = computeInbox(nodes)
@@ -38,7 +38,7 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
         {items.length > 0 && (
           <ul className="real-view__list">
             {items.map((n) => (
-              <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
+              <TaskRow key={n.id} node={n} tagsById={tagsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
             ))}
           </ul>
         )}

@@ -30,5 +30,12 @@
       "tag": "0003_remove_saved_filter",
       "breakpoints": true
     }
+    ,{
+      "idx": 4,
+      "version": "7",
+      "when": 1754668683000,
+      "tag": "0004_label_to_tag",
+      "breakpoints": true
+    }
   ]
 }

@@ -23,7 +23,7 @@ export const nodeDto = z.object({
     )
     .nullable(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
-  labelIds: z.array(z.string()),
+  tagIds: z.array(z.string()),
   color: z.string().nullable(),
   isFavorite: z.boolean(),
   isInbox: z.boolean(),
@@ -36,7 +36,7 @@ export const nodeDto = z.object({
 export type NodeDto = z.infer<typeof nodeDto>
 
 // name has no spaces — it's the literal $name token (1.todo/spec.md §3.2).
-export const labelDto = z.object({
+export const tagDto = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(1).max(60).regex(/^\S+$/),
   color: z.string(),
@@ -46,10 +46,10 @@ export const labelDto = z.object({
   updatedAt: z.string().datetime(),
   deletedAt: z.string().datetime().nullable(),
 })
-export type LabelDto = z.infer<typeof labelDto>
+export type TagDto = z.infer<typeof tagDto>
 
 // A completion row never changes after it's written (1.todo/spec.md §8) —
-// no updatedAt/deletedAt here, unlike node and label.
+// no updatedAt/deletedAt here, unlike node and tag.
 export const completionDto = z.object({
   id: z.string().uuid(),
   nodeId: z.string().uuid(),
@@ -64,7 +64,7 @@ export const syncRequest = z.object({
   cursor: z.string().regex(/^\d+$/),
   changes: z.object({
     nodes: z.array(nodeDto).max(MAX_BATCH).default([]),
-    labels: z.array(labelDto).max(MAX_BATCH).default([]),
+    tags: z.array(tagDto).max(MAX_BATCH).default([]),
     completions: z.array(completionDto).max(MAX_BATCH).default([]),
   }),
 })

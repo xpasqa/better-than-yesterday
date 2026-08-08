@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { project as computeProject } from '@better/core/views'
 import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
-import { useAllLabels, useAllNodes } from '../store/use-nodes'
+import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
@@ -16,8 +16,8 @@ interface ProjectRealProps {
 
 function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
   const nodes = useAllNodes()
-  const labels = useAllLabels()
-  const labelsById = new Map(labels.map((l) => [l.id, l]))
+  const tags = useAllTags()
+  const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
 
   const project = nodes.find((n) => n.id === projectId && n.kind === 'project')
@@ -42,7 +42,7 @@ function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
             {items.length > 0 && (
               <ul className="real-view__list">
                 {items.map((n) => (
-                  <TaskRow key={n.id} node={n} labelsById={labelsById} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
+                  <TaskRow key={n.id} node={n} tagsById={tagsById} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
                 ))}
               </ul>
             )}

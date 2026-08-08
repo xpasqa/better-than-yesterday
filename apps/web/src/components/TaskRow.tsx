@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { ArrowsClockwiseIcon, CalendarBlankIcon, DotsThreeIcon, FlagIcon as PhFlagIcon, NotePencilIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Node } from '@better/core/node'
-import type { Label } from '@better/core/label'
+import type { Tag } from '@better/core/tag'
 import { describeRecurrence } from '@better/core/recurrence'
 import { toggleTaskComplete, deleteTask } from '../store/node-actions'
 import './TaskRow.css'
 
 interface TaskRowProps {
   node: Node
-  labelsById: Map<string, Label>
+  tagsById: Map<string, Tag>
   /** All nodes in the store — used to look up the parent project name. Omit in ProjectReal (redundant). */
   allNodes?: Node[]
   /** Called when the user clicks the content area to open the detail modal. */
@@ -38,13 +38,13 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
 }
 
 /** Shared row for every real (store-backed) task view — Today, Inbox, Upcoming, Project. */
-function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: TaskRowProps) {
+function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone }: TaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
   const done = node.completedAt !== null
   const dueInfo = node.dueDate ? formatDueDate(node.dueDate) : null
-  const taskLabels = node.labelIds.map(id => labelsById.get(id)).filter(Boolean) as Label[]
+  const taskTags = node.tagIds.map(id => tagsById.get(id)).filter(Boolean) as Tag[]
   const priority = node.priority ?? 4
 
   // Project name — only shown when allNodes is passed (Today/Inbox/Upcoming, not ProjectReal)
@@ -85,7 +85,7 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
         {node.note && <p className="task-row__description">{node.note}</p>}
 
         {/* Meta row */}
-        {(dueInfo || node.dueTime || node.recurrence || taskLabels.length > 0 || parentProject) && (
+        {(dueInfo || node.dueTime || node.recurrence || taskTags.length > 0 || parentProject) && (
           <div className="task-row__meta">
             {dueInfo && (
               <span className={[
@@ -105,21 +105,21 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
               </span>
             )}
             {node.recurrence && (() => {
-              const label = describeRecurrence(node.recurrence)
-              return label ? (
-                <span className="task-row__recurrence" title={label}>
+              const recLabel = describeRecurrence(node.recurrence)
+              return recLabel ? (
+                <span className="task-row__recurrence" title={recLabel}>
                   <ArrowsClockwiseIcon size={12} />
-                  {label}
+                  {recLabel}
                 </span>
               ) : null
             })()}
-            {taskLabels.map(label => (
-              <span key={label.id} className="task-row__label" style={{ color: label.color }}>
-                @ {label.name}
+            {taskTags.map(tag => (
+              <span key={tag.id} className="task-row__tag" style={{ color: tag.color }}>
+                ${tag.name}
               </span>
             ))}
             {parentProject && (
-              <span className="task-row__project">
+              <span className="task-row__project" style={{ color: parentProject.color ?? undefined }}>
                 #{parentProject.content}
               </span>
             )}
@@ -127,7 +127,7 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
         )}
       </div>
 
-      {/* Hover actions */}
+      {/* Actions */}
       {hovered && (
         <div className="task-row__actions">
           {priority < 4 && (

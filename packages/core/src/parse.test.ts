@@ -221,7 +221,7 @@ describe('parse — project, label, mention sigils', () => {
 
   it('extracts multiple label tokens', () => {
     const result = parse('bayar listrik $rumah $penting', CTX)
-    expect(result.labelNames).toEqual(['rumah', 'penting'])
+    expect(result.tagNames).toEqual(['rumah', 'penting'])
     expect(result.content).toBe('bayar listrik')
   })
 
@@ -232,7 +232,7 @@ describe('parse — project, label, mention sigils', () => {
 
   it('does not treat "$5" (a price) as a label — labels must start with a letter', () => {
     const result = parse('beli kopi $5', CTX)
-    expect(result.labelNames).toEqual([])
+    expect(result.tagNames).toEqual([])
     expect(result.content).toBe('beli kopi $5')
   })
 
@@ -245,7 +245,7 @@ describe('parse — project, label, mention sigils', () => {
       expect(r.dueDate).toBe(addDays(TODAY, 1))
       expect(r.dueTime).toBe('09:00')
       expect(r.projectQuery).toBe('Kerja')
-      expect(r.labelNames).toEqual(['penting'])
+      expect(r.tagNames).toEqual(['penting'])
       expect(r.priority).toBe(1)
     }
   })
@@ -275,7 +275,7 @@ describe('parse — full example from the spec', () => {
     expect(result.dueDate).toBe(addDays(TODAY, 1))
     expect(result.dueTime).toBe('09:00')
     expect(result.projectQuery).toBe('Travel')
-    expect(result.labelNames).toEqual(['penting'])
+    expect(result.tagNames).toEqual(['penting'])
     expect(result.priority).toBe(1)
   })
 })
@@ -303,7 +303,7 @@ describe('parse — recurrence', () => {
     const result = parse('minum obat besok setiap hari $kesehatan !2', CTX)
     expect(result.dueDate).toBe(addDays(TODAY, 1))
     expect(result.recurrence).toBe('FREQ=DAILY')
-    expect(result.labelNames).toEqual(['kesehatan'])
+    expect(result.tagNames).toEqual(['kesehatan'])
     expect(result.priority).toBe(2)
     expect(result.content).toBe('minum obat')
   })

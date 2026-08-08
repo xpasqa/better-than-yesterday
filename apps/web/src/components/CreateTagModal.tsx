@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { XIcon } from '@phosphor-icons/react'
-import { createLabelFromUI } from '../store/label-actions'
-import './CreateLabelModal.css'
+import { createTagFromUI } from '../store/tag-actions'
+import './CreateTagModal.css'
 
-interface CreateLabelModalProps {
+interface CreateTagModalProps {
   onClose: () => void
   onCreated: (id: string) => void
 }
@@ -20,7 +20,7 @@ const COLOR_SWATCHES = [
   { label: 'Grey', value: '#808080' },
 ]
 
-export default function CreateLabelModal({ onClose, onCreated }: CreateLabelModalProps) {
+export default function CreateTagModal({ onClose, onCreated }: CreateTagModalProps) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(COLOR_SWATCHES[0].value)
   const [submitting, setSubmitting] = useState(false)
@@ -39,8 +39,8 @@ export default function CreateLabelModal({ onClose, onCreated }: CreateLabelModa
     if (!trimmed || submitting) return
     setSubmitting(true)
     try {
-      const label = await createLabelFromUI(trimmed, color)
-      onCreated(label.id)
+      const tag = await createTagFromUI(trimmed, color)
+      onCreated(tag.id)
       onClose()
     } finally {
       setSubmitting(false)
@@ -49,42 +49,37 @@ export default function CreateLabelModal({ onClose, onCreated }: CreateLabelModa
 
   return createPortal(
     <div
-      className="create-label-overlay"
+      className="create-tag-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Create label"
+      aria-label="Create tag"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="create-label-modal">
-        <div className="create-label-modal__header">
-          <span className="create-label-modal__title">Add label</span>
-          <button className="create-label-modal__close" onClick={onClose} aria-label="Close" type="button">
+      <div className="create-tag-modal">
+        <div className="create-tag-modal__header">
+          <span className="create-tag-modal__title">Add tag</span>
+          <button className="create-tag-modal__close" onClick={onClose} aria-label="Close" type="button">
             <XIcon size={18} />
           </button>
         </div>
 
-        <div className="create-label-modal__body">
-          <label className="create-label-modal__label" htmlFor="label-name-input">Name</label>
+        <div className="create-tag-modal__body">
+          <label className="create-tag-modal__label" htmlFor="tag-name-input">Name</label>
           <input
-            id="label-name-input"
+            id="tag-name-input"
             ref={inputRef}
-            className="create-label-modal__input"
-            type="text"
-            placeholder="Label name"
+            className="create-tag-modal__input"
+            placeholder="tag-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void handleSubmit() }}
-            maxLength={100}
-            autoComplete="off"
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') void handleSubmit() }}
           />
-
-          <span className="create-label-modal__label">Color</span>
-          <div className="create-label-modal__swatches">
+          <div className="create-tag-modal__swatches">
             {COLOR_SWATCHES.map(s => (
               <button
                 key={s.value}
                 type="button"
-                className={`create-label-modal__swatch${color === s.value ? ' create-label-modal__swatch--active' : ''}`}
+                className={`create-tag-modal__swatch${color === s.value ? ' create-tag-modal__swatch--active' : ''}`}
                 style={{ background: s.value }}
                 aria-label={s.label}
                 onClick={() => setColor(s.value)}
@@ -93,12 +88,12 @@ export default function CreateLabelModal({ onClose, onCreated }: CreateLabelModa
           </div>
         </div>
 
-        <div className="create-label-modal__footer">
-          <button className="create-label-modal__btn create-label-modal__btn--cancel" onClick={onClose} type="button">
+        <div className="create-tag-modal__footer">
+          <button className="create-tag-modal__btn create-tag-modal__btn--cancel" onClick={onClose} type="button">
             Cancel
           </button>
           <button
-            className="create-label-modal__btn create-label-modal__btn--submit"
+            className="create-tag-modal__btn create-tag-modal__btn--submit"
             onClick={() => void handleSubmit()}
             disabled={!name.trim() || submitting}
             type="button"

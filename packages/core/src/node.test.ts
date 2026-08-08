@@ -15,7 +15,7 @@ function makeNode(overrides: Partial<Node>): Node {
     durationMin: null,
     recurrence: null,
     priority: null,
-    labelIds: [],
+    tagIds: [],
     color: null,
     isFavorite: false,
     isInbox: false,

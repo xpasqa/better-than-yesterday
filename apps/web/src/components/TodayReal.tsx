@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { todayInTimezone } from '@better/core/date'
 import { today as computeToday } from '@better/core/views'
 import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
-import { useAllLabels, useAllNodes } from '../store/use-nodes'
+import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
@@ -16,8 +16,8 @@ interface TodayRealProps {
 
 function TodayReal({ user, onOpenNode }: TodayRealProps) {
   const nodes = useAllNodes()
-  const labels = useAllLabels()
-  const labelsById = new Map(labels.map((l) => [l.id, l]))
+  const tags = useAllTags()
+  const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
 
   const timezone = user.timezone ?? 'Asia/Jakarta'
@@ -47,7 +47,7 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
             </h2>
             <ul className="real-view__list">
               {overdue.map((n) => (
-                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
+                <TaskRow key={n.id} node={n} tagsById={tagsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
               ))}
             </ul>
           </section>
@@ -60,7 +60,7 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
           {dueToday.length > 0 && (
             <ul className="real-view__list">
               {dueToday.map((n) => (
-                <TaskRow key={n.id} node={n} labelsById={labelsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
+                <TaskRow key={n.id} node={n} tagsById={tagsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={timezone} />
               ))}
             </ul>
           )}

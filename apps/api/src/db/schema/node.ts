@@ -40,7 +40,7 @@ export const node = pgTable(
     recurrence: text('recurrence'),
 
     priority: smallint('priority'),
-    labelIds: text('label_ids').array().notNull().default(sql`'{}'::text[]`),
+    tagIds: text('tag_ids').array().notNull().default(sql`'{}'::text[]`),
     color: text('color'),
     isFavorite: boolean('is_favorite').notNull().default(false),
     isInbox: boolean('is_inbox').notNull().default(false),

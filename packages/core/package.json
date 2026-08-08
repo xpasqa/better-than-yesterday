@@ -7,7 +7,7 @@
     "./id": "./src/id.ts",
     "./date": "./src/date.ts",
     "./node": "./src/node.ts",
-    "./label": "./src/label.ts",
+    "./tag": "./src/tag.ts",
     "./rank": "./src/rank.ts",
     "./tree": "./src/tree.ts",
     "./parse": "./src/parse.ts",

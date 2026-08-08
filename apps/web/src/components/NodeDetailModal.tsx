@@ -6,10 +6,10 @@ import {
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 import type { Node } from '@better/core/node'
-import type { Label } from '@better/core/label'
+import type { Tag } from '@better/core/tag'
 import { toggleTaskComplete, updateNode, deleteTask } from '../store/node-actions'
-import { useAllLabels, useAllNodes } from '../store/use-nodes'
-import CreateLabelModal from './CreateLabelModal'
+import { useAllTags, useAllNodes } from '../store/use-nodes'
+import CreateTagModal from './CreateTagModal'
 import './NodeDetailModal.css'
 
 interface NodeDetailModalProps {
@@ -26,7 +26,7 @@ const PRIORITIES = [
   { value: null, label: 'No priority', color: 'var(--text-tertiary)' },
 ]
 
-type OpenField = 'date' | 'priority' | 'labels' | 'project' | null
+type OpenField = 'date' | 'priority' | 'tags' | 'project' | null
 
 function parseISODate(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
@@ -42,14 +42,14 @@ function formatISODate(date: Date): string {
 
 export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailModalProps) {
   const allNodes = useAllNodes()
-  const allLabels = useAllLabels()
-  const labelsById = new Map(allLabels.map(l => [l.id, l]))
+  const allTags = useAllTags()
+  const tagsById = new Map(allTags.map(t => [t.id, t]))
 
   // Local editable state — flushed to store on blur
   const [title, setTitle] = useState(node.content)
   const [note, setNote] = useState(node.note ?? '')
   const [openField, setOpenField] = useState<OpenField>(null)
-  const [showCreateLabel, setShowCreateLabel] = useState(false)
+  const [showCreateTag, setShowCreateTag] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const dateFieldRef = useRef<HTMLButtonElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
@@ -92,7 +92,7 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
 
   const parentProject = allNodes.find(n => n.id === node.parentId && n.kind === 'project')
   const projects = allNodes.filter(n => n.kind === 'project' && n.deletedAt === null)
-  const taskLabels = node.labelIds.map(id => labelsById.get(id)).filter(Boolean) as Label[]
+  const taskTags = node.tagIds.map(id => tagsById.get(id)).filter(Boolean) as Tag[]
   const done = node.completedAt !== null
   const priority = node.priority
   const priorityMeta = PRIORITIES.find(p => p.value === priority) ?? PRIORITIES[3]
@@ -105,11 +105,11 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
     setOpenField(f => f === 'date' ? null : 'date')
   }
 
-  const toggleLabel = (labelId: string) => {
-    const next = node.labelIds.includes(labelId)
-      ? node.labelIds.filter(l => l !== labelId)
-      : [...node.labelIds, labelId]
-    patch({ labelIds: next })
+  const toggleTag = (tagId: string) => {
+    const next = node.tagIds.includes(tagId)
+      ? node.tagIds.filter(t => t !== tagId)
+      : [...node.tagIds, tagId]
+    patch({ tagIds: next })
   }
 
   return createPortal(
@@ -277,46 +277,46 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
               )}
             </div>
 
-            {/* Labels */}
+            {/* Tags */}
             <div className="node-modal__field">
-              <span className="node-modal__field-label">Labels</span>
+              <span className="node-modal__field-label">Tags</span>
               <button
                 className="node-modal__field-value"
-                onClick={() => setOpenField(f => f === 'labels' ? null : 'labels')}
+                onClick={() => setOpenField(f => f === 'tags' ? null : 'tags')}
                 type="button"
               >
                 <TagIcon size={14} />
-                {taskLabels.length > 0 ? taskLabels.map(l => `@${l.name}`).join(' ') : 'Add labels'}
+                {taskTags.length > 0 ? taskTags.map(t => `$${t.name}`).join(' ') : 'Add tags'}
               </button>
-              {openField === 'labels' && (
+              {openField === 'tags' && (
                 <div className="node-modal__dropdown">
-                  {allLabels.map(l => (
+                  {allTags.map(t => (
                     <button
-                      key={l.id}
-                      className={`node-modal__dropdown-item ${node.labelIds.includes(l.id) ? 'node-modal__dropdown-item--active' : ''}`}
-                      onClick={() => toggleLabel(l.id)}
+                      key={t.id}
+                      className={`node-modal__dropdown-item ${node.tagIds.includes(t.id) ? 'node-modal__dropdown-item--active' : ''}`}
+                      onClick={() => toggleTag(t.id)}
                       type="button"
                     >
-                      <TagIcon size={14} color={l.color} />
-                      {l.name}
+                      <TagIcon size={14} color={t.color} />
+                      {t.name}
                     </button>
                   ))}
                   <button
                     className="node-modal__dropdown-item node-modal__dropdown-item--new"
-                    onClick={() => { setOpenField(null); setShowCreateLabel(true) }}
+                    onClick={() => { setOpenField(null); setShowCreateTag(true) }}
                     type="button"
                   >
-                    + New label
+                    + New tag
                   </button>
                 </div>
               )}
-              {showCreateLabel && (
-                <CreateLabelModal
-                  onClose={() => setShowCreateLabel(false)}
+              {showCreateTag && (
+                <CreateTagModal
+                  onClose={() => setShowCreateTag(false)}
                   onCreated={(id) => {
-                    const next = [...node.labelIds, id]
-                    patch({ labelIds: next })
-                    setShowCreateLabel(false)
+                    const next = [...node.tagIds, id]
+                    patch({ tagIds: next })
+                    setShowCreateTag(false)
                   }}
                 />
               )}
