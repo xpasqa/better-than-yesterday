@@ -4,6 +4,11 @@
 **Sumber:** board [Project 7](https://github.com/users/xpasqa/projects/7) ·
 [`spec.md`](spec.md) · [`todo.md`](todo.md) · [`policy/3`](../../../policy/3-product-policy.md)
 
+> **Versi yang bisa dieksekusi ada di [#83](https://github.com/xpasqa/better-than-yesterday/issues/83)** — urutan yang
+> sama, tapi ditulis untuk diserahkan ke agen lain tanpa konteks percakapan.
+> Kalau keduanya berbeda, **#83 yang menang** dan dokumen ini yang harus
+> menyusul.
+
 Dokumen ini bukan spec. Ia peta: **apa yang sudah berdiri, apa yang belum,
 dan kenapa urutannya begitu.** Semua rincian ada di spec/plan masing-masing
 fitur — di sini hanya alasan urutan dan hal-hal yang cuma kelihatan kalau
@@ -76,35 +81,35 @@ jadi menariknya maju setelah #43 adalah pilihan yang sah — bukan menyerobot.
 
 ## 3. Urutan yang disarankan
 
-### Gelombang 0 — tutup yang menggantung (2 kartu)
+Enam belas kartu, satu per satu (aturan 4: satu fitur di Ongoing pada satu
+waktu). Alasan tiap penempatan dan jebakannya ada di [#83](https://github.com/xpasqa/better-than-yesterday/issues/83).
 
-| # | Kartu | Catatan |
-|---|---|---|
-| 1 | **#24** → #23 ke Done | Recurring sudah lengkap dan direview, tapi **belum pernah dijalankan di browser sungguhan**. Sampai itu terjadi ia tinggal di Review |
-| 2 | **#41** hapus filter tersimpan | Murni penghapusan. Mengecilkan permukaan yang harus dibaca semua kartu sesudahnya |
+| Gel. | Urutan | Kartu | Kenapa di situ |
+|---|---|---|---|
+| **0** | 1 | [#80](https://github.com/xpasqa/better-than-yesterday/issues/80) E2E Playwright | Blok B **menutup #24** → #23 akhirnya bisa ke Done. Sekaligus jaring pengaman untuk #43 |
+| | 2 | [#75](https://github.com/xpasqa/better-than-yesterday/issues/75) bug anchor recurrence | Merusak task berulang **diam-diam** |
+| | 3 | [#77](https://github.com/xpasqa/better-than-yesterday/issues/77) metadata terurai | Kecil, nol perubahan model. Membuat recurring **terlihat** — berguna justru saat memverifikasi #23 |
+| | 4 | [#41](https://github.com/xpasqa/better-than-yesterday/issues/41) hapus filter tersimpan | Murni penghapusan; mengecilkan permukaan semua kartu sesudahnya |
+| **1** | 5 | [#43](https://github.com/xpasqa/better-than-yesterday/issues/43) label → tag | Sendirian — empat lapis sekaligus. Makin ditunda makin mahal |
+| **2** | 6 | [#29](https://github.com/xpasqa/better-than-yesterday/issues/29) Area → Project | **Migrasi enum + CHECK.** Baca peringatan di bawah |
+| | 7 | [#50](https://github.com/xpasqa/better-than-yesterday/issues/50) Anytime & Someday | Melengkapi lima daftar bawaan |
+| **3** | 8 | [#39](https://github.com/xpasqa/better-than-yesterday/issues/39) subtask di detail | Nol perubahan model. **Membuka jalan #65 blok D** |
+| | 9 | [#30](https://github.com/xpasqa/better-than-yesterday/issues/30) toggle selesai | |
+| | 10 | [#47](https://github.com/xpasqa/better-than-yesterday/issues/47) Logbook | Menggabung dua sumber |
+| **4** | 11 | [#31](https://github.com/xpasqa/better-than-yesterday/issues/31) Search | Menghidupkan tombol Sidebar yang selama ini mati |
+| | 12 | [#79](https://github.com/xpasqa/better-than-yesterday/issues/79) keyboard shortcut | Butuh #31 untuk `/` |
+| | 13 | [#64](https://github.com/xpasqa/better-than-yesterday/issues/64) auto-scheduling | Terisolasi penuh |
+| | 14 | [#65](https://github.com/xpasqa/better-than-yesterday/issues/65) Board | Blok D aman karena #39 sudah lewat |
+| | 15 | [#53](https://github.com/xpasqa/better-than-yesterday/issues/53) kelola tag | Butuh #43 |
+| | 16 | [#78](https://github.com/xpasqa/better-than-yesterday/issues/78) Settings | Terisolasi penuh |
 
-Mulai dari sini karena board yang punya kartu menggantung di Review membuat
-"apa yang sedang dikerjakan" jadi kabur — dan karena keduanya murah.
+**Menunggu:** [#81](https://github.com/xpasqa/better-than-yesterday/issues/81) drag reorder (setelah #65 blok C) ·
+[#82](https://github.com/xpasqa/better-than-yesterday/issues/82) reminder (setelah keputusan penjadwal) ·
+[#74](https://github.com/xpasqa/better-than-yesterday/issues/74), [#76](https://github.com/xpasqa/better-than-yesterday/issues/76) di Inbox.
 
-### Gelombang 1 — penamaan (1 kartu)
-
-| # | Kartu | Catatan |
-|---|---|---|
-| 3 | **#43** label → tag | Core + DB + sync + UI. Makin ditunda makin mahal |
-
-Sendirian di gelombangnya sendiri karena ia menyentuh empat lapis sekaligus;
-menumpuknya dengan kartu lain membuat diff-nya tidak bisa dibaca.
-
-### Gelombang 2 — struktur ala Things (2 kartu, 2 migrasi)
-
-| # | Kartu | Catatan |
-|---|---|---|
-| 4 | **#29** Area → Project | Migrasi `kind='area'` — enum, CHECK, tipe core, DTO sync |
-| 5 | **#50** Anytime & Someday | Kolom `isSomeday`. Melengkapi lima daftar bawaan |
-
-Ini inti model Things dan pondasi buat semua yang sesudahnya. Setelah
-gelombang ini, **lima daftar bawaan lengkap**: Inbox, Today, Upcoming,
-Anytime, Someday.
+**Boleh disisipkan kapan saja:** #64 dan #78 — nol konflik dengan apa pun.
+#31 juga boleh ditarik maju setelah #43; nilai hariannya paling tinggi dengan
+risiko paling rendah.
 
 > ### ⚠️ Satu migrasi pada satu waktu, diverifikasi sebelum lanjut
 >
@@ -118,29 +123,8 @@ Anytime, Someday.
 > benar-benar jalan sebelum menumpuk kartu berikutnya di atasnya.
 >
 > Bug itu lolos dari **sembilan review per-task** dan baru tertangkap review
-> menyeluruh di akhir. Review per-task tidak melihatnya karena tiap task
-> benar sendiri-sendiri.
-
-### Gelombang 3 — isi task & riwayat (3 kartu)
-
-| # | Kartu | Catatan |
-|---|---|---|
-| 6 | **#39** subtask di task detail | Nol perubahan model — murni rendering. Membuka jalan #63 |
-| 7 | **#30** toggle tampilkan/sembunyikan selesai | Parameter `includeCompleted` di `views.ts` |
-| 8 | **#47** Logbook | Menggabung dua sumber — lihat §5 |
-
-### Gelombang 4 — upgrade dari Todoist (4 kartu)
-
-| # | Kartu | Catatan |
-|---|---|---|
-| 9 | **#64** auto-scheduling | Terisolasi; boleh disisipkan lebih awal |
-| 10 | **#65** Board | Blok D (#63) sudah aman karena #39 lewat di gelombang 3 |
-| 11 | **#53** kelola tag | Butuh #43 |
-| 12 | **#31** search | Boleh ditarik maju kapan saja setelah #43 |
-
-Ditaruh terakhir bukan karena kurang penting, tapi karena
-[policy 3](../../../policy/3-product-policy.md) menempatkannya sebagai
-tambahan **di atas** struktur — dan strukturnya baru selesai di gelombang 2.
+> menyeluruh di akhir — tiap task benar sendiri-sendiri; yang salah
+> gabungannya.
 
 ---
 
@@ -261,7 +245,7 @@ menata sesuatu?* Kalau ya — tunduk pada model Things, atau tidak dibangun.
 
 ## 7. Fase 1 selesai bila
 
-- [ ] Dua belas kartu di §3 semuanya **Done** — dengan verifikasi
+- [ ] Enam belas kartu di §3 semuanya **Done** — dengan verifikasi
       benar-benar dijalankan, bukan cuma tes hijau (aturan 5)
 - [ ] Lima daftar bawaan lengkap dan benar: Inbox, Today, Upcoming, Anytime,
       Someday
