@@ -21,6 +21,9 @@ function formatPreviewDate(date: string): string {
 }
 
 /** The quick-add input shared by every real (store-backed) view. */
+// NOTE: The input's aria-label="Quick add a task" is a stable contract relied
+// upon by the global keyboard shortcut handler in App.tsx (q/a keys). Do not
+// change this value without updating the DOM query in the keyboard listener.
 function QuickAddBar({ timezone, defaultParentId }: QuickAddBarProps) {
   const [value, setValue] = useState('')
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BellIcon, ListIcon } from '@phosphor-icons/react'
 import { useMediaQuery } from './hooks/useMediaQuery'
@@ -14,6 +14,7 @@ import ProjectModal from './components/ProjectModal'
 import type { ProjectModalKind } from './components/ProjectModal'
 import NodeDetailModal from './components/NodeDetailModal'
 import AgentSettingsModal from './components/AgentSettingsModal'
+import ShortcutsModal from './components/ShortcutsModal'
 import TodayReal from './components/TodayReal'
 import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
@@ -32,6 +33,23 @@ import type { Node } from '@better/core/node'
 import './styles/variables.css'
 import './styles/global.css'
 import './App.css'
+
+/**
+ * Single-letter shortcuts must never fire while someone is typing, while a
+ * modal owns the screen, or when a modifier makes the key belong to the
+ * browser or the OS. Getting any of these wrong makes the app feel broken
+ * rather than merely incomplete.
+ */
+function shouldIgnore(e: KeyboardEvent, modalOpen: boolean): boolean {
+  if (e.ctrlKey || e.metaKey || e.altKey) return true
+  if (modalOpen) return true
+  const el = document.activeElement
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    (el instanceof HTMLElement && el.isContentEditable)
+  )
+}
 
 function useAuthGate() {
   const [user, setUser] = useState<AuthUser | null | 'loading'>('loading')
@@ -76,6 +94,53 @@ function App() {
 
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+
+  // Pending "g" prefix for two-key nav shortcuts (g→i, g→t, g→u)
+  const pendingGRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingG = useRef(false)
+
+  useEffect(() => {
+    const modalOpen = Boolean(projectModal) || agentSettingsOpen || Boolean(openNodeId) || showShortcuts
+
+    const handler = (e: KeyboardEvent) => {
+      if (shouldIgnore(e, modalOpen)) return
+
+      // Two-key "g" prefix sequences
+      if (pendingG.current) {
+        pendingG.current = false
+        if (pendingGRef.current) clearTimeout(pendingGRef.current)
+        if (e.key === 'i') { navigate(pathForView('inbox')); return }
+        if (e.key === 't') { navigate(pathForView('today')); return }
+        if (e.key === 'u') { navigate(pathForView('upcoming')); return }
+        return
+      }
+
+      switch (e.key) {
+        case 'q':
+        case 'a': {
+          // Focus the Quick Add input — aria-label is the stable selector contract
+          // (QuickAddBar.tsx documents this dependency on its input's aria-label)
+          const input = document.querySelector<HTMLInputElement>('input[aria-label="Quick add a task"]')
+          if (input) { input.focus(); input.select() }
+          break
+        }
+        case '/':
+          navigate(pathForView('search'))
+          break
+        case 'g':
+          pendingG.current = true
+          pendingGRef.current = setTimeout(() => { pendingG.current = false }, 1500)
+          break
+        case '?':
+          setShowShortcuts(true)
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [navigate, projectModal, agentSettingsOpen, openNodeId, showShortcuts])
 
   /*
    * Below 1024px the sidebar stops being a docked column and becomes an
@@ -202,6 +267,9 @@ function App() {
       )}
       {agentSettingsOpen && (
         <AgentSettingsModal onClose={() => setAgentSettingsOpen(false)} />
+      )}
+      {showShortcuts && (
+        <ShortcutsModal onClose={() => setShowShortcuts(false)} />
       )}
       {openNodeId && (() => {
         const openNode = realNodes.find(n => n.id === openNodeId) ?? null
