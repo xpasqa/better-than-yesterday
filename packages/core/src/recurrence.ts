@@ -39,6 +39,73 @@ const WEEKDAY_TO_CODE: Record<string, string> = {
   // behavior.
 }
 
+const DAY_NAMES: Record<string, string> = {
+  SU: 'Minggu', MO: 'Senin', TU: 'Selasa', WE: 'Rabu',
+  TH: 'Kamis', FR: 'Jumat', SA: 'Sabtu',
+}
+
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+]
+
+/**
+ * Converts an RRULE string (as produced by this module) into a short human
+ * phrase in Indonesian, for display only. Returns null for anything this app
+ * does not itself produce — the caller shows no icon, which is a cosmetic gap,
+ * whereas throwing would take down the whole list.
+ */
+export function describeRecurrence(rule: string | null): string | null {
+  if (!rule) return null
+  try {
+    const parts = new Map(
+      rule.split(';').map((p) => {
+        const i = p.indexOf('=')
+        return [p.slice(0, i), p.slice(i + 1)] as [string, string]
+      }),
+    )
+
+    const freq = parts.get('FREQ')
+
+    if (freq === 'DAILY') {
+      const interval = parts.get('INTERVAL')
+      if (!interval) return 'setiap hari'
+      const n = Number(interval)
+      return Number.isInteger(n) && n > 0 ? `setiap ${n} hari` : null
+    }
+
+    if (freq === 'WEEKLY') {
+      const byday = parts.get('BYDAY')
+      if (!byday) return null
+      if (byday === 'MO,TU,WE,TH,FR') return 'setiap hari kerja'
+      const days = byday.split(',')
+      if (days.length === 1 && DAY_NAMES[days[0]]) return `setiap ${DAY_NAMES[days[0]]}`
+      return null
+    }
+
+    if (freq === 'MONTHLY') {
+      const bymonthday = parts.get('BYMONTHDAY')
+      if (!bymonthday) return null
+      const d = Number(bymonthday)
+      return Number.isInteger(d) && d > 0 ? `setiap tanggal ${d}` : null
+    }
+
+    if (freq === 'YEARLY') {
+      const bymonth = parts.get('BYMONTH')
+      const bymonthday = parts.get('BYMONTHDAY')
+      if (!bymonth || !bymonthday) return null
+      const m = Number(bymonth)
+      const d = Number(bymonthday)
+      if (!Number.isInteger(m) || m < 1 || m > 12 || !Number.isInteger(d) || d < 1) return null
+      return `setiap ${d} ${MONTH_NAMES[m - 1]}`
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
 /** Finds every occurrence of the eight spec.md §8 recurrence phrases in `input`. */
 export function findRecurrenceCandidates(input: string): Candidate[] {
   const candidates: Candidate[] = []

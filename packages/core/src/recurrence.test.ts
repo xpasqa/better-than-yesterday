@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { anchorRecurrence, findRecurrenceCandidates, nextOccurrence, nextOccurrenceAfter } from './recurrence.ts'
+import { anchorRecurrence, describeRecurrence, findRecurrenceCandidates, nextOccurrence, nextOccurrenceAfter } from './recurrence.ts'
 
 function values(input: string): string[] {
   return findRecurrenceCandidates(input).map((c) => c.value)
@@ -235,6 +235,30 @@ describe('anchorRecurrence', () => {
   it('is a no-op for a null rule or a null dueDate', () => {
     expect(anchorRecurrence(null, '2026-08-05')).toBeNull()
     expect(anchorRecurrence('FREQ=MONTHLY', null)).toBe('FREQ=MONTHLY')
+  })
+})
+
+describe('describeRecurrence', () => {
+  const cases: [string | null, string | null][] = [
+    ['FREQ=DAILY', 'setiap hari'],
+    ['FREQ=DAILY;INTERVAL=3', 'setiap 3 hari'],
+    ['FREQ=WEEKLY;BYDAY=MO', 'setiap Senin'],
+    ['FREQ=WEEKLY;BYDAY=SU', 'setiap Minggu'],
+    ['FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', 'setiap hari kerja'],
+    ['FREQ=MONTHLY;BYMONTHDAY=8', 'setiap tanggal 8'],
+    ['FREQ=YEARLY;BYMONTH=8;BYMONTHDAY=17', 'setiap 17 Agustus'],
+    ['FREQ=HOURLY', null],
+    ['bukan rrule', null],
+    ['', null],
+    [null, null],
+  ]
+  it.each(cases)('describes %s as %s', (rule, expected) => {
+    expect(describeRecurrence(rule)).toBe(expected)
+  })
+
+  it('does not throw on a malformed rule', () => {
+    expect(() => describeRecurrence('FREQ=MONTHLY;BYMONTHDAY=')).not.toThrow()
+    expect(describeRecurrence('FREQ=MONTHLY;BYMONTHDAY=')).toBeNull()
   })
 })
 
