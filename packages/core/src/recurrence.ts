@@ -211,8 +211,9 @@ export function nextOccurrenceAfter(rule: string, fromDate: string, notAfter: st
  * fixes that — it's what `findRecurrenceCandidates` already does for the
  * "setiap tanggal N" pattern; this just extends the same fix to the bare
  * "setiap bulan"/"setiap tahun" patterns, which don't carry a day on their
- * own since the phrase itself doesn't name one. A no-op for every other
- * rule shape (already-anchored, or not MONTHLY/YEARLY) and for a null rule
+ * own since the phrase itself doesn't name one. Also re-anchors already-anchored
+ * MONTHLY/YEARLY rules when dueDate changes (issue #75 — chip tanggal overrides
+ * the original anchor). A no-op for all other rule shapes and for a null rule
  * or null dueDate.
  */
 export function anchorRecurrence(rule: string | null, dueDate: string | null): string | null {
