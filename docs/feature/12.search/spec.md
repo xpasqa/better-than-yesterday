@@ -21,8 +21,11 @@ pernah diimplementasi. Jejaknya di kode hari ini:
 
 `1.todo/todo.md` blok G membundel "Filter tersimpan & pencarian" jadi satu
 item. Spec ini **sengaja memecahnya**: hanya mengerjakan search, tanpa
-menyentuh bahasa query filter tersimpan (§7) yang jauh lebih besar dan
-butuh parser sendiri berikut pelaporan posisi karakter yang gagal di-parse.
+menyentuh bahasa query filter tersimpan (§7).
+
+> **Diperbarui 2026-08-08:** filter tersimpan kemudian **dihapus seluruhnya**
+> (fitur 15). Pemisahan search dari blok G tetap benar; yang berubah cuma
+> alasannya — blok G sekarang tinggal search saja.
 
 ---
 
@@ -35,9 +38,8 @@ butuh parser sendiri berikut pelaporan posisi karakter yang gagal di-parse.
 - Task **aktif dan selesai** ikut tercari; yang selesai tampil tercoret
 
 **Out (dengan alasan):**
-- **Bahasa query filter tersimpan (§7)** — pekerjaan terpisah dan jauh lebih
-  besar. Spec ini justru menyiapkan jalannya: term `search: <teks>` di §7
-  nanti tinggal memanggil `matches()` dari modul ini.
+- ~~**Bahasa query filter tersimpan (§7)**~~ — **dihapus seluruhnya** oleh
+  fitur 15. Tidak ada lagi yang perlu disiapkan untuknya.
 - **Highlight teks yang cocok di hasil** — polish yang tidak menghalangi
   fitur berfungsi; lihat issue polish terpisah.
 - **Keyboard shortcut untuk membuka search** (`⌘K` / `/`) — app ini belum
@@ -57,7 +59,7 @@ butuh parser sendiri berikut pelaporan posisi karakter yang gagal di-parse.
 
 | Keputusan | Alasan |
 |---|---|
-| **Modul sendiri `core/search.ts`**, bukan menambah ke `views.ts` | `views.ts` isinya filter pohon & tanggal; search wataknya beda (tokenisasi teks, ranking). Lebih penting: `core/filter.ts` kelak meng-*import* matcher ini untuk term `search:` §7 — kalau ditanam di `views.ts`, filter.ts harus impor modul yang 90% isinya tak terkait. |
+| **Modul sendiri `core/search.ts`**, bukan menambah ke `views.ts` | `views.ts` isinya filter pohon & tanggal; search wataknya beda — tokenisasi teks dan ranking relevansi.<br><br>**Catatan kejujuran:** alasan utama semula adalah "`core/filter.ts` kelak mengimpor matcher ini". Filter tersimpan sudah dihapus (fitur 15), jadi argumen itu **gugur**. Keputusannya tetap dipertahankan atas alasan yang tersisa — pemisahan watak — yang memang lebih lemah tapi masih berdiri sendiri. |
 | **Multi-kata, semua harus ada, urutan bebas** | "susu beli" tetap menemukan "beli susu di pasar". Cuma sedikit lebih rumit dari substring polos, tapi jauh lebih sesuai cara orang mengingat isi task. |
 | **Task selesai ikut muncul** | Orang sering mencari task justru karena ingat pernah mengerjakannya. Pembedanya visual (tercoret), bukan disembunyikan. Konsisten dengan arah issue #30. |
 | **Halaman `/search` sendiri**, bukan overlay `⌘K` | Persis pola view yang sudah ada (`routes.ts` → `ViewType` → cabang di `App.tsx`), jadi paling murah dan konsisten. Dapat URL sendiri yang bisa di-bookmark — `2.outline/spec.md` §8 menjadikan "tiap view punya alamat sungguhan" sebagai prinsip. Overlay tanpa `⌘K` kehilangan sebagian besar nilainya, dan shortcut belum ada. |
@@ -82,7 +84,7 @@ export function tokenize(query: string): string[]
 /**
  * Apakah `node` cocok dengan seluruh `tokens`? Setiap token harus ada di
  * judul ATAU catatan (urutan bebas). Dipakai `search()`, dan nanti oleh
- * `core/filter.ts` untuk term `search: <teks>` (spec §7).
+ * pemanggil lain di kemudian hari, tanpa ikut membawa logika ranking.
  */
 export function matches(node: Node, tokens: string[]): boolean
 
