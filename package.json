@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"PORT=3001 npm run dev -w @better/api\" \"npm run dev -w @better/web\"",
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.scripts.json",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p e2e/tsconfig.json",
     "lint": "oxlint -c oxlint.json .",
     "lint:fix": "oxlint -c oxlint.json . --fix",
     "test": "npm run test --workspaces --if-present",

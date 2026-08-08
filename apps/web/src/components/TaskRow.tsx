@@ -64,7 +64,7 @@ function TaskRow({ node, labelsById, allNodes = [], onOpenNode, timezone }: Task
       <button
         type="button"
         className={`task-row__checkbox task-row__checkbox--p${priority}`}
-        aria-label={done ? 'Mark as incomplete' : 'Mark as complete'}
+        aria-label={done ? `Mark ${node.content} as incomplete` : `Mark ${node.content} as complete`}
         onClick={() => void toggleTaskComplete(node, timezone)}
       >
         {done && (
