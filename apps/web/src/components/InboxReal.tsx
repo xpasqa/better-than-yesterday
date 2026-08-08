@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { inbox as computeInbox } from '@better/core/views'
 import { findInbox } from '@better/core/node'
-import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, EyeIcon, EyeSlashIcon, PlusIcon } from '@phosphor-icons/react'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
+import { useShowCompleted } from '../hooks/useShowCompleted'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
@@ -19,8 +20,9 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
   const tags = useAllTags()
   const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
+  const [showCompleted, toggleShowCompleted] = useShowCompleted()
 
-  const items = computeInbox(nodes)
+  const items = computeInbox(nodes, showCompleted)
   const inboxId = findInbox(nodes)?.id ?? null
 
   return (
@@ -32,6 +34,16 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
             <CheckCircleIcon size={14} />
             {items.length} {items.length === 1 ? 'task' : 'tasks'}
             <SyncStatusBadge />
+            <button
+              className="real-view__toggle-completed"
+              onClick={toggleShowCompleted}
+              type="button"
+              aria-pressed={showCompleted}
+              title={showCompleted ? 'Hide completed tasks' : 'Show completed tasks'}
+            >
+              {showCompleted ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
+              {showCompleted ? 'Hide completed' : 'Show completed'}
+            </button>
           </p>
         </div>
 

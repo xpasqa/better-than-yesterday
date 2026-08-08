@@ -109,6 +109,30 @@
   line-height: 1.4;
 }
 
+/* Toggle "show completed" button — sits inline in the subtitle row */
+.real-view__toggle-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-content);
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: inherit;
+  transition: color 0.1s;
+}
+
+.real-view__toggle-completed:hover {
+  color: var(--text-secondary);
+}
+
+.real-view__toggle-completed[aria-pressed='true'] {
+  color: var(--text-secondary);
+}
+
 /* Mobile: reduce top padding */
 @media (max-width: 767px) {
   .real-view__inner {

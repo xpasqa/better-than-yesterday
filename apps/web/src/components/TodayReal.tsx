@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { todayInTimezone } from '@better/core/date'
 import { today as computeToday } from '@better/core/views'
-import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, EyeIcon, EyeSlashIcon, PlusIcon } from '@phosphor-icons/react'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
+import { useShowCompleted } from '../hooks/useShowCompleted'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
@@ -19,10 +20,11 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
   const tags = useAllTags()
   const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
+  const [showCompleted, toggleShowCompleted] = useShowCompleted()
 
   const timezone = user.timezone ?? 'Asia/Jakarta'
   const todayStr = todayInTimezone(timezone)
-  const { overdue, today: dueToday } = computeToday(nodes, todayStr)
+  const { overdue, today: dueToday } = computeToday(nodes, todayStr, showCompleted)
   const openCount = overdue.length + dueToday.length
 
   const now = new Date()
@@ -37,6 +39,16 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
             <CheckCircleIcon size={14} />
             {openCount} {openCount === 1 ? 'task' : 'tasks'}
             <SyncStatusBadge />
+            <button
+              className="real-view__toggle-completed"
+              onClick={toggleShowCompleted}
+              type="button"
+              aria-pressed={showCompleted}
+              title={showCompleted ? 'Hide completed tasks' : 'Show completed tasks'}
+            >
+              {showCompleted ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
+              {showCompleted ? 'Hide completed' : 'Show completed'}
+            </button>
           </p>
         </div>
 
