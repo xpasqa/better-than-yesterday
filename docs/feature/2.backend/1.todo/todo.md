@@ -1,3 +1,6 @@
+> **Peta finalisasi:** untuk urutan pengerjaan sisa fitur dan apa yang belum
+> punya kartu di board, baca [`finalisasi.md`](finalisasi.md).
+
 # Todo: Backend Todo — Paritas Todoist
 
 Urutan eksekusi [spec.md](spec.md). Prasyarat: fase 0 selesai. Tiap blok
