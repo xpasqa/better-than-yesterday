@@ -22,9 +22,11 @@ Yang tersisa duduk di atas pondasi itu — bukan menggantinya.
 
 | | Jumlah |
 |---|---|
-| Epic di **Ready** | 11 |
+| Epic di **Ready** | 15 |
 | Epic di **Review** | 1 (#23 recurring) |
-| Issue di dalam epic | 26 |
+| Issue di dalam epic | 34 |
+| Kartu di **Backlog** | 3 |
+| Kartu di **Inbox** | 2 |
 | Kartu di **Ongoing** | 0 |
 
 Aturan 4 [workflow](../../../policy/2-workflow.md) mengunci **satu fitur di
@@ -142,38 +144,69 @@ tambahan **di atas** struktur — dan strukturnya baru selesai di gelombang 2.
 
 ---
 
-## 4. Yang belum punya kartu sama sekali
+## 4. Sisa yang sekarang sudah berkartu
 
-Ini bagian yang paling gampang terlewat: board berisi sebelas epic, tapi
-[`todo.md`](todo.md) masih menyimpan pekerjaan yang **tidak diwakili kartu
-mana pun**. Menyelesaikan dua belas kartu di §3 **tidak** menyelesaikan fase
-1.
+Bagian ini semula berjudul *"yang belum punya kartu sama sekali"*. Semuanya
+sudah ditelusuri ke kode dan dibuatkan kartu — dan penelusuran itu mengubah
+beberapa di antaranya.
 
-| Blok | Yang tersisa | Ukuran |
+### Ready (4 epic, 8 issue)
+
+| Epic | Isi | Temuan yang mengubah bentuknya |
 |---|---|---|
-| **I** | **Reminder & notifikasi web push** — tabel `reminder`/`notification`/`push_subscription` sudah ada di skema, **nol kode** | besar — butuh service worker, VAPID, penjadwal |
-| **J** | Halaman Settings — timezone user masih hardcode `'Asia/Jakarta'` di enam pemanggilan | sedang |
-| **J** | Keyboard shortcut (`q`/`a` buka quick add, `⌘Z` undo) | sedang |
-| **J** | E2E Playwright — runner belum terpasang sama sekali | sedang |
-| **E** | Penyorotan `spans` di dalam input quick-add — **data sudah ada dari parser**, tinggal dirender | kecil |
-| **F** | Drag reorder lintas section/project (Today belum punya drag) | sedang |
-| **H** | Indikator recurring di meta row `TaskRow` — sengaja di luar scope #23 | kecil |
+| [#77](https://github.com/xpasqa/better-than-yesterday/issues/77) Metadata terurai | Pratinjau parse di quick-add · ikon recurring di `TaskRow` | Dua sisa yang tampak tak berhubungan ternyata **satu masalah**: parser sudah mengerti, UI tidak pernah memberitahu. `grep -rn "spans" apps/web/src` → nol pemakai |
+| [#78](https://github.com/xpasqa/better-than-yesterday/issues/78) Settings | `PATCH /api/me` · halaman `/settings` | **Jauh lebih kecil dari dugaan** — lihat di bawah |
+| [#79](https://github.com/xpasqa/better-than-yesterday/issues/79) Keyboard shortcut | Listener global · modal daftar | Yang menentukan berhasil-tidaknya bukan shortcut-nya, tapi **tiga penjaganya** |
+| [#80](https://github.com/xpasqa/better-than-yesterday/issues/80) E2E Playwright | Pasang · tiga alur | Salah satu alurnya **menutup #24**, yang selama ini menahan #23 di Review |
 
-**Reminder & notifikasi (blok I) adalah lubang terbesar** — ia disebut di
-judul spec induk sebagai bagian dari paritas, skemanya sudah dibuat, dan
-belum ada satu baris kode pun. Ia juga satu-satunya sisa yang butuh
-infrastruktur baru (service worker, kunci VAPID, penjadwal sisi server),
-bukan sekadar kode aplikasi.
+### Backlog (2, sengaja)
 
-Tiga yang **kecil** (`spans` highlight, indikator recurring) menarik karena
-datanya sudah tersedia — parser sudah mengembalikan `spans`, node sudah punya
-`recurrence`. Yang kurang cuma perenderannya. Kandidat bagus untuk disisipkan
-di sela gelombang.
+| Kartu | Kenapa belum Ready |
+|---|---|
+| [#81](https://github.com/xpasqa/better-than-yesterday/issues/81) Drag reorder | Menunggu [#65](https://github.com/xpasqa/better-than-yesterday/issues/65) blok C mendarat. Blok C memperkenalkan seret HTML5 **pertama** di app ini; menulis rencana untuk seret kedua sebelum yang pertama ada berarti menebak idiomnya lalu menulis ulang. Dua cara menyeret yang berbeda lebih buruk daripada satu cara yang datang belakangan |
+| [#82](https://github.com/xpasqa/better-than-yesterday/issues/82) Reminder & notifikasi | **Lubang terbesar.** Satu keputusan operasional menahannya: di mana penjadwalnya jalan — cron sistem (seperti `backup-db.sh` yang sudah ada), `node-cron` di kontainer, atau antrean sungguhan. Condong ke yang pertama, tapi itu bukan keputusan kode |
 
-Semuanya masih di [`todo.md`](todo.md), **belum di board** — sesuai aturan:
-kartu baru masuk lewat Inbox setelah ada spec, bukan langsung.
+### Inbox (2 ide)
 
----
+- [#74](https://github.com/xpasqa/better-than-yesterday/issues/74) — tiga kolom preferensi yang tidak menyetir apa pun
+- [#76](https://github.com/xpasqa/better-than-yesterday/issues/76) — undo `⌘Z`, dipisahkan dari shortcut karena ia fitur
+  undo yang kebetulan punya shortcut
+
+### Bug yang ditemukan sambil jalan
+
+[#75](https://github.com/xpasqa/better-than-yesterday/issues/75) — **chip tanggal di `AddTaskFormReal` merusak anchor
+recurrence.** `anchorRecurrence` memanggang `BYMONTHDAY` dari `dueDate` saat
+task dibuat; lalu `handleSubmit` menimpa `dueDate` lewat `updateNode` **tanpa
+menghitung ulang `recurrence`**. Mengetik `bayar listrik setiap bulan` lalu
+memilih tanggal 20 lewat chip menghasilkan `dueDate=20` dengan
+`BYMONTHDAY=8` — task berulangnya berpindah hari permanen.
+
+Kelas yang sama dengan #25, dan tidak ada di board karena ia bug, bukan
+fitur.
+
+### Tiga hal yang berubah setelah ditelusuri
+
+**Settings jauh lebih kecil dari yang dicatat.** `todo.md` menulis "timezone
+user memakai default `Asia/Jakarta`" — itu **fallback**, bukan hardcode.
+Timezone sudah dipakai di sembilan tempat; yang hilang cuma cara mengubahnya.
+
+**Dan tiga dari empat kolom preferensi tidak menyetir apa pun.** `language`
+paling menipu: ia ada di `ParseContext` dan dioper dari dua komponen, tapi
+`grep -n "language" packages/core/src/parse.ts` cuma menemukan **baris
+deklarasinya**. Parser mencocokkan kata Indonesia dan Inggris sekaligus,
+tanpa syarat. Parameter itu mati sejak lahir. `week_start` dan
+`default_remind_time` juga tidak pernah dibaca.
+
+Karena itu #78 **hanya** menangani timezone: kenop yang tidak tersambung ke
+apa pun lebih buruk daripada tidak ada kenop.
+
+**"Sorotan spans di dalam input" diganti pratinjau di bawahnya.** `<input>`
+tidak bisa memuat markup, jadi tekniknya harus mirror div dengan font,
+padding, dan scroll yang sinkron piksel-per-piksel — sorotan yang mendarat di
+huruf salah adalah bug yang tidak pernah benar-benar selesai. Pratinjau di
+bawah menyampaikan hal yang sama **plus** nilai hasilnya (`10 Agu`), yang
+sorotan warna tidak bisa. Untuk `minggu depan` justru itu yang paling
+penting.
 
 ## 5. Hal-hal yang cuma kelihatan dari atas
 
@@ -233,9 +266,10 @@ menata sesuatu?* Kalau ya — tunduk pada model Things, atau tidak dibangun.
 - [ ] Lima daftar bawaan lengkap dan benar: Inbox, Today, Upcoming, Anytime,
       Someday
 - [ ] Logbook memuat riwayat task biasa **dan** task berulang
-- [ ] Blok I (reminder & notifikasi) punya spec — atau dinyatakan keluar dari
-      fase 1 secara tertulis, bukan didiamkan
-- [ ] Sisa blok E/F/H/J di §4 punya kartu atau keputusan tertulis
+- [x] Blok I (reminder & notifikasi) punya spec — [#82](https://github.com/xpasqa/better-than-yesterday/issues/82)
+- [x] Sisa blok E/F/H/J di §4 punya kartu
+- [ ] Keputusan penjadwal [#82](https://github.com/xpasqa/better-than-yesterday/issues/82) diambil, supaya plan-nya bisa ditulis
+- [ ] [#75](https://github.com/xpasqa/better-than-yesterday/issues/75) diperbaiki — ia merusak task berulang secara diam-diam
 - [ ] `npm run verify` hijau; `packages/core` tetap tanpa I/O
 
 Yang **tidak** jadi syarat: paritas fitur dengan Todoist. Itu bukan lagi
