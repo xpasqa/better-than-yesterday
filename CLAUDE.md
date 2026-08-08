@@ -28,8 +28,8 @@ brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
 
 ```
 1 feature  =  1 epic  +  N detailed issues
-                ↓
-        the epic IS the project
+                         ↓
+        the task list on the board IS the epic
 ```
 
 - **Detailed issues carry the work.** Each is independently implementable
@@ -39,8 +39,10 @@ brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
   checklist (`- [ ] #32 — ...`), states their order and dependencies, and
   holds the shared design decisions plus what is deliberately out of scope.
   It does not duplicate the issues' technical detail — that would drift.
-- **The epic defines the project.** One epic → one project board, carrying
-  that epic and its issues and nothing else.
+- **The board's task list is the epic, made visible.** A feature's epic and
+  its issues sit together as items on the board and move through the Status
+  columns as a group. There is **one board** — do not create a separate
+  board per feature.
 
 ### Hard rules
 
@@ -51,8 +53,9 @@ brainstorm  →  spec.md  →  plan.md + todo.md  →  epic + issues  →  board
    the board as part of a feature that already went through the pipeline. A
    drive-by issue with no spec does not belong there — it goes to **Inbox**
    as an idea until it is specced.
-3. **One project = one feature = one epic.** Do not mix unrelated features
-   into the same board.
+3. **One board; the task list on it is the epic.** A feature's epic and its
+   issues go on the board together and move through the columns as a group.
+   Do not spin up a separate board per feature.
 4. **Nothing enters Ready half-specced.** Spec without plan means
    **Backlog**, not Ready. This distinction is the entire point of having
    both columns.
