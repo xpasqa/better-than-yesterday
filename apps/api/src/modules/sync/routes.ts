@@ -133,9 +133,16 @@ function toCompletionRow(userId: string, dto: CompletionDto) {
  * Insert-only: completions are immutable after creation (spec §8). The
  * DO NOTHING on conflict means a retry is always safe — the original row
  * is kept and the caller sees a 200 either way.
+ * Only completions for nodes owned by the caller are accepted — foreign
+ * nodeIds are silently dropped.
  */
 async function applyIncomingCompletions(userId: string, dtos: CompletionDto[]): Promise<void> {
   for (const dto of dtos) {
+    // Ownership guard: only accept completions for nodes this user owns.
+    const owner = await db.select({ id: node.id }).from(node)
+      .where(and(eq(node.id, dto.nodeId), eq(node.userId, userId)))
+      .limit(1)
+    if (owner.length === 0) continue
     const row = toCompletionRow(userId, dto)
     await db.insert(completion).values(row).onConflictDoNothing()
   }
@@ -150,7 +157,9 @@ function nodeToDto(row: typeof node.$inferSelect): NodeDto {
     content: row.content,
     note: row.note,
     dueDate: row.dueDate,
-    dueTime: row.dueTime,
+    // Postgres TIME columns return 'HH:MM:SS' — strip the seconds so the
+    // value is always in the 'HH:MM' format the client expects.
+    dueTime: row.dueTime ? row.dueTime.slice(0, 5) : row.dueTime,
     durationMin: row.durationMin,
     recurrence: row.recurrence,
     priority: row.priority as NodeDto['priority'],
