@@ -7,7 +7,7 @@ import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
 import { findInbox, sanitizeNode, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
-import { anchorRecurrence, nextOccurrence, nextOccurrenceAfter } from '@better/core/recurrence'
+import { anchorRecurrence, nextOccurrence, nextOccurrenceAfter, reanchorRecurrence } from '@better/core/recurrence'
 import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
@@ -162,10 +162,27 @@ export async function deleteTask(node: Node): Promise<void> {
   await enqueue({ ...node, deletedAt: now, updatedAt: now })
 }
 
-/** Patch a node with the given fields. Uses LWW: sets updatedAt to now. */
+/**
+ * Patch a node with the given fields. Uses LWW: sets updatedAt to now.
+ *
+ * Moving the due date re-anchors the recurrence rule (issue #75). A monthly
+ * or yearly rule carries the day it repeats on inside its own text, baked in
+ * from whatever date the task had when it was created — so patching only
+ * `dueDate` leaves the two disagreeing, and the next completion sends the
+ * task back to the old day and keeps it there. Both callers that patch a
+ * date (`NodeDetailModal`'s calendar, `AddTaskFormReal`'s date chip) are the
+ * user picking a date by hand, which is precisely when the picked date
+ * should win — see `reanchorRecurrence`'s note on why the paths that advance
+ * a date *by the rule* (`toggleTaskComplete`, `skipRecurrence`) must not,
+ * and deliberately write through `enqueue` instead of coming through here.
+ */
 export async function updateNode(id: string, patch: Partial<Omit<Node, 'id' | 'userId' | 'createdAt' | 'seq'>>): Promise<void> {
   const existing = await db.nodes.get(id)
   if (!existing) return
   const now = new Date().toISOString()
-  await enqueue({ ...existing, ...patch, id, updatedAt: now })
+  const updated: Node = { ...existing, ...patch, id, updatedAt: now }
+  if ('dueDate' in patch && patch.dueDate !== existing.dueDate) {
+    updated.recurrence = reanchorRecurrence(updated.recurrence, updated.dueDate)
+  }
+  await enqueue(updated)
 }
