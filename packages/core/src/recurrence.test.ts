@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { anchorRecurrence, describeRecurrence, findRecurrenceCandidates, nextOccurrence, nextOccurrenceAfter } from './recurrence.ts'
+import {
+  anchorRecurrence,
+  describeRecurrence,
+  findRecurrenceCandidates,
+  nextOccurrence,
+  nextOccurrenceAfter,
+  reanchorRecurrence,
+} from './recurrence.ts'
 
 function values(input: string): string[] {
   return findRecurrenceCandidates(input).map((c) => c.value)
@@ -215,16 +222,22 @@ describe('anchorRecurrence', () => {
     expect(anchorRecurrence('FREQ=YEARLY', '2028-02-29')).toBe('FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29')
   })
 
-  it('re-anchors an already-anchored FREQ=MONTHLY rule to a new dueDate (issue #75: date chip change must update BYMONTHDAY)', () => {
-    // Bug scenario: parser infers dueDate=8th → BYMONTHDAY=8; user picks 20th via chip.
-    // anchorRecurrence must update the anchor to 20, not leave it as 8.
-    expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', '2026-08-20')).toBe('FREQ=MONTHLY;BYMONTHDAY=20')
-    // Same-day case: no-op in practice but must still return the correct value
+  it('leaves an already-anchored rule untouched', () => {
     expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=25', '2026-08-25')).toBe('FREQ=MONTHLY;BYMONTHDAY=25')
   })
 
-  it('re-anchors an already-anchored FREQ=YEARLY rule to a new dueDate', () => {
-    expect(anchorRecurrence('FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=8', '2026-03-20')).toBe('FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=20')
+  it('keeps a day the user named out loud, even when dueDate defaulted to some other day', () => {
+    // The create path calls this with a dueDate that defaults to *today*
+    // whenever the phrase carried no date of its own — and "setiap tanggal 8"
+    // is exactly such a phrase. Re-anchoring here would rewrite the day the
+    // user typed to whatever day they happened to type it on: "setiap tanggal
+    // 8" entered on the 10th would silently become BYMONTHDAY=10.
+    //
+    // This is why re-anchoring lives in `reanchorRecurrence` and is reachable
+    // only from `updateNode` (a date the user picked), never from create.
+    // A branch that merged the two functions into one shipped precisely this
+    // regression, so the boundary is pinned here rather than left implicit.
+    expect(anchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', '2026-08-10')).toBe('FREQ=MONTHLY;BYMONTHDAY=8')
   })
 
   it('leaves non-MONTHLY/YEARLY rules untouched', () => {
@@ -260,6 +273,45 @@ describe('describeRecurrence', () => {
   it('does not throw on a malformed rule', () => {
     expect(() => describeRecurrence('FREQ=MONTHLY;BYMONTHDAY=')).not.toThrow()
     expect(describeRecurrence('FREQ=MONTHLY;BYMONTHDAY=')).toBeNull()
+  })
+})
+
+describe('reanchorRecurrence — issue #75, the due date the user just picked wins over a stale anchor', () => {
+  it('moves BYMONTHDAY to the new dueDate, unlike anchorRecurrence which would leave it stale', () => {
+    // The exact repro in issue #75: "bayar listrik setiap bulan" typed on the
+    // 8th anchors to BYMONTHDAY=8, then the date chip moves the task to the
+    // 20th. anchorRecurrence is a no-op here (the rule is already anchored),
+    // which is why re-anchoring needs its own function.
+    expect(reanchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', '2026-08-20')).toBe('FREQ=MONTHLY;BYMONTHDAY=20')
+  })
+
+  it('moves BYMONTH and BYMONTHDAY to the new dueDate for a yearly rule', () => {
+    expect(reanchorRecurrence('FREQ=YEARLY;BYMONTH=8;BYMONTHDAY=8', '2027-03-02')).toBe(
+      'FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=2',
+    )
+  })
+
+  it('anchors a still-bare rule too, so the create and edit paths agree', () => {
+    expect(reanchorRecurrence('FREQ=MONTHLY', '2026-08-20')).toBe('FREQ=MONTHLY;BYMONTHDAY=20')
+    expect(reanchorRecurrence('FREQ=YEARLY', '2026-08-20')).toBe('FREQ=YEARLY;BYMONTH=8;BYMONTHDAY=20')
+  })
+
+  it('leaves rules that carry no date anchor untouched — their phase follows dueDate on its own', () => {
+    expect(reanchorRecurrence('FREQ=DAILY;INTERVAL=3', '2026-08-20')).toBe('FREQ=DAILY;INTERVAL=3')
+    expect(reanchorRecurrence('FREQ=WEEKLY', '2026-08-20')).toBe('FREQ=WEEKLY')
+  })
+
+  it('leaves BYDAY alone — "setiap senin" names its own day, and #75 is not about weekday rules', () => {
+    expect(reanchorRecurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-19')).toBe('FREQ=WEEKLY;BYDAY=MO')
+  })
+
+  it('is a no-op for a null rule or a null dueDate', () => {
+    expect(reanchorRecurrence(null, '2026-08-20')).toBeNull()
+    expect(reanchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', null)).toBe('FREQ=MONTHLY;BYMONTHDAY=8')
+  })
+
+  it('leaves the rule alone when the re-anchored date lands on the day it already had', () => {
+    expect(reanchorRecurrence('FREQ=MONTHLY;BYMONTHDAY=8', '2026-09-08')).toBe('FREQ=MONTHLY;BYMONTHDAY=8')
   })
 })
 

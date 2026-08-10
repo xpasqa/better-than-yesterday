@@ -285,18 +285,37 @@ export function nextOccurrenceAfter(rule: string, fromDate: string, notAfter: st
  * or null dueDate.
  */
 export function anchorRecurrence(rule: string | null, dueDate: string | null): string | null {
+  if (rule === 'FREQ=MONTHLY' || rule === 'FREQ=YEARLY') return reanchorRecurrence(rule, dueDate)
+  return rule
+}
+
+/**
+ * Like `anchorRecurrence`, but *replaces* an anchor that's already there
+ * instead of leaving it — issue #75. Use this when the user has just picked
+ * a due date directly: the rule's baked-in day was derived from whatever
+ * date the task happened to have at creation time, and once the user moves
+ * the task to another day that day is stale. Left stale, completing the task
+ * sends it back to the old day and it stays there permanently — the same
+ * silent drift as issue #25, reached from the other direction.
+ *
+ * Only MONTHLY/YEARLY carry a date anchor in their rule text. DAILY,
+ * INTERVAL and bare WEEKLY take their phase from `dueDate` itself, so they
+ * follow a moved date with no help. `BYDAY` is deliberately left alone: it
+ * comes from the user naming a weekday out loud ("setiap senin"), not from a
+ * date the code guessed on their behalf.
+ *
+ * Only ever call this for a date the user chose. Calling it on a date that
+ * *the rule itself* produced would re-derive the anchor from an occurrence
+ * that may have been clamped by a short month — which is exactly the drift
+ * issue #25 exists to prevent. That's why `toggleTaskComplete` and
+ * `skipRecurrence` advance the due date without going near this.
+ */
+export function reanchorRecurrence(rule: string | null, dueDate: string | null): string | null {
   if (!rule || !dueDate) return rule
   const [, monthStr, dayStr] = dueDate.split('-')
   const month = Number(monthStr)
   const day = Number(dayStr)
-  // Bare unanchored patterns — first-time anchor from dueDate
-  if (rule === 'FREQ=MONTHLY') return `FREQ=MONTHLY;BYMONTHDAY=${day}`
-  if (rule === 'FREQ=YEARLY') return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
-  // Already-anchored MONTHLY — re-anchor to new dueDate (issue #75: chip date
-  // change must update BYMONTHDAY so the rule tracks the new day, not the
-  // original parse-time anchor).
-  if (/^FREQ=MONTHLY;BYMONTHDAY=\d+$/.test(rule)) return `FREQ=MONTHLY;BYMONTHDAY=${day}`
-  // Already-anchored YEARLY — re-anchor both month and day
-  if (/^FREQ=YEARLY;BYMONTH=\d+;BYMONTHDAY=\d+$/.test(rule)) return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
+  if (rule.startsWith('FREQ=MONTHLY')) return `FREQ=MONTHLY;BYMONTHDAY=${day}`
+  if (rule.startsWith('FREQ=YEARLY')) return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
   return rule
 }
