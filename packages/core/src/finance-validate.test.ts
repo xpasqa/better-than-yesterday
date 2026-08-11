@@ -62,6 +62,16 @@ describe('bentuk per tipe (spec §6)', () => {
       toAccountId: 'acc-tabungan', toPocket: 'personal',
     })
     expect(codes(d, ctx)).toContain('CATEGORY_FORBIDDEN')
+
+    const noFrom = draft({
+      type: 'transfer', categoryId: null,
+      fromAccountId: null, fromPocket: null,
+      toAccountId: 'acc-tabungan', toPocket: 'personal',
+    })
+    expect(codes(noFrom, ctx)).toContain('FROM_REQUIRED')
+
+    const noTo = draft({ type: 'transfer', categoryId: null })
+    expect(codes(noTo, ctx)).toContain('TO_REQUIRED')
   })
 
   it('transfer ke dirinya sendiri persis ditolak', () => {
