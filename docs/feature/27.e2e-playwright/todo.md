@@ -19,5 +19,5 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — pemasangan
-- [ ] B — dua alur
+- [x] A — pemasangan
+- [x] B — dua alur

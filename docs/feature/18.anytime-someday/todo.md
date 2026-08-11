@@ -11,5 +11,5 @@ Rincian: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — skema & core
-- [ ] B — view & UI
+- [x] A — skema & core
+- [x] B — view & UI

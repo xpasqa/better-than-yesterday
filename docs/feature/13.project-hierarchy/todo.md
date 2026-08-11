@@ -18,7 +18,7 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — migrasi & core
-- [ ] B — store
-- [ ] C — modal
-- [ ] D — sidebar
+- [x] A — migrasi & core
+- [x] B — store
+- [x] C — modal
+- [x] D — sidebar

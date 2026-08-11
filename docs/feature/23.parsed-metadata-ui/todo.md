@@ -16,5 +16,5 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — core + TaskRow
-- [ ] B — pratinjau quick-add
+- [x] A — core + TaskRow
+- [x] B — pratinjau quick-add

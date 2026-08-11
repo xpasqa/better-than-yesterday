@@ -16,5 +16,5 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — helper kalender
-- [ ] B — pola parser
+- [x] A — helper kalender
+- [x] B — pola parser

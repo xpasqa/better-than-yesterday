@@ -14,6 +14,6 @@ Rincian langkah per blok: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](s
 
 ## Status
 
-- [ ] A — core
-- [ ] B — view & routing
-- [ ] C — highlight (polish, opsional)
+- [x] A — core
+- [x] B — view & routing
+- [x] C — highlight (polish, opsional)

@@ -23,7 +23,7 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — core
-- [ ] B — store
-- [ ] C — board view
-- [ ] D — heading di list
+- [x] A — core
+- [x] B — store
+- [x] C — board view
+- [x] D — heading di list

@@ -9,4 +9,4 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — daftar subtask di task detail
+- [x] A — daftar subtask di task detail

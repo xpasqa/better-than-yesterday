@@ -13,5 +13,5 @@ Rincian: [plan.md](plan.md). Alasan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — store
-- [ ] B — halaman
+- [x] A — store
+- [x] B — halaman

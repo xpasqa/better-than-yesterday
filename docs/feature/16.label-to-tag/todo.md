@@ -13,6 +13,6 @@ Urutan A → B → C, ketat — melompatinya bikin typecheck rusak di tengah jal
 Rincian: [plan.md](plan.md). Alasan: [spec.md](spec.md).
 
 ## Status
-- [ ] A — core & database
-- [ ] B — sync
-- [ ] C — UI
+- [x] A — core & database
+- [x] B — sync
+- [x] C — UI

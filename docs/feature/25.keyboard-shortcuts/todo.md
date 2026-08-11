@@ -16,5 +16,5 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — listener & shortcut
-- [ ] B — modal daftar
+- [x] A — listener & shortcut
+- [x] B — modal daftar

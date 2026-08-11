@@ -17,5 +17,5 @@ Rincian langkah: [plan.md](plan.md). Alasan tiap keputusan: [spec.md](spec.md).
 
 ## Status
 
-- [ ] A — route
-- [ ] B — halaman
+- [x] A — route
+- [x] B — halaman
