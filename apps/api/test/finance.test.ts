@@ -424,6 +424,27 @@ describe('endpoint tulis §8', () => {
     expect((await accountBalances(user.id)).find((a) => a.id === dompet)!.balance).toBe(0)
   })
 
+  it('PATCH yang melepas fromPocket sendirian tanpa menyentuh fromAccountId ditolak 422 (celah review Task C)', async () => {
+    const user = await createTestUser('w4b@example.com')
+    const cookie = await loginCookie('w4b@example.com')
+    await ensureFinanceSeed(user.id)
+    const created = await post(cookie, await expenseBody(user.id, 25_000))
+    expect(created.status).toBe(201)
+
+    // Baris saat ini punya fromAccountId (Dompet). PATCH ini cuma mengirim
+    // fromPocket: null — service.ts menggabungkannya ke draft lengkap
+    // (fromAccountId lama tetap ada, fromPocket jadi null), dan gabungan itu
+    // yang harus ditolak validateTransaction, bukan patch mentahnya.
+    const res = await app.request(`/api/finance/transactions/${created.body.transaction.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ fromPocket: null }),
+    })
+    expect(res.status).toBe(422)
+    const body = await readJson(res)
+    expect(body.error.details.violations).toContainEqual({ field: 'fromAccountId', code: 'FROM_POCKET_MISMATCH' })
+  })
+
   it('DELETE pinjaman yang sudah dibayar sebagian meminta konfirmasi dulu (§11.2)', async () => {
     const user = await createTestUser('w5@example.com')
     const cookie = await loginCookie('w5@example.com')

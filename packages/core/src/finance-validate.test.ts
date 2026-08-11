@@ -116,3 +116,37 @@ describe('aturan tambahan (spec §6)', () => {
     expect(codes(draft(), { ...ctx, archivedIds: ['cat-makan'] })).toContain('ARCHIVED')
   })
 })
+
+describe('akun dan kantong berpasangan (celah dari review Task C)', () => {
+  it('fromAccountId terisi tanpa fromPocket ditolak', () => {
+    expect(codes(draft({ fromAccountId: 'acc-bca', fromPocket: null }), ctx)).toContain('FROM_POCKET_MISMATCH')
+  })
+
+  // Arah ini sebenarnya tak terjangkau lewat form UI normal (fromPocket
+  // butuh fromAccountId untuk dipilih dulu), tapi draft datang lewat body
+  // request mentah — client nakal atau bug bisa mengirim fromPocket sendirian.
+  // FROM_REQUIRED/FROM_FORBIDDEN tidak menyentuh kombinasi ini sama sekali,
+  // jadi tanpa cek ini draft begini akan lolos validasi.
+  it('fromPocket terisi tanpa fromAccountId ditolak', () => {
+    const d = draft({ type: 'income', fromAccountId: null, fromPocket: 'personal', toAccountId: 'acc-tabungan', toPocket: 'personal' })
+    expect(codes(d, { ...ctx, categoryType: 'income' })).toContain('FROM_POCKET_MISMATCH')
+  })
+
+  it('toAccountId terisi tanpa toPocket ditolak', () => {
+    const d = draft({ type: 'income', fromAccountId: null, fromPocket: null, toAccountId: 'acc-tabungan', toPocket: null })
+    expect(codes(d, { ...ctx, categoryType: 'income' })).toContain('TO_POCKET_MISMATCH')
+  })
+
+  it('toPocket terisi tanpa toAccountId ditolak', () => {
+    expect(codes(draft({ toAccountId: null, toPocket: 'business' }), ctx)).toContain('TO_POCKET_MISMATCH')
+  })
+
+  it('draft yang sudah valid — akun dan kantong berpasangan — tidak memicu kode baru ini', () => {
+    expect(validateTransaction(draft(), ctx)).toEqual([])
+    const transfer = draft({
+      type: 'transfer', categoryId: null, fromPocket: 'business',
+      toAccountId: 'acc-bca', toPocket: 'personal',
+    })
+    expect(validateTransaction(transfer, ctx)).toEqual([])
+  })
+})

@@ -32,6 +32,8 @@ export type ViolationCode =
   | 'SELF_TRANSFER'
   | 'COUNTERPARTY_REQUIRED'
   | 'ARCHIVED'
+  | 'FROM_POCKET_MISMATCH'
+  | 'TO_POCKET_MISMATCH'
 
 export type ViolationField = 'amount' | 'date' | 'categoryId' | 'fromAccountId' | 'toAccountId' | 'counterparty'
 
@@ -109,6 +111,16 @@ export function validateTransaction(draft: TransactionDraft, ctx: ValidateContex
   if (draft.fromAccountId && archived.has(draft.fromAccountId)) v.push({ field: 'fromAccountId', code: 'ARCHIVED' })
   if (draft.toAccountId && archived.has(draft.toAccountId)) v.push({ field: 'toAccountId', code: 'ARCHIVED' })
   if (draft.categoryId && archived.has(draft.categoryId)) v.push({ field: 'categoryId', code: 'ARCHIVED' })
+
+  // 7. Akun dan kantongnya harus jalan berpasangan — satu terisi tanpa yang
+  // lain akan lolos ke DB lalu hilang diam-diam dari pemecahan saldo per
+  // kantong (§9.3). Berlaku dua arah: id tanpa kantong, atau kantong tanpa id.
+  if ((draft.fromAccountId === null) !== (draft.fromPocket === null)) {
+    v.push({ field: 'fromAccountId', code: 'FROM_POCKET_MISMATCH' })
+  }
+  if ((draft.toAccountId === null) !== (draft.toPocket === null)) {
+    v.push({ field: 'toAccountId', code: 'TO_POCKET_MISMATCH' })
+  }
 
   return v
 }
