@@ -3,9 +3,23 @@ import {
   CalendarBlankIcon, FlagIcon, PaperPlaneTiltIcon, PlusIcon, XIcon,
 } from '@phosphor-icons/react'
 import type { Node } from '@better/core/node'
+import { parse } from '@better/core/parse'
+import { describeRecurrence } from '@better/core/recurrence'
 import { createTaskFromQuickAdd } from '../store/node-actions'
 import { useAllNodes } from '../store/use-nodes'
 import './AddTaskForm.css'
+
+/** Formats a YYYY-MM-DD string as "Hari ini", "Besok", or "10 Agu". */
+function formatPreviewDate(date: string): string {
+  const today = new Date().toISOString().split('T')[0]
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrow = tomorrowDate.toISOString().split('T')[0]
+  if (date === today) return 'Hari ini'
+  if (date === tomorrow) return 'Besok'
+  const d = new Date(date + 'T00:00:00')
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+}
 
 interface AddTaskFormRealProps {
   defaultParentId?: string | null
@@ -23,8 +37,9 @@ const PRIORITIES = [
 ]
 
 /**
- * Visually identical to AddTaskForm but backed by the real Node store.
- * Uses createTaskFromQuickAdd for persistence — title input only, no NLP.
+ * Visually identical to AddTaskForm but backed by the real Node store and
+ * createTaskFromQuickAdd's NLP parser — the title input accepts the same
+ * quick-add syntax as the rest of the app (dates, $tags, #project, !priority).
  */
 export default function AddTaskFormReal({
   defaultParentId, defaultDueDate, timezone, onCancel, onAdded,
@@ -51,6 +66,23 @@ export default function AddTaskFormReal({
     : dueDate === today
       ? 'Today'
       : new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+
+  // Preview of what the NLP parser recognises in `content` so far — only
+  // shown once at least one field is recognised. parse() is pure and fast,
+  // so calling it on every render is intentional (issue #77 block B; this
+  // used to live in QuickAddBar.tsx, a component that was never actually
+  // mounted anywhere in the app).
+  const parsePreview = (() => {
+    const trimmed = content.trim()
+    if (!trimmed) return null
+    const parsed = parse(trimmed, { now: new Date(), timezone, language: 'id' })
+    const parts: string[] = []
+    if (parsed.dueDate) parts.push(formatPreviewDate(parsed.dueDate))
+    if (parsed.priority) parts.push(`P${parsed.priority}`)
+    const recLabel = describeRecurrence(parsed.recurrence)
+    if (recLabel) parts.push(recLabel)
+    return parts.length > 0 ? parts.join(' · ') : null
+  })()
 
   const handleSubmit = async () => {
     const trimmed = content.trim()
@@ -110,6 +142,11 @@ export default function AddTaskFormReal({
           onChange={e => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        {parsePreview && (
+          <p className="real-view__quick-add-preview" aria-hidden="true">
+            {parsePreview}
+          </p>
+        )}
         {showDescription && (
           <input
             className="add-task-form__desc-input"

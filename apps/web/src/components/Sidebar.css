@@ -396,6 +396,13 @@
   min-width: 0;
 }
 
+/* Positioned via inline style (top/right, computed from the trigger
+   button's getBoundingClientRect) since it's portaled to document.body —
+   left: 0 from .sidebar__profile-menu must not apply here. */
+.sidebar__add-menu {
+  left: auto;
+}
+
 .sidebar__profile-menu {
   position: absolute;
   top: calc(100% + 4px);

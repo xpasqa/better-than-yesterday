@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
@@ -34,7 +35,7 @@ interface SidebarProps {
   onProjectChange: (id: string) => void
   onToggleCollapse: () => void
   /** Opens the Create Project modal */
-  onAddProject: () => void
+  onAddProject: (kind: 'project' | 'area') => void
   /** Opens the Agent Settings modal */
   onOpenSettings: () => void
   onLogout: () => void
@@ -113,18 +114,30 @@ export default function Sidebar({
   const [favoritesExpanded, setFavoritesExpanded] = useState(true)
   const profileRef = useRef<HTMLDivElement>(null)
   const [profileOpen, setProfileOpen] = useState(false)
+  // Rendered via a portal (below) rather than inline: the "My Projects"
+  // section sits inside a scrolling nav list with overflow-x: hidden, which
+  // clips an inline absolutely-positioned dropdown instead of letting it
+  // overflow — same reason NodeDetailModal's calendar dropdown is a portal.
+  const addTriggerRef = useRef<HTMLButtonElement>(null)
+  const addMenuPortalRef = useRef<HTMLDivElement>(null)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const [addMenuPos, setAddMenuPos] = useState<{ top: number; right: number } | null>(null)
 
   // Close dropdown on outside click
   useEffect(() => {
-    if (!profileOpen) return
+    if (!profileOpen && !addMenuOpen) return
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false)
       }
+      const t = e.target as Node
+      if (!addMenuPortalRef.current?.contains(t) && !addTriggerRef.current?.contains(t)) {
+        setAddMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [profileOpen])
+  }, [profileOpen, addMenuOpen])
 
   const realTodayStr = todayInTimezone(timezone)
   const realToday = computeToday(realNodes, realTodayStr)
@@ -418,14 +431,49 @@ export default function Sidebar({
           <div className="sidebar__section-header">
             <span className="sidebar__section-title">My Projects</span>
             <button
+              ref={addTriggerRef}
               className="sidebar__section-add"
-              title="Add project"
+              title="Add project or area"
               type="button"
-              onClick={onAddProject}
-              aria-label="Add project"
+              onClick={() => {
+                const rect = addTriggerRef.current?.getBoundingClientRect()
+                if (rect) setAddMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+                setAddMenuOpen(o => !o)
+              }}
+              aria-label="Add project or area"
+              aria-haspopup="true"
+              aria-expanded={addMenuOpen}
             >
               <PlusIcon size={16} weight="bold" />
             </button>
+            {addMenuOpen && addMenuPos && createPortal(
+              <div
+                ref={addMenuPortalRef}
+                className="sidebar__profile-menu sidebar__add-menu"
+                role="menu"
+                style={{ position: 'fixed', top: addMenuPos.top, right: addMenuPos.right }}
+              >
+                <button
+                  className="sidebar__profile-item"
+                  role="menuitem"
+                  type="button"
+                  onClick={() => { setAddMenuOpen(false); onAddProject('project') }}
+                >
+                  <FolderIcon size={15} />
+                  New Project
+                </button>
+                <button
+                  className="sidebar__profile-item"
+                  role="menuitem"
+                  type="button"
+                  onClick={() => { setAddMenuOpen(false); onAddProject('area') }}
+                >
+                  <TrayIcon size={15} />
+                  New Area
+                </button>
+              </div>,
+              document.body,
+            )}
             <button
               className="sidebar__section-chevron"
               onClick={() => setProjectsExpanded(e => !e)}

@@ -122,10 +122,27 @@ function App() {
       switch (e.key) {
         case 'q':
         case 'a': {
-          // Focus the Quick Add input — aria-label is the stable selector contract
-          // (QuickAddBar.tsx documents this dependency on its input's aria-label)
-          const input = document.querySelector<HTMLInputElement>('input[aria-label="Quick add a task"]')
-          if (input) { input.focus(); input.select() }
+          // preventDefault: this handler moves focus onto a freshly-opened
+          // text input as a *result* of this very keystroke — without this,
+          // the browser's own default handling for the same keydown types
+          // the triggering letter into the input it just focused.
+          e.preventDefault()
+          // Focus the Quick Add input — aria-label is the stable selector
+          // contract (AddTaskFormReal.tsx documents this dependency). The
+          // input only exists once the view's own "+ Add task" toggle has
+          // been clicked open, so click it first when the form is closed —
+          // otherwise this shortcut silently did nothing on every view's
+          // default (form-closed) state, which is the common case.
+          const focusQuickAdd = () => {
+            const input = document.querySelector<HTMLInputElement>('input[aria-label="Quick add a task"]')
+            if (input) { input.focus(); input.select() }
+          }
+          if (document.querySelector('input[aria-label="Quick add a task"]')) {
+            focusQuickAdd()
+          } else {
+            document.querySelector<HTMLButtonElement>('.real-view__add-task-btn')?.click()
+            requestAnimationFrame(focusQuickAdd)
+          }
           break
         }
         case '/':
@@ -213,7 +230,7 @@ function App() {
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
-          onAddProject={() => setProjectModal({ mode: 'create', kind: 'project' })}
+          onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
           onOpenSettings={() => setAgentSettingsOpen(true)}
           onLogout={handleLogout}
           onEditNode={(node) => setProjectModal({

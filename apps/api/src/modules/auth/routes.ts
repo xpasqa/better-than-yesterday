@@ -67,7 +67,7 @@ authRoutes.post('/login', async (c) => {
     path: '/',
   })
 
-  return c.json({ user: { id: user.id, email: user.email, name: user.name } })
+  return c.json({ user: { id: user.id, email: user.email, name: user.name, timezone: user.timezone } })
 })
 
 authRoutes.post('/logout', (c) => {
