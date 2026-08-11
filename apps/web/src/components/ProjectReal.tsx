@@ -4,6 +4,8 @@ import { SquaresFourIcon, ListBulletsIcon, CheckCircleIcon, EyeIcon, EyeSlashIco
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import { useShowCompleted } from '../hooks/useShowCompleted'
+import { reorderSibling } from '../store/node-actions'
+import type { Node } from '@better/core/node'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
@@ -22,6 +24,26 @@ function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
   const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
   const [showCompleted, toggleShowCompleted] = useShowCompleted()
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: 'before' | 'after' } | null>(null)
+
+  // Reordering is scoped to one column's own items (spec §2: "di dalam satu
+  // daftar") — each section (and the implicit "no section" column) is its
+  // own parentId group, so `columnItems` must be that column's list, not
+  // the project's full flat item list, or beforeId/afterId could be
+  // computed against a sibling from a different section entirely.
+  async function handleReorderDrop(columnItems: Node[]) {
+    if (!draggedId || !dropTarget) return
+    const others = columnItems.filter((n) => n.id !== draggedId)
+    const targetIdx = others.findIndex((n) => n.id === dropTarget.id)
+    if (targetIdx === -1) { setDraggedId(null); setDropTarget(null); return }
+    const insertAt = dropTarget.position === 'before' ? targetIdx : targetIdx + 1
+    const beforeId = insertAt > 0 ? others[insertAt - 1]!.id : null
+    const afterId = insertAt < others.length ? others[insertAt]!.id : null
+    setDraggedId(null)
+    setDropTarget(null)
+    await reorderSibling(draggedId, beforeId, afterId)
+  }
 
   const storageKey = `bty.project-view.${projectId}`
   const [mode, setMode] = useState<'list' | 'board'>(
@@ -92,7 +114,18 @@ function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
                   {col.items.length > 0 && (
                     <ul className="real-view__list">
                       {col.items.map((n) => (
-                        <TaskRow key={n.id} node={n} tagsById={tagsById} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
+                        <TaskRow
+                          key={n.id}
+                          node={n}
+                          tagsById={tagsById}
+                          onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined}
+                          timezone={user.timezone ?? 'Asia/Jakarta'}
+                          reorderable
+                          dropIndicator={dropTarget?.id === n.id ? dropTarget.position : null}
+                          onReorderDragStart={setDraggedId}
+                          onReorderDragOver={(id, position) => setDropTarget({ id, position })}
+                          onReorderDrop={() => void handleReorderDrop(col.items)}
+                        />
                       ))}
                     </ul>
                   )}

@@ -4,7 +4,7 @@
 // will all eventually call through here once they're migrated off mock
 // data (docs/feature/2.backend/1.todo/todo.md blocks C–J).
 import { uuidv7 } from '@better/core/id'
-import { between } from '@better/core/rank'
+import { between, rebalance } from '@better/core/rank'
 import { findInbox, sanitizeNode, type Node } from '@better/core/node'
 import { parse } from '@better/core/parse'
 import { anchorRecurrence, nextOccurrence, nextOccurrenceAfter, reanchorRecurrence } from '@better/core/recurrence'
@@ -300,4 +300,55 @@ export async function updateNode(id: string, patch: Partial<Omit<Node, 'id' | 'u
     updated.recurrence = reanchorRecurrence(updated.recurrence, updated.dueDate)
   }
   await enqueue(updated)
+}
+
+/**
+ * Moves `itemId` to a new position among its siblings (same `parentId` +
+ * `kind`), between `beforeId` and `afterId` — issue #81. Dropping back into
+ * the exact gap it already occupied writes nothing (spec §3): a failed drag
+ * shouldn't bump `updatedAt` and ship a no-op row to every other device.
+ *
+ * `between()` produces a longer key each time something is repeatedly
+ * inserted into the same gap — past 32 characters this rebalances every
+ * sibling to fresh, evenly-spaced keys in one batch instead (same tradeoff
+ * `deleteSection` makes: rare, deliberate, one transaction), so cheap
+ * single-row moves stay cheap indefinitely.
+ */
+export async function reorderSibling(itemId: string, beforeId: string | null, afterId: string | null): Promise<void> {
+  const allNodes = await db.nodes.toArray()
+  const item = allNodes.find((n) => n.id === itemId)
+  if (!item) return
+
+  const siblings = allNodes
+    .filter((n) => n.parentId === item.parentId && n.kind === item.kind && n.deletedAt === null)
+    .sort((a, b) => (a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0))
+
+  const idx = siblings.findIndex((n) => n.id === itemId)
+  const currentPrevId = idx > 0 ? siblings[idx - 1]!.id : null
+  const currentNextId = idx < siblings.length - 1 ? siblings[idx + 1]!.id : null
+  if (currentPrevId === beforeId && currentNextId === afterId) return
+
+  const others = siblings.filter((n) => n.id !== itemId)
+  const beforeNode = beforeId ? others.find((n) => n.id === beforeId) : undefined
+  const afterNode = afterId ? others.find((n) => n.id === afterId) : undefined
+  const newRank = between(beforeNode?.rank ?? null, afterNode?.rank ?? null)
+  const now = new Date().toISOString()
+
+  if (newRank.length <= 32) {
+    await enqueue({ ...item, rank: newRank, updatedAt: now })
+    return
+  }
+
+  const insertAt = beforeNode ? others.indexOf(beforeNode) + 1 : 0
+  const reordered = [...others.slice(0, insertAt), item, ...others.slice(insertAt)]
+  const freshRanks = rebalance(reordered.length)
+
+  await db.transaction('rw', db.nodes, db.outbox, async () => {
+    for (const [i, n] of reordered.entries()) {
+      const safe = sanitizeNode({ ...n, rank: freshRanks[i]!, updatedAt: now })
+      await db.nodes.put(safe)
+      await db.outbox.put({ key: `node:${safe.id}`, entityType: 'node', payload: safe })
+    }
+  })
+  triggerSync()
 }

@@ -18,6 +18,16 @@ interface TaskRowProps {
   timezone: string
   /** When provided (e.g. from SearchView), matching substrings in title and note are wrapped in <mark>. */
   tokens?: string[]
+  /**
+   * Drag-to-reorder (issue #81) — only Inbox and Project pass these. Today
+   * and Upcoming order by date then priority (views.ts), not `rank`;
+   * dragging there would lie, since the row would jump back on next render.
+   */
+  reorderable?: boolean
+  dropIndicator?: 'before' | 'after' | null
+  onReorderDragStart?: (id: string) => void
+  onReorderDragOver?: (id: string, position: 'before' | 'after') => void
+  onReorderDrop?: () => void
 }
 
 const priorityColors: Record<number, string> = {
@@ -41,7 +51,10 @@ function formatDueDate(date: string): { text: string; overdue: boolean; isToday:
 }
 
 /** Shared row for every real (store-backed) task view — Today, Inbox, Upcoming, Project. */
-function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone, tokens }: TaskRowProps) {
+function TaskRow({
+  node, tagsById, allNodes = [], onOpenNode, timezone, tokens,
+  reorderable, dropIndicator, onReorderDragStart, onReorderDragOver, onReorderDrop,
+}: TaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
@@ -60,7 +73,20 @@ function TaskRow({ node, tagsById, allNodes = [], onOpenNode, timezone, tokens }
       className={[
         'task-row',
         done && 'task-row--done',
+        dropIndicator && `task-row--drop-${dropIndicator}`,
       ].filter(Boolean).join(' ')}
+      draggable={reorderable}
+      onDragStart={reorderable ? (e) => {
+        e.dataTransfer.setData('text/plain', node.id)
+        onReorderDragStart?.(node.id)
+      } : undefined}
+      onDragOver={reorderable ? (e) => {
+        e.preventDefault()
+        const rect = e.currentTarget.getBoundingClientRect()
+        const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+        onReorderDragOver?.(node.id, position)
+      } : undefined}
+      onDrop={reorderable ? (e) => { e.preventDefault(); onReorderDrop?.() } : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
     >

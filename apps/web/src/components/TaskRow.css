@@ -13,6 +13,16 @@
   list-style: none;
 }
 
+/* Drag-to-reorder insert line (issue #81) — box-shadow so it doesn't
+   fight the row's own border-bottom divider. */
+.task-row--drop-before {
+  box-shadow: inset 0 2px 0 var(--brand-red-idle);
+}
+
+.task-row--drop-after {
+  box-shadow: inset 0 -2px 0 var(--brand-red-idle);
+}
+
 /* Hover fill bleeds 8px wider than the row — same as TaskItem */
 .task-row::before {
   content: '';

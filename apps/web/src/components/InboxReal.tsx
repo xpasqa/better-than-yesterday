@@ -5,6 +5,7 @@ import { CheckCircleIcon, EyeIcon, EyeSlashIcon, PlusIcon } from '@phosphor-icon
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import { useShowCompleted } from '../hooks/useShowCompleted'
+import { reorderSibling } from '../store/node-actions'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
@@ -21,9 +22,25 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
   const tagsById = new Map(tags.map((t) => [t.id, t]))
   const [addingTask, setAddingTask] = useState(false)
   const [showCompleted, toggleShowCompleted] = useShowCompleted()
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: 'before' | 'after' } | null>(null)
 
   const items = computeInbox(nodes, showCompleted)
   const inboxId = findInbox(nodes)?.id ?? null
+
+  // Neighbors of the drop target, skipping the dragged row itself if it's
+  // one of them (dropping right next to your own current position).
+  async function handleReorderDrop() {
+    if (!draggedId || !dropTarget) return
+    const others = items.filter((n) => n.id !== draggedId)
+    const targetIdx = others.findIndex((n) => n.id === dropTarget.id)
+    const insertAt = dropTarget.position === 'before' ? targetIdx : targetIdx + 1
+    const beforeId = insertAt > 0 ? others[insertAt - 1]!.id : null
+    const afterId = insertAt < others.length ? others[insertAt]!.id : null
+    setDraggedId(null)
+    setDropTarget(null)
+    await reorderSibling(draggedId, beforeId, afterId)
+  }
 
   return (
     <main className="real-view">
@@ -50,7 +67,19 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
         {items.length > 0 && (
           <ul className="real-view__list">
             {items.map((n) => (
-              <TaskRow key={n.id} node={n} tagsById={tagsById} allNodes={nodes} onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined} timezone={user.timezone ?? 'Asia/Jakarta'} />
+              <TaskRow
+                key={n.id}
+                node={n}
+                tagsById={tagsById}
+                allNodes={nodes}
+                onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined}
+                timezone={user.timezone ?? 'Asia/Jakarta'}
+                reorderable
+                dropIndicator={dropTarget?.id === n.id ? dropTarget.position : null}
+                onReorderDragStart={setDraggedId}
+                onReorderDragOver={(id, position) => setDropTarget({ id, position })}
+                onReorderDrop={() => void handleReorderDrop()}
+              />
             ))}
           </ul>
         )}
