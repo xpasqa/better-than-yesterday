@@ -295,6 +295,7 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
                 ref={dateFieldRef}
                 className="node-modal__field-value"
                 onClick={openDateField}
+                aria-label="Due date"
                 type="button"
               >
                 <CalendarBlankIcon size={14} />

@@ -36,8 +36,10 @@ export const test = base.extend<{ userEmail: string }>({
     await page.getByLabel(/password/i).fill('e2e-password')
     await page.getByRole('button', { name: /sign.?in/i }).click()
 
-    // Wait until we're inside the app — QuickAddBar's "Add" button is always visible
-    await expect(page.getByRole('button', { name: /^Add$/i })).toBeVisible()
+    // Wait until we're inside the app — Today's "+ Add task" trigger is always
+    // visible in its default (form-closed) state. Scoped to <main> because
+    // Sidebar has its own "Add task" button with the same accessible name.
+    await expect(page.getByRole('main').getByRole('button', { name: /add task/i })).toBeVisible()
 
     await use(email)
   },

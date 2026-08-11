@@ -6,6 +6,7 @@ test('a task created offline reaches the server once sync is allowed again', asy
   // Block sync at the network layer — avoids needing Docker privileges.
   await context.route('**/api/sync', (route) => route.abort())
 
+  await page.getByRole('main').getByRole('button', { name: /add task/i }).click()
   const input = page.getByLabel('Quick add a task')
   await input.fill('task saat offline')
   await input.press('Enter')

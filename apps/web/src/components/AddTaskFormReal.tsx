@@ -95,6 +95,7 @@ export default function AddTaskFormReal({
           ref={inputRef}
           className="add-task-form__title-input"
           placeholder="Task name"
+          aria-label="Quick add a task"
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={handleKeyDown}

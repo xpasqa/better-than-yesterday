@@ -10,6 +10,11 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // one Postgres, shared state — parallel files would race
   retries: 0,
+  // Vite dev compiles modules on first request — a cold server can take
+  // longer than the 5s default to serve the first real page, causing
+  // flaky timeouts unrelated to app behavior. webServer.port only waits for
+  // the port to accept connections, not for the app to finish compiling.
+  expect: { timeout: 10_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:4200',

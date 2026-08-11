@@ -205,7 +205,11 @@
   border-radius: 8px;
   box-shadow: var(--shadow-dropdown);
   min-width: 190px;
-  z-index: 200;
+  /* Rendered via createPortal onto document.body — a sibling of
+     .node-modal-overlay (z-index 1000), not a descendant, so it needs a
+     higher z-index of its own to actually sit above the modal instead of
+     underneath it and intercepting no clicks at all. */
+  z-index: 1100;
   padding: 4px;
 }
 
