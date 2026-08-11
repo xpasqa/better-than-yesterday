@@ -98,6 +98,7 @@ export default function ReceivablesTab({ accounts, categories, revision, onChang
 
   async function resolveConfirm(cascade: 'one' | 'all') {
     if (!confirm) return
+    setError(null)
     try {
       await deleteTransaction(confirm.transactionId, cascade)
       setConfirm(null)
