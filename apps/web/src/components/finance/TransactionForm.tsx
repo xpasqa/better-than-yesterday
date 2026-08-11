@@ -1,20 +1,25 @@
 // Form per situasi. Bentuk datanya tidak disusun di sini — buildTransaction
 // di @better/core yang melakukannya (§4.2), jadi client dan server memakai
 // tabel §7 yang sama persis.
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { buildTransaction } from '@better/core/finance-action'
 import { validateTransaction } from '@better/core/finance-validate'
+import { todayInTimezone } from '@better/core/date'
 import type { FinanceAccount, FinanceCategory } from '../../types'
-import { postTransaction, FinanceApiError } from '../../store/finance-api'
+import { getReceivables, postTransaction, FinanceApiError } from '../../store/finance-api'
 import { savingsAccounts, type ActionSpec } from './action-catalog'
 
 interface Props {
   action: ActionSpec
   accounts: FinanceAccount[]
   categories: FinanceCategory[]
+  timezone: string
   onBack: () => void
   onSaved: () => void
 }
+
+/** Preferensi tampilan, bukan data keuangan — cukup di localStorage (§7, §10.2). */
+export const LAST_ACCOUNT_KEY = 'finance.lastAccountId'
 
 const MESSAGES: Record<string, string> = {
   AMOUNT_NOT_POSITIVE: 'Jumlah harus lebih dari nol.',
@@ -27,10 +32,20 @@ const MESSAGES: Record<string, string> = {
   ARCHIVED: 'Akun atau kategori itu sudah diarsipkan.',
 }
 
-export default function TransactionForm({ action, accounts, categories, onBack, onSaved }: Props) {
+export default function TransactionForm({ action, accounts, categories, timezone, onBack, onSaved }: Props) {
   const usable = accounts.filter((a) => !a.isArchived && !a.isSystem)
   const receivable = accounts.find((a) => a.kind === 'receivable') ?? null
-  const today = new Date().toISOString().slice(0, 10)
+  // Hari ini menurut zona waktu user, bukan UTC: transaksi jam 1 pagi WIB
+  // tercatat di tanggal yang benar (§11.7).
+  const today = todayInTimezone(timezone)
+  // Default akun = yang terakhir dipakai (§7, §10.2), bukan yang pertama
+  // menurut urutan nama. Kalau akunnya sudah tidak ada (diarsipkan/dihapus di
+  // perangkat lain), jatuh kembali ke akun pertama.
+  const storedLastAccountId = localStorage.getItem(LAST_ACCOUNT_KEY)
+  const defaultAccountId =
+    (storedLastAccountId && usable.some((a) => a.id === storedLastAccountId)
+      ? storedLastAccountId
+      : usable[0]?.id) ?? ''
   // Satu key per instance form, bukan per percobaan simpan: harus sama
   // persis di retry supaya server bisa dedupe (§8). Form ini di-mount ulang
   // tiap kali sheet dibuka (FinanceHome merender <ActionPicker> secara
@@ -40,7 +55,7 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
 
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('')
-  const [accountId, setAccountId] = useState(usable[0]?.id ?? '')
+  const [accountId, setAccountId] = useState(defaultAccountId)
   const [toAccountId, setToAccountId] = useState(savingsAccounts(accounts)[0]?.id ?? usable[0]?.id ?? '')
   const [counterparty, setCounterparty] = useState('')
   const [date, setDate] = useState(today)
@@ -50,6 +65,22 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
 
   const has = (f: string) => action.fields.includes(f as never)
   const expenseCategories = categories.filter((c) => c.type === 'expense' && !c.isArchived)
+
+  // Nama orang dicocokkan persis (§9.6, §11.2), jadi "Budi" dan "budi" jadi
+  // dua piutang terpisah tanpa tanda apa pun. Datalist bawaan browser: cukup
+  // untuk menyodorkan ejaan yang sudah ada, tanpa komponen combobox baru.
+  const suggestsCounterparty = action.fields.includes('counterparty') && action.id !== 'project-income'
+  const [knownCounterparties, setKnownCounterparties] = useState<string[]>([])
+  const counterpartyListId = useId()
+
+  useEffect(() => {
+    if (!suggestsCounterparty) return
+    let cancelled = false
+    getReceivables()
+      .then((r) => { if (!cancelled) setKnownCounterparties(r.map((x) => x.counterparty)) })
+      .catch(() => { /* saran opsional — form tetap jalan tanpa ini */ })
+    return () => { cancelled = true }
+  }, [suggestsCounterparty])
 
   const draft = useMemo(() => buildTransaction(action.id, {
     amount: Number(amount.replace(/\D/g, '')) || 0,
@@ -61,11 +92,11 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
     date,
   }, {
     today,
-    lastUsedAccountId: usable[0]?.id ?? null,
+    lastUsedAccountId: defaultAccountId || null,
     receivableAccountId: receivable?.id ?? null,
     salaryCategoryId: categories.find((c) => c.name === 'Gaji')?.id ?? null,
     projectCategoryId: categories.find((c) => c.name === 'Project')?.id ?? null,
-  }), [action.id, amount, accountId, toAccountId, categoryId, counterparty, note, date, categories, receivable, usable, today])
+  }), [action.id, amount, accountId, toAccountId, categoryId, counterparty, note, date, categories, receivable, defaultAccountId, today])
 
   const violations = validateTransaction(draft, {
     today,
@@ -81,6 +112,9 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
       // Key stabil (lihat idempotencyKey di atas): kirim ulang karena
       // koneksi jelek mengembalikan baris yang sama, bukan duplikat (§8).
       await postTransaction(draft, idempotencyKey)
+      // Baru dicatat setelah server menerimanya: default akun berikutnya
+      // mengikuti transaksi yang benar-benar jadi, bukan yang gagal.
+      if (accountId) localStorage.setItem(LAST_ACCOUNT_KEY, accountId)
       onSaved()
     } catch (e) {
       setServerError(e instanceof FinanceApiError ? e.message : 'Gagal menyimpan. Coba lagi.')
@@ -110,7 +144,16 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
       {has('counterparty') && (
         <label className="finance-field">
           <span>{action.id === 'project-income' ? 'Nama project' : 'Nama'}</span>
-          <input value={counterparty} onChange={(e) => setCounterparty(e.target.value)} />
+          <input
+            value={counterparty}
+            onChange={(e) => setCounterparty(e.target.value)}
+            list={suggestsCounterparty ? counterpartyListId : undefined}
+          />
+          {suggestsCounterparty && knownCounterparties.length > 0 && (
+            <datalist id={counterpartyListId}>
+              {knownCounterparties.map((c) => <option key={c} value={c} />)}
+            </datalist>
+          )}
         </label>
       )}
 
