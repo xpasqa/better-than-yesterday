@@ -12,6 +12,7 @@ import { todayInTimezone } from '@better/core/date'
 import type { Completion } from '@better/core/completion'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
+import { recordUndo } from './undo-store.ts'
 import { resolveOrCreateTagIds } from './tag-actions.ts'
 import { resolveOrCreateProjectId } from './project-actions.ts'
 
@@ -148,7 +149,9 @@ export async function toggleTaskComplete(node: Node, timezone: string): Promise<
     return
   }
 
-  await enqueue({ ...node, completedAt: node.completedAt ? null : now, updatedAt: now })
+  const completing = !node.completedAt
+  await enqueue({ ...node, completedAt: completing ? now : null, updatedAt: now })
+  if (completing) recordUndo({ type: 'complete', nodeId: node.id, label: node.content })
 }
 
 /** Advances a recurring task's due date to the next occurrence without logging a completion — 1.todo/spec.md §8's "skip". No-op on a non-recurring task. */
@@ -161,6 +164,7 @@ export async function skipRecurrence(node: Node): Promise<void> {
 export async function deleteTask(node: Node): Promise<void> {
   const now = new Date().toISOString()
   await enqueue({ ...node, deletedAt: now, updatedAt: now })
+  recordUndo({ type: 'delete', nodeId: node.id, label: node.content })
 }
 
 /**
