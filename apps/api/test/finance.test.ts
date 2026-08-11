@@ -202,3 +202,85 @@ describe('agregasi §9', () => {
     expect(await receivables(user.id, receivableAccountId)).toEqual([{ counterparty: 'Cici', sisa: 200_000 }])
   })
 })
+
+import { createApp } from '../src/app.ts'
+import { extractSessionCookie, readJson } from './helpers.ts'
+import { appUser } from '../src/db/schema/user.ts'
+
+const app = createApp()
+
+async function loginCookie(email: string, password = 'testpassword123'): Promise<string> {
+  const res = await app.request('/auth/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+  return extractSessionCookie(res)
+}
+
+describe('endpoint baca §8', () => {
+  it('GET /finance/accounts men-seed saat pertama diakses', async () => {
+    await createTestUser('read1@example.com')
+    const cookie = await loginCookie('read1@example.com')
+
+    const res = await app.request('/api/finance/accounts', { headers: { cookie } })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.accounts.map((a: { name: string }) => a.name).sort()).toEqual(['Dompet', 'Piutang'])
+    expect(body.accounts[0]).toHaveProperty('isSpendable') // camelCase, bukan is_spendable
+  })
+
+  it('GET /finance/overview mengirim headline, ringkasan, dan chip', async () => {
+    const user = await createTestUser('read2@example.com')
+    const cookie = await loginCookie('read2@example.com')
+    const { receivableAccountId } = await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+    const today = new Date().toISOString().slice(0, 10)
+
+    await insertTx(user.id, { date: today, type: 'income', amount: 5_000_000, toAccountId: dompet, toPocket: 'personal' })
+    await insertTx(user.id, {
+      date: today, type: 'transfer', amount: 500_000, counterparty: 'Budi',
+      fromAccountId: dompet, fromPocket: 'personal', toAccountId: receivableAccountId, toPocket: 'personal',
+    })
+
+    const body = await readJson(await app.request('/api/finance/overview', { headers: { cookie } }))
+    expect(body.spendablePersonal).toBe(4_500_000)
+    expect(body.summary.masuk).toBe(5_000_000)
+    expect(body.chips.piutangTotal).toBe(500_000)
+    expect(body.chips).not.toHaveProperty('businessTotal') // chip nol tidak dikirim
+  })
+
+  it('progress target percent dihitung dari Masuk bulan berjalan (§5.5)', async () => {
+    const user = await createTestUser('read3@example.com')
+    const cookie = await loginCookie('read3@example.com')
+    await db.update(appUser)
+      .set({ financeSavingsTargetMode: 'percent', financeSavingsTargetValue: 20 })
+      .where(eq(appUser.id, user.id))
+    await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+    const today = new Date().toISOString().slice(0, 10)
+
+    await insertTx(user.id, { date: today, type: 'income', amount: 10_000_000, toAccountId: dompet, toPocket: 'personal' })
+    await insertTx(user.id, { date: today, type: 'expense', amount: 9_000_000, fromAccountId: dompet, fromPocket: 'personal' })
+
+    const body = await readJson(await app.request('/api/finance/overview', { headers: { cookie } }))
+    expect(body.target).toEqual({ mode: 'percent', value: 20, targetAmount: 2_000_000, saved: 1_000_000 })
+  })
+
+  it('data user lain tidak pernah bocor', async () => {
+    const owner = await createTestUser('read4@example.com')
+    await createTestUser('other@example.com')
+    await ensureFinanceSeed(owner.id)
+    const dompet = await accountIdByName(owner.id, 'Dompet')
+    await insertTx(owner.id, { type: 'income', amount: 7_000_000, toAccountId: dompet, toPocket: 'personal' })
+
+    const cookie = await loginCookie('other@example.com')
+    const body = await readJson(await app.request('/api/finance/overview', { headers: { cookie } }))
+    expect(body.spendablePersonal).toBe(0)
+  })
+
+  it('menolak tanpa sesi', async () => {
+    const res = await app.request('/api/finance/overview')
+    expect(res.status).toBe(401)
+  })
+})
