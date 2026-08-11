@@ -284,3 +284,58 @@ describe('endpoint baca §8', () => {
     expect(res.status).toBe(401)
   })
 })
+
+describe('GET /finance/transactions §8', () => {
+  it('tanpa cursor mengirim transaksi bulan yang diminta', async () => {
+    const user = await createTestUser('tx1@example.com')
+    const cookie = await loginCookie('tx1@example.com')
+    await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+
+    await insertTx(user.id, { date: '2026-08-05', type: 'income', amount: 1_000_000, toAccountId: dompet, toPocket: 'personal' })
+    await insertTx(user.id, { date: '2026-08-10', type: 'expense', amount: 200_000, fromAccountId: dompet, fromPocket: 'personal' })
+    // Bulan lain — tidak boleh ikut.
+    await insertTx(user.id, { date: '2026-07-31', type: 'expense', amount: 50_000, fromAccountId: dompet, fromPocket: 'personal' })
+
+    const body = await readJson(await app.request('/api/finance/transactions?month=2026-08', { headers: { cookie } }))
+    expect(body.transactions).toHaveLength(2)
+    // date DESC — yang terbaru duluan.
+    expect(body.transactions.map((t: { date: string }) => t.date)).toEqual(['2026-08-10', '2026-08-05'])
+    expect(body.transactions[0]).toHaveProperty('id')
+    expect(body.transactions[0]).toHaveProperty('amount')
+    expect(body.nextCursor).toBeNull()
+  })
+
+  it('cursor (date, id) gabungan tidak kehilangan transaksi backdate yang dibuat belakangan', async () => {
+    const user = await createTestUser('tx2@example.com')
+    const cookie = await loginCookie('tx2@example.com')
+    await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+
+    // 50 transaksi mengisi tepat satu halaman, semuanya tertanggal sama
+    // (2026-08-10) — id-nya monoton naik seiring urutan pembuatan.
+    for (let i = 0; i < 50; i++) {
+      await insertTx(user.id, { date: '2026-08-10', type: 'income', amount: 1_000 + i, toAccountId: dompet, toPocket: 'personal' })
+    }
+    // Dibuat PALING BELAKANGAN (id terbesar dari semuanya) tapi tanggalnya
+    // di-backdate lebih tua dari 50 transaksi di atas (§11.5: backdate bebas).
+    // Kalau cursor cuma pakai id, baris ini tidak akan pernah bisa dijangkau
+    // lagi lewat paginasi karena idnya lebih besar dari cursor id manapun
+    // di halaman 1, padahal secara date DESC ia seharusnya muncul di
+    // halaman 2.
+    await insertTx(user.id, { date: '2026-08-01', type: 'income', amount: 999_999, toAccountId: dompet, toPocket: 'personal' })
+
+    const page1 = await readJson(await app.request('/api/finance/transactions?month=2026-08', { headers: { cookie } }))
+    expect(page1.transactions).toHaveLength(50)
+    expect(page1.transactions.every((t: { date: string }) => t.date === '2026-08-10')).toBe(true)
+    expect(page1.nextCursor).not.toBeNull()
+
+    const page2 = await readJson(
+      await app.request(`/api/finance/transactions?month=2026-08&cursor=${encodeURIComponent(page1.nextCursor)}`, { headers: { cookie } }),
+    )
+    expect(page2.transactions).toHaveLength(1)
+    expect(page2.transactions[0].date).toBe('2026-08-01')
+    expect(page2.transactions[0].amount).toBe(999_999)
+    expect(page2.nextCursor).toBeNull()
+  })
+})

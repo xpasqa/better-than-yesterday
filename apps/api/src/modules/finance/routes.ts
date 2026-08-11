@@ -1,7 +1,7 @@
 // Endpoint Finance — docs/feature/30.finance/spec.md §8.
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { and, desc, eq, isNull, lt, gte } from 'drizzle-orm'
+import { and, desc, eq, isNull, lt, gte, sql } from 'drizzle-orm'
 import { todayInTimezone, firstOfNextMonth } from '@better/core/date'
 import { AppError } from '../../http/errors.ts'
 import { db } from '../../db/client.ts'
@@ -81,9 +81,20 @@ financeRoutes.get('/finance/transactions', async (c) => {
     filters.push(gte(financeTransaction.date, `${q.data.month}-01`))
     filters.push(lt(financeTransaction.date, firstOfNextMonth(`${q.data.month}-01`)))
   }
-  // Cursor adalah id transaksi terakhir halaman sebelumnya. UUIDv7 monoton,
-  // jadi "id < cursor" berarti "lebih lama" tanpa kolom tambahan.
-  if (q.data.cursor) filters.push(lt(financeTransaction.id, q.data.cursor))
+  // Cursor membawa (date, id) dari baris terakhir halaman sebelumnya, bukan
+  // id saja — transaksi boleh backdate bebas (§11.5), jadi id (UUIDv7,
+  // monoton menurut waktu dibuat) tidak selalu sejalan dengan date (bisnis,
+  // bisa mundur). Perbandingan tuple Postgres "(date, id) < (cursorDate,
+  // cursorId)" mengikuti urutan ORDER BY date DESC, id DESC persis: baris
+  // yang dibuat belakangan tapi tanggalnya lebih tua tetap ditemukan di
+  // halaman berikutnya, bukan hilang permanen.
+  if (q.data.cursor) {
+    const sep = q.data.cursor.indexOf('|')
+    if (sep === -1) throw new AppError('VALIDATION_ERROR', 422, 'Invalid cursor')
+    const cursorDate = q.data.cursor.slice(0, sep)
+    const cursorId = q.data.cursor.slice(sep + 1)
+    filters.push(sql`(${financeTransaction.date}, ${financeTransaction.id}) < (${cursorDate}, ${cursorId})`)
+  }
 
   const rows = await db.select().from(financeTransaction)
     .where(and(...filters))
@@ -91,9 +102,10 @@ financeRoutes.get('/finance/transactions', async (c) => {
     .limit(PAGE_SIZE + 1)
 
   const page = rows.slice(0, PAGE_SIZE)
+  const last = page[page.length - 1]
   return c.json({
     transactions: page.map(toTransactionDto),
-    nextCursor: rows.length > PAGE_SIZE ? page[page.length - 1]!.id : null,
+    nextCursor: rows.length > PAGE_SIZE && last ? `${last.date}|${last.id}` : null,
   })
 })
 
