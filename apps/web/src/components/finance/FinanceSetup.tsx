@@ -1,7 +1,7 @@
 // Setup awal — spec §10.4. Tiga pertanyaan, sisanya default; target < 1 menit.
 import { useState } from 'react'
 import type { FinancePocket } from '../../types'
-import { patchSettings, postAccount } from '../../store/finance-api'
+import { patchSettings, postAccount, FinanceApiError } from '../../store/finance-api'
 
 interface DraftAccount {
   name: string
@@ -20,6 +20,7 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
   const [targetMode, setTargetMode] = useState<'amount' | 'percent' | ''>('')
   const [targetValue, setTargetValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function addDraft() {
     if (name.trim() === '') return
@@ -31,19 +32,29 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
 
   async function finish() {
     setSaving(true)
-    for (const d of drafts) {
-      await postAccount({ name: d.name, kind: d.kind, pocket: d.pocket, isSpendable: !d.isSavings })
+    setError(null)
+    try {
+      for (const d of drafts) {
+        await postAccount({ name: d.name, kind: d.kind, pocket: d.pocket, isSpendable: !d.isSavings })
+      }
+      await patchSettings({
+        financeBusinessEnabled: businessEnabled,
+        financeSavingsTargetMode: targetMode === '' ? null : targetMode,
+        financeSavingsTargetValue: targetMode === '' ? null : Number(targetValue.replace(/\D/g, '')) || null,
+      })
+      // Ditandai per perangkat: kalau user memang hanya punya Dompet, tanpa
+      // penanda ini wizard-nya muncul terus. Perangkat lain akan melihat akun
+      // yang sudah dibuat, jadi kondisinya toh sudah tidak terpenuhi.
+      localStorage.setItem('finance.setupDone', '1')
+      onDone()
+    } catch (e) {
+      // Tanpa ini, kegagalan write mana pun (jaringan, 4xx/5xx) membuat
+      // saving tersangkut true selamanya — Selesai disabled, tanpa pesan
+      // apa pun (pola yang sama yang dibereskan Task I di AccountsTab/
+      // ReceivablesTab; wizard ini luput karena ditulis sebelum itu).
+      setError(e instanceof FinanceApiError ? e.message : 'Gagal menyimpan. Coba lagi.')
+      setSaving(false)
     }
-    await patchSettings({
-      financeBusinessEnabled: businessEnabled,
-      financeSavingsTargetMode: targetMode === '' ? null : targetMode,
-      financeSavingsTargetValue: targetMode === '' ? null : Number(targetValue.replace(/\D/g, '')) || null,
-    })
-    // Ditandai per perangkat: kalau user memang hanya punya Dompet, tanpa
-    // penanda ini wizard-nya muncul terus. Perangkat lain akan melihat akun
-    // yang sudah dibuat, jadi kondisinya toh sudah tidak terpenuhi.
-    localStorage.setItem('finance.setupDone', '1')
-    onDone()
   }
 
   return (
@@ -102,6 +113,7 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
               <input inputMode="numeric" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} />
             </label>
           )}
+          {error && <p className="finance-form__error">{error}</p>}
           <div className="finance-form__actions">
             <button type="button" disabled={saving} onClick={() => void finish()}>Selesai</button>
           </div>
