@@ -50,6 +50,13 @@
       "when": 1786120284003,
       "tag": "0006_add_is_someday",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786463306770,
+      "tag": "0007_finance_schema",
+      "breakpoints": true
     }
   ]
 }

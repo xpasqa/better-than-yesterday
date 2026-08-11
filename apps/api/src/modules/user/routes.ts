@@ -13,6 +13,11 @@ const prefsSchema = z.object({
     .string()
     .refine((tz) => Intl.supportedValuesOf('timeZone').includes(tz), { message: 'unknown timezone' })
     .optional(),
+  // Finance — spec 30.finance §5.5. Menempel di app_user, jadi Finance tidak
+  // butuh endpoint setting sendiri.
+  financeBusinessEnabled: z.boolean().optional(),
+  financeSavingsTargetMode: z.enum(['amount', 'percent']).nullable().optional(),
+  financeSavingsTargetValue: z.number().int().nonnegative().nullable().optional(),
 })
 
 export const userRoutes = new Hono()
@@ -32,5 +37,12 @@ userRoutes.patch('/me', async (c) => {
 
   const [user] = await db.select().from(appUser).where(eq(appUser.id, userId))
   if (!user) throw new AppError('UNAUTHORIZED', 401, 'Session refers to a user that no longer exists')
-  return c.json({ user: { id: user.id, email: user.email, name: user.name, timezone: user.timezone } })
+  return c.json({
+    user: {
+      id: user.id, email: user.email, name: user.name, timezone: user.timezone,
+      financeBusinessEnabled: user.financeBusinessEnabled,
+      financeSavingsTargetMode: user.financeSavingsTargetMode,
+      financeSavingsTargetValue: user.financeSavingsTargetValue,
+    },
+  })
 })

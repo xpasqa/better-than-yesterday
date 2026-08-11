@@ -8,6 +8,7 @@ import ThemeToggle from './components/ThemeToggle'
 import OutlineView from './components/OutlineView'
 import MailView from './components/MailView'
 import StorageView from './components/StorageView'
+import FinanceView from './components/finance/FinanceView'
 import AgentView from './components/AgentView'
 import Login from './components/Login'
 import ProjectModal from './components/ProjectModal'
@@ -84,7 +85,7 @@ function App() {
   const { user, handleLoggedIn, handleLogout, handleUserChange } = useAuthGate()
   const navigate = useNavigate()
   const location = useLocation()
-  const { view: activeView, projectId: activeProjectId } = deriveViewFromPathname(location.pathname)
+  const { view: activeView, projectId: activeProjectId, sub: activeSub } = deriveViewFromPathname(location.pathname)
   const realNodes = useAllNodes()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -249,6 +250,12 @@ function App() {
           <MailView />
         ) : activeView === 'storage' ? (
           <StorageView />
+        ) : activeView === 'finance' ? (
+          <FinanceView
+            sub={activeSub}
+            timezone={user.timezone ?? 'Asia/Jakarta'}
+            onSubChange={(sub) => navigate(pathForView('finance', null, sub))}
+          />
         ) : activeView === 'agent' ? (
           <AgentView />
         ) : activeView === 'today' ? (

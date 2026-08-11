@@ -4,18 +4,21 @@
 // "/*", and a handful of paths this shallow don't earn the extra structure.
 import type { ViewType } from './types'
 
-const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'outline', 'mail', 'storage', 'agent', 'search', 'tags', 'settings']
+const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'outline', 'mail', 'storage', 'finance', 'agent', 'search', 'tags', 'settings']
 
-export function pathForView(view: ViewType, projectId?: string | null): string {
+export function pathForView(view: ViewType, projectId?: string | null, sub?: string | null): string {
   if (view === 'project' && projectId) return `/project/${projectId}`
+  // Tab Finance punya alamatnya sendiri (spec §10.1) — menyimpannya di
+  // useState akan membuatnya satu-satunya layar yang tidak bisa di-bookmark.
+  if (sub) return `/${view}/${sub}`
   return `/${view}`
 }
 
-export function deriveViewFromPathname(pathname: string): { view: ViewType; projectId: string | null } {
+export function deriveViewFromPathname(pathname: string): { view: ViewType; projectId: string | null; sub: string | null } {
   const [, first, second] = pathname.split('/')
-  if (first === 'project' && second) return { view: 'project', projectId: second }
+  if (first === 'project' && second) return { view: 'project', projectId: second, sub: null }
   if (first && (PLAIN_VIEWS as string[]).includes(first)) {
-    return { view: first as ViewType, projectId: null }
+    return { view: first as ViewType, projectId: null, sub: second ?? null }
   }
-  return { view: 'today', projectId: null }
+  return { view: 'today', projectId: null, sub: null }
 }
