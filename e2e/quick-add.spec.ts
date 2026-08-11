@@ -46,3 +46,24 @@ test('a recurring task advances instead of closing', async ({ page, userEmail: _
   await page.goto('/upcoming')
   await expect(page.getByText('siram tanaman')).toBeVisible()
 })
+
+// Found by interactively clicking through the app: AddTaskFormReal's date
+// chip starts pre-filled with `defaultDueDate` (Today's date, so a plain
+// task with no date phrase still lands there) and used to patch every
+// submitted task to that value unconditionally — silently overwriting any
+// date the NLP parser found in the text itself. Typing "besok" from Today
+// created a task due *today*, not tomorrow.
+test('a date phrase typed from Today wins over the view\'s default date', async ({ page, userEmail: _userEmail }) => {
+  await page.goto('/today')
+  await page.getByRole('main').getByRole('button', { name: /add task/i }).click()
+
+  const input = page.getByLabel('Quick add a task')
+  await input.fill('review pull request besok')
+  await input.press('Enter')
+
+  // Must NOT show up in Today — it's due tomorrow.
+  await expect(page.getByText('review pull request')).toBeHidden()
+
+  await page.goto('/upcoming')
+  await expect(page.getByText('review pull request')).toBeVisible()
+})

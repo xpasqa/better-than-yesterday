@@ -66,12 +66,22 @@ export default function AddTaskFormReal({
       defaultParentId: parentId,
     })
 
-    // Patch priority and due date if set via chips (overrides NLP)
-    if (priority !== null || dueDate) {
+    // Patch priority and due date from the chips — but only the due date
+    // chip if it actually reflects a choice. `dueDate` starts pre-filled
+    // from `defaultDueDate` (Today view defaults it to today's date so a
+    // plain task with no date phrase still lands there), so comparing
+    // straight against its truthiness silently overwrote a date the NLP
+    // parser correctly found ("besok", "jumat depan", ...) with that
+    // untouched default on every submit. Only override when the chip was
+    // actually touched (differs from the pre-fill) or the parser found no
+    // date of its own to fall back on.
+    const dueDateChanged = dueDate !== (defaultDueDate ?? '')
+    const shouldPatchDate = dueDateChanged || node.dueDate === null
+    if (priority !== null || shouldPatchDate) {
       const { updateNode } = await import('../store/node-actions')
       const patch: Partial<Node> = {}
       if (priority !== null) patch.priority = priority
-      if (dueDate) patch.dueDate = dueDate
+      if (shouldPatchDate) patch.dueDate = dueDate || null
       await updateNode(node.id, patch)
     }
 
