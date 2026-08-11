@@ -85,7 +85,10 @@ export function postAccount(input: { name: string; kind: 'cash' | 'bank'; pocket
     .then((b) => b.account)
 }
 
-export function patchAccount(id: string, patch: Partial<{ name: string; pocket: FinancePocket; isSpendable: boolean; sortOrder: number }>) {
+export function patchAccount(
+  id: string,
+  patch: Partial<{ name: string; pocket: FinancePocket; isSpendable: boolean; sortOrder: number; isArchived: boolean }>,
+) {
   return request<{ account: FinanceAccountWrite }>(`/finance/accounts/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
     .then((b) => b.account)
 }

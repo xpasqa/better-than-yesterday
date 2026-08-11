@@ -80,13 +80,19 @@ export async function accountBalances(userId: string): Promise<AccountBalance[]>
   }))
 }
 
-/** §9.4 — angka besar di beranda: uang personal yang aman dipakai hari ini. */
+/**
+ * §9.4 — angka besar di beranda: uang personal yang aman dipakai hari ini.
+ * Akun yang diarsipkan tidak ikut: ia tidak muncul di daftar akun, jadi kalau
+ * saldonya tetap dihitung di sini headline-nya salah tanpa bisa dijelaskan.
+ * Saldonya tetap utuh di accountBalances dan netWorth (§9.1, §9.7) — yang
+ * hilang cuma klaim "aman dipakai hari ini".
+ */
 export async function spendablePersonal(userId: string): Promise<number> {
   const rows = await db.execute(sql`
     SELECT COALESCE(SUM(e.delta), 0) AS total
     FROM (${entries(userId)}) e
     JOIN finance_account a ON a.id = e.account_id
-    WHERE e.pocket = 'personal' AND a.is_spendable
+    WHERE e.pocket = 'personal' AND a.is_spendable AND NOT a.is_archived
   `)
   return num([...rows][0]?.total)
 }

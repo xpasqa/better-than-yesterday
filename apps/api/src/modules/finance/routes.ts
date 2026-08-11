@@ -231,9 +231,16 @@ async function ownedAccount(userId: string, id: string) {
   return row
 }
 
+// DELETE hanya bisa mengarsipkan; membatalkannya lewat PATCH — kalau tidak,
+// akun yang terlanjur diarsipkan hilang selamanya beserta saldonya (§11.6).
+const accountPatchInput = accountInput.partial().extend({ isArchived: z.boolean().optional() })
+
 financeRoutes.patch('/finance/accounts/:id', async (c) => {
-  const parsed = accountInput.partial().safeParse(await c.req.json().catch(() => ({})))
+  const parsed = accountPatchInput.safeParse(await c.req.json().catch(() => ({})))
   if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+  if (Object.keys(parsed.data).length === 0) {
+    throw new AppError('VALIDATION_ERROR', 422, 'Nothing to update')
+  }
 
   const userId = c.get('userId')
   await ownedAccount(userId, c.req.param('id'))

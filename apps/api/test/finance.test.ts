@@ -142,6 +142,28 @@ describe('agregasi §9', () => {
     expect(await netWorth(user.id)).toBe(1_000_000)
   })
 
+  it('akun yang diarsipkan tidak ikut headline, tapi tetap ikut saldo dan kekayaan bersih (§9.1/§9.4/§9.7)', async () => {
+    const user = await createTestUser('agg4b@example.com')
+    await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+    const [lama] = await db.insert(financeAccount).values({
+      id: uuidv7(), userId: user.id, name: 'Rekening lama', kind: 'bank', pocket: 'personal', isSpendable: true,
+    }).returning()
+
+    await insertTx(user.id, { type: 'income', amount: 1_000_000, toAccountId: dompet, toPocket: 'personal' })
+    await insertTx(user.id, { type: 'income', amount: 300_000, toAccountId: lama!.id, toPocket: 'personal' })
+
+    expect(await spendablePersonal(user.id)).toBe(1_300_000)
+
+    await db.update(financeAccount).set({ isArchived: true }).where(eq(financeAccount.id, lama!.id))
+
+    // Uangnya tidak lagi diklaim "aman dipakai hari ini" — akunnya memang tidak
+    // kelihatan lagi di daftar. Tapi angkanya tidak menguap.
+    expect(await spendablePersonal(user.id)).toBe(1_000_000)
+    expect(await netWorth(user.id)).toBe(1_300_000)
+    expect((await accountBalances(user.id)).find((a) => a.id === lama!.id)!.balance).toBe(300_000)
+  })
+
   it('nabung dan ngutangin bukan Keluar; prive adalah Masuk (§9.5)', async () => {
     const user = await createTestUser('agg5@example.com')
     await ensureFinanceSeed(user.id)
@@ -567,6 +589,43 @@ describe('endpoint tulis §8', () => {
 
     const [row] = await db.select().from(financeAccount).where(eq(financeAccount.id, created.account.id))
     expect(row!.isArchived).toBe(true)
+  })
+
+  it('PATCH isArchived:false mengembalikan akun yang terlanjur diarsipkan', async () => {
+    const user = await createTestUser('w8b@example.com')
+    const cookie = await loginCookie('w8b@example.com')
+    await ensureFinanceSeed(user.id)
+
+    const created = await readJson(await app.request('/api/finance/accounts', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'BCA', kind: 'bank', pocket: 'personal', isSpendable: true }),
+    }))
+    await app.request(`/api/finance/accounts/${created.account.id}`, { method: 'DELETE', headers: { cookie } })
+
+    const res = await app.request(`/api/finance/accounts/${created.account.id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ isArchived: false }),
+    })
+    expect(res.status).toBe(200)
+    expect((await readJson(res)).account.isArchived).toBe(false)
+
+    const [row] = await db.select().from(financeAccount).where(eq(financeAccount.id, created.account.id))
+    expect(row!.isArchived).toBe(false)
+  })
+
+  it('PATCH akun dengan body kosong ditolak 422, bukan 500 dari driver', async () => {
+    const user = await createTestUser('w8c@example.com')
+    const cookie = await loginCookie('w8c@example.com')
+    await ensureFinanceSeed(user.id)
+
+    const created = await readJson(await app.request('/api/finance/accounts', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'BCA', kind: 'bank', pocket: 'personal', isSpendable: true }),
+    }))
+    const res = await app.request(`/api/finance/accounts/${created.account.id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({}),
+    })
+    expect(res.status).toBe(422)
   })
 
   it('POST/PATCH akun dan kategori tidak membocorkan kolom backend-only', async () => {
