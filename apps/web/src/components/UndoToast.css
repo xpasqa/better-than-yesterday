@@ -1,0 +1,38 @@
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-raised);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-raised-2);
+  /* Above the date-picker dropdown portal (1100, NodeDetailModal.css) so an
+     undo toast triggered from within a modal is never hidden behind it. */
+  z-index: 1200;
+}
+
+.undo-toast__message {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.undo-toast__button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--brand-red-idle);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.undo-toast__button:hover {
+  text-decoration: underline;
+}

@@ -15,6 +15,7 @@ import type { ProjectModalKind } from './components/ProjectModal'
 import NodeDetailModal from './components/NodeDetailModal'
 import AgentSettingsModal from './components/AgentSettingsModal'
 import ShortcutsModal from './components/ShortcutsModal'
+import UndoToast from './components/UndoToast'
 import TodayReal from './components/TodayReal'
 import InboxReal from './components/InboxReal'
 import UpcomingReal from './components/UpcomingReal'
@@ -302,6 +303,7 @@ function App() {
         ) : null
       })()}
       <BottomNav onMorePress={() => setDrawerOpen(true)} />
+      <UndoToast />
     </div>
   )
 }
