@@ -251,7 +251,11 @@ function App() {
         ) : activeView === 'storage' ? (
           <StorageView />
         ) : activeView === 'finance' ? (
-          <FinanceView sub={activeSub} onSubChange={(sub) => navigate(pathForView('finance', null, sub))} />
+          <FinanceView
+            sub={activeSub}
+            timezone={user.timezone ?? 'Asia/Jakarta'}
+            onSubChange={(sub) => navigate(pathForView('finance', null, sub))}
+          />
         ) : activeView === 'agent' ? (
           <AgentView />
         ) : activeView === 'today' ? (

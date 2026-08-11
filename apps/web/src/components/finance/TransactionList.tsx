@@ -1,5 +1,6 @@
 // Tab Riwayat — daftar per bulan, halaman berikutnya lewat cursor (§8).
 import { useEffect, useState } from 'react'
+import { todayInTimezone } from '@better/core/date'
 import type { FinanceAccount, FinanceCategory, FinanceTransaction } from '../../types'
 import { getTransactions } from '../../store/finance-api'
 import { formatMonth, formatRupiah } from './format'
@@ -7,12 +8,15 @@ import { formatMonth, formatRupiah } from './format'
 interface Props {
   accounts: FinanceAccount[]
   categories: FinanceCategory[]
+  timezone: string
   revision: number
   onChanged: () => void
 }
 
-export default function TransactionList({ accounts, categories, revision }: Props) {
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
+export default function TransactionList({ accounts, categories, timezone, revision }: Props) {
+  // Bulan berjalan menurut zona waktu user: tanggal 1 jam 1 pagi WIB masih
+  // bulan sebelumnya kalau dihitung UTC (§11.7).
+  const [month, setMonth] = useState(todayInTimezone(timezone).slice(0, 7))
   const [items, setItems] = useState<FinanceTransaction[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
 

@@ -7,12 +7,13 @@ import TransactionForm from './TransactionForm'
 interface Props {
   accounts: FinanceAccount[]
   categories: FinanceCategory[]
+  timezone: string
   businessEnabled: boolean
   onClose: () => void
   onSaved: () => void
 }
 
-export default function ActionPicker({ accounts, categories, businessEnabled, onClose, onSaved }: Props) {
+export default function ActionPicker({ accounts, categories, timezone, businessEnabled, onClose, onSaved }: Props) {
   const [chosen, setChosen] = useState<ActionSpec | null>(null)
   const actions = availableActions(accounts, businessEnabled)
 
@@ -38,6 +39,7 @@ export default function ActionPicker({ accounts, categories, businessEnabled, on
             action={chosen}
             accounts={accounts}
             categories={categories}
+            timezone={timezone}
             onBack={() => setChosen(null)}
             onSaved={onSaved}
           />

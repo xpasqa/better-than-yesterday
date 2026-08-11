@@ -9,11 +9,12 @@ import ActionPicker from './ActionPicker'
 interface Props {
   accounts: FinanceAccount[]
   categories: FinanceCategory[]
+  timezone: string
   revision: number
   onChanged: () => void
 }
 
-export default function FinanceHome({ accounts, categories, revision, onChanged }: Props) {
+export default function FinanceHome({ accounts, categories, timezone, revision, onChanged }: Props) {
   const [overview, setOverview] = useState<FinanceOverview | null>(null)
   const [recent, setRecent] = useState<FinanceTransaction[]>([])
   const [picking, setPicking] = useState(false)
@@ -97,6 +98,7 @@ export default function FinanceHome({ accounts, categories, revision, onChanged 
         <ActionPicker
           accounts={accounts}
           categories={categories}
+          timezone={timezone}
           businessEnabled={overview.businessEnabled}
           onClose={() => setPicking(false)}
           onSaved={() => { setPicking(false); onChanged() }}

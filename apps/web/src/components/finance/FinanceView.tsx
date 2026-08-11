@@ -18,10 +18,12 @@ const TABS = [
 
 export interface FinanceViewProps {
   sub: string | null
+  /** Zona waktu user — "hari ini" selalu lokal, tidak pernah UTC (§11.7). */
+  timezone: string
   onSubChange: (sub: string | null) => void
 }
 
-export default function FinanceView({ sub, onSubChange }: FinanceViewProps) {
+export default function FinanceView({ sub, timezone, onSubChange }: FinanceViewProps) {
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [categories, setCategories] = useState<FinanceCategory[]>([])
   const [businessEnabled, setBusinessEnabled] = useState(false)
@@ -80,10 +82,10 @@ export default function FinanceView({ sub, onSubChange }: FinanceViewProps) {
       {needsSetup && <FinanceSetup onDone={reload} />}
       {!needsSetup && (
         <>
-          {sub === null && <FinanceHome accounts={accounts} categories={categories} revision={revision} onChanged={reload} />}
-          {sub === 'riwayat' && <TransactionList accounts={accounts} categories={categories} revision={revision} onChanged={reload} />}
+          {sub === null && <FinanceHome accounts={accounts} categories={categories} timezone={timezone} revision={revision} onChanged={reload} />}
+          {sub === 'riwayat' && <TransactionList accounts={accounts} categories={categories} timezone={timezone} revision={revision} onChanged={reload} />}
           {sub === 'akun' && <AccountsTab accounts={accounts} businessEnabled={businessEnabled} onChanged={reload} />}
-          {sub === 'piutang' && <ReceivablesTab accounts={accounts} categories={categories} revision={revision} onChanged={reload} />}
+          {sub === 'piutang' && <ReceivablesTab accounts={accounts} categories={categories} timezone={timezone} revision={revision} onChanged={reload} />}
         </>
       )}
     </div>
