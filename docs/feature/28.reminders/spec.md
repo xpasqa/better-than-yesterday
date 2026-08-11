@@ -1,7 +1,7 @@
 # Spec: Reminder & notifikasi web push
 
 **Tanggal:** 2026-08-08
-**Status:** **spec saja — Backlog.** Rencana menunggu satu keputusan, lihat §6.
+**Status:** **Ready.** Keputusan §6 sudah diambil (`node-cron` di proses API) — lihat [plan.md](plan.md) dan [todo.md](todo.md).
 **Menutup:** `1.todo/todo.md` blok I (seluruhnya)
 
 ---
@@ -110,25 +110,21 @@ di rencananya sebagai kewajiban, bukan catatan kaki.
 
 ---
 
-## 6. Kenapa Backlog, bukan Ready
+## 6. Keputusan penjadwal (sudah diambil)
 
-Satu keputusan belum diambil, dan ia menentukan bentuk blok D:
+Satu keputusan yang menentukan bentuk blok D:
 
 > **Di mana penjadwalnya jalan?**
 
 | Pilihan | Untung | Rugi |
 |---|---|---|
-| **Cron sistem** memanggil skrip, seperti `backup-db.sh` jam 3 pagi | Pola yang **sudah terbukti di server ini** (`0 3 * * * .../backup-db.sh`). Tidak menambah dependensi. Mati satu kali tidak menjatuhkan API | Granularitas semenit; satu proses lagi di luar `docker compose` |
-| **`node-cron` di dalam kontainer API** | Satu tempat, satu deploy, terlihat di `docker compose logs` | Ikut mati kalau API restart; dua replika berarti dua kali kirim |
-| **Antrean sungguhan** (BullMQ + Redis) | Percobaan ulang, backoff | Menambah Redis ke stack demi satu pekerjaan periodik. Berlebihan |
+| Cron sistem memanggil skrip, seperti `backup-db.sh` jam 3 pagi | Pola yang **sudah terbukti di server ini** (`0 3 * * * .../backup-db.sh`). Tidak menambah dependensi. Mati satu kali tidak menjatuhkan API | Granularitas semenit; satu proses lagi di luar `docker compose` |
+| **`node-cron` di dalam kontainer API** ← dipilih | Satu tempat, satu deploy, terlihat di `docker compose logs` | Ikut mati kalau API restart; dua replika berarti dua kali kirim |
+| Antrean sungguhan (BullMQ + Redis) | Percobaan ulang, backoff | Menambah Redis ke stack demi satu pekerjaan periodik. Berlebihan — melanggar [policy 1](../../policy/1-engineering-policy.md) |
 
-Condong ke **cron sistem** — ia meniru pola yang sudah jalan di server ini,
-dan pilihan ketiga jelas melanggar [policy 1](../../policy/1-engineering-policy.md).
-
-Tapi ini keputusan operasional, bukan keputusan kode, dan pemiliknya bukan
-saya. Sampai ia diambil, `plan.md` blok D tidak bisa ditulis tanpa menebak —
-dan menurut [workflow](../../policy/2-workflow.md), spec tanpa plan berarti
-**Backlog**, bukan Ready.
-
-Empat blok lain (A, B, C, E) tidak bergantung pada jawabannya dan bisa
-direncanakan kapan saja.
+**Dipilih: `node-cron` di dalam proses API.** Rugi yang diterima secara
+sadar: ikut mati kalau API restart (dampaknya kecil — cron berikutnya
+menyusul dalam menit, `reminder_due` tetap konsisten), dan tidak boleh
+menjalankan API lebih dari satu replika sampai ini diganti antrean
+sungguhan (di luar skala proyek ini sekarang). Rincian tiap blok, termasuk
+blok D dengan keputusan ini: [plan.md](plan.md).
