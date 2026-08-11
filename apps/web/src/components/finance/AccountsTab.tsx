@@ -2,15 +2,16 @@
 // kekayaan bersih (§9.7) yang sengaja tidak diletakkan di beranda.
 import { useEffect, useState } from 'react'
 import type { FinanceAccount, FinancePocket } from '../../types'
-import { archiveAccount, getNetWorth, postAccount, FinanceApiError } from '../../store/finance-api'
+import { archiveAccount, getNetWorth, patchSettings, postAccount, FinanceApiError } from '../../store/finance-api'
 import { formatRupiah } from './format'
 
 interface Props {
   accounts: FinanceAccount[]
+  businessEnabled: boolean
   onChanged: () => void
 }
 
-export default function AccountsTab({ accounts, onChanged }: Props) {
+export default function AccountsTab({ accounts, businessEnabled, onChanged }: Props) {
   const [netWorth, setNetWorth] = useState<number | null>(null)
   const [showNetWorth, setShowNetWorth] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -46,6 +47,16 @@ export default function AccountsTab({ accounts, onChanged }: Props) {
     setError(null)
     try {
       await archiveAccount(id)
+      onChanged()
+    } catch (e) {
+      setError(message(e))
+    }
+  }
+
+  async function toggleBusiness(enabled: boolean) {
+    setError(null)
+    try {
+      await patchSettings({ financeBusinessEnabled: enabled })
       onChanged()
     } catch (e) {
       setError(message(e))
@@ -113,6 +124,20 @@ export default function AccountsTab({ accounts, onChanged }: Props) {
         {showNetWorth && netWorth !== null && (
           <p className="finance-networth__value">{formatRupiah(netWorth)}<small> termasuk tabungan dan piutang</small></p>
         )}
+      </section>
+
+      <section className="finance-settings">
+        <label className="finance-check">
+          <input
+            type="checkbox"
+            checked={businessEnabled}
+            onChange={(e) => void toggleBusiness(e.target.checked)}
+          />
+          Saya punya usaha atau project sampingan
+        </label>
+        <p className="finance-empty">
+          Mematikannya menyembunyikan aksi bisnis. Datanya tidak hilang — tidak ada migrasi apa pun kalau nanti dinyalakan lagi.
+        </p>
       </section>
     </div>
   )
