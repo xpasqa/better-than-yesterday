@@ -36,6 +36,11 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
     try {
       for (const d of drafts) {
         await postAccount({ name: d.name, kind: d.kind, pocket: d.pocket, isSpendable: !d.isSavings })
+        // Ditandai lunas begitu POST-nya sukses: postAccount tidak punya
+        // idempotency key (beda dari postTransaction) dan tidak ada unique
+        // constraint pada nama/kantong, jadi retry yang mengulang draft yang
+        // sudah kepos akan menggandakan akunnya diam-diam (§8).
+        setDrafts((prev) => prev.filter((x) => x !== d))
       }
       await patchSettings({
         financeBusinessEnabled: businessEnabled,
