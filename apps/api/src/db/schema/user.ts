@@ -1,4 +1,5 @@
-import { bigint, pgTable, smallint, text, time, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, boolean, pgTable, smallint, text, time, timestamp } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const appUser = pgTable('app_user', {
   id: text('id').primaryKey(),
@@ -15,5 +16,13 @@ export const appUser = pgTable('app_user', {
   language: text('language').notNull().default('id'),
 
   // Storage quota in bytes — default 10 GiB (storage spec §7)
-  storageQuotaBytes: bigint('storage_quota_bytes', { mode: 'bigint' }).notNull().default(BigInt(10737418240)),
+  // sql`` literal, not BigInt(...): drizzle-kit's snapshot serializer
+  // crashes on JSON.stringify(BigInt) when diffing a raw BigInt default.
+  storageQuotaBytes: bigint('storage_quota_bytes', { mode: 'bigint' }).notNull().default(sql`10737418240`),
+
+  // Finance — spec 30.finance §5.5. Menempel di app_user seperti preferensi
+  // lain supaya ikut PATCH /api/me dan Finance tidak butuh endpoint setting.
+  financeBusinessEnabled: boolean('finance_business_enabled').notNull().default(false),
+  financeSavingsTargetMode: text('finance_savings_target_mode'), // 'amount' | 'percent'
+  financeSavingsTargetValue: bigint('finance_savings_target_value', { mode: 'number' }),
 })
