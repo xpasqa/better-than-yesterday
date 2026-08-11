@@ -1,7 +1,7 @@
 // Form per situasi. Bentuk datanya tidak disusun di sini — buildTransaction
 // di @better/core yang melakukannya (§4.2), jadi client dan server memakai
 // tabel §7 yang sama persis.
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { buildTransaction } from '@better/core/finance-action'
 import { validateTransaction } from '@better/core/finance-validate'
 import type { FinanceAccount, FinanceCategory } from '../../types'
@@ -31,6 +31,12 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
   const usable = accounts.filter((a) => !a.isArchived && !a.isSystem)
   const receivable = accounts.find((a) => a.kind === 'receivable') ?? null
   const today = new Date().toISOString().slice(0, 10)
+  // Satu key per instance form, bukan per percobaan simpan: harus sama
+  // persis di retry supaya server bisa dedupe (§8). Form ini di-mount ulang
+  // tiap kali sheet dibuka (FinanceHome merender <ActionPicker> secara
+  // kondisional), jadi percobaan yang benar-benar baru otomatis dapat key
+  // baru — tidak perlu logika reset manual.
+  const idempotencyKey = useRef(crypto.randomUUID()).current
 
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -72,9 +78,9 @@ export default function TransactionForm({ action, accounts, categories, onBack, 
     setSaving(true)
     setServerError(null)
     try {
-      // Kunci di-generate sekali per percobaan simpan: kirim ulang karena
+      // Key stabil (lihat idempotencyKey di atas): kirim ulang karena
       // koneksi jelek mengembalikan baris yang sama, bukan duplikat (§8).
-      await postTransaction(draft, crypto.randomUUID())
+      await postTransaction(draft, idempotencyKey)
       onSaved()
     } catch (e) {
       setServerError(e instanceof FinanceApiError ? e.message : 'Gagal menyimpan. Coba lagi.')
