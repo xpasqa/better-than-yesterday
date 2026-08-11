@@ -15,7 +15,6 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
   const [drafts, setDrafts] = useState<DraftAccount[]>([])
   const [name, setName] = useState('')
   const [isSavings, setIsSavings] = useState(false)
-  const [pocket, setPocket] = useState<FinancePocket>('personal')
   const [businessEnabled, setBusinessEnabled] = useState(false)
   const [targetMode, setTargetMode] = useState<'amount' | 'percent' | ''>('')
   const [targetValue, setTargetValue] = useState('')
@@ -24,10 +23,14 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
 
   function addDraft() {
     if (name.trim() === '') return
-    setDrafts((prev) => [...prev, { name: name.trim(), kind: 'bank', pocket, isSavings }])
+    // Kantong selalu personal di sini: pertanyaan "punya usaha?" baru datang di
+    // langkah 2, jadi di langkah 1 belum ada dasar untuk menanyakan kantong —
+    // dan menampilkannya duluan berarti menyodorkan istilah yang belum berarti
+    // apa-apa (prinsip 4). Yang punya usaha bisa membuat akun berkantong bisnis
+    // lewat tab Akun setelah togglenya menyala.
+    setDrafts((prev) => [...prev, { name: name.trim(), kind: 'bank', pocket: 'personal', isSavings }])
     setName('')
     setIsSavings(false)
-    setPocket('personal')
   }
 
   async function finish() {
@@ -75,13 +78,6 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
           <label className="finance-check">
             <input type="checkbox" checked={isSavings} onChange={(e) => setIsSavings(e.target.checked)} />
             Ini tabungan — jangan hitung sebagai uang yang bisa dipakai
-          </label>
-          <label className="finance-field">
-            <span>Kantong bawaan</span>
-            <select value={pocket} onChange={(e) => setPocket(e.target.value as FinancePocket)}>
-              <option value="personal">Personal</option>
-              <option value="business">Bisnis</option>
-            </select>
           </label>
           <div className="finance-form__actions">
             <button type="button" onClick={addDraft}>Tambah</button>
