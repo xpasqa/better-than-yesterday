@@ -44,6 +44,30 @@ describe('ensureFinanceSeed', () => {
     const accounts = await db.select().from(financeAccount).where(eq(financeAccount.userId, user.id))
     expect(accounts).toHaveLength(2)
   })
+
+  it('aman dipanggil bersamaan untuk user baru — tidak melempar, tidak menggandakan (race first-call)', async () => {
+    const user = await createTestUser('seed4@example.com')
+
+    // 3-5 panggilan bersamaan cukup untuk memicu race check-then-insert di
+    // Postgres asli: semuanya lolos SELECT "belum ada" sebelum satu pun
+    // sempat commit INSERT-nya.
+    const results = await Promise.all([
+      ensureFinanceSeed(user.id),
+      ensureFinanceSeed(user.id),
+      ensureFinanceSeed(user.id),
+      ensureFinanceSeed(user.id),
+      ensureFinanceSeed(user.id),
+    ])
+
+    const ids = new Set(results.map((r) => r.receivableAccountId))
+    expect(ids.size).toBe(1)
+
+    const accounts = await db.select().from(financeAccount).where(eq(financeAccount.userId, user.id))
+    expect(accounts.map((a) => a.name).sort()).toEqual(['Dompet', 'Piutang'])
+
+    const cats = await db.select().from(financeCategory).where(eq(financeCategory.userId, user.id))
+    expect(cats).toHaveLength(12) // 4 income + 8 expense — see the "12 kategori default" test above
+  })
 })
 
 import { financeTransaction } from '../src/db/schema/finance.ts'
