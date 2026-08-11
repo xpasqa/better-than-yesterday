@@ -298,11 +298,11 @@ export function anchorRecurrence(rule: string | null, dueDate: string | null): s
  * sends it back to the old day and it stays there permanently — the same
  * silent drift as issue #25, reached from the other direction.
  *
- * Only MONTHLY/YEARLY carry a date anchor in their rule text. DAILY,
- * INTERVAL and bare WEEKLY take their phase from `dueDate` itself, so they
- * follow a moved date with no help. `BYDAY` is deliberately left alone: it
- * comes from the user naming a weekday out loud ("setiap senin"), not from a
- * date the code guessed on their behalf.
+ * MONTHLY/YEARLY carry their date anchor as a day-of-month/month; WEEKLY
+ * with BYDAY carries it as a day-of-week (issue #85) — both get replaced
+ * with whatever `dueDate` now falls on. DAILY, INTERVAL and bare WEEKLY
+ * (no BYDAY) take their phase from `dueDate` itself, so they follow a moved
+ * date with no help needed here.
  *
  * Only ever call this for a date the user chose. Calling it on a date that
  * *the rule itself* produced would re-derive the anchor from an occurrence
@@ -317,5 +317,8 @@ export function reanchorRecurrence(rule: string | null, dueDate: string | null):
   const day = Number(dayStr)
   if (rule.startsWith('FREQ=MONTHLY')) return `FREQ=MONTHLY;BYMONTHDAY=${day}`
   if (rule.startsWith('FREQ=YEARLY')) return `FREQ=YEARLY;BYMONTH=${month};BYMONTHDAY=${day}`
+  if (rule.startsWith('FREQ=WEEKLY') && rule.includes('BYDAY=')) {
+    return `FREQ=WEEKLY;BYDAY=${DAY_CODES[dayOfWeek(dueDate)]}`
+  }
   return rule
 }

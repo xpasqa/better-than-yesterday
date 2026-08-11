@@ -6,7 +6,7 @@ import { parse } from './parse.ts'
 // nor a Monday, so "next occurrence" arithmetic for every weekday name is
 // exercised somewhere in this file (see the weekday table test).
 const NOW = new Date('2026-08-05T03:00:00Z')
-const CTX = { now: NOW, timezone: 'Asia/Jakarta', language: 'id' as const }
+const CTX = { now: NOW, timezone: 'Asia/Jakarta' }
 const TODAY = '2026-08-05'
 
 describe('parse — content extraction', () => {
@@ -322,7 +322,7 @@ describe('parse — recurrence', () => {
 })
 
 describe('compound relative dates', () => {
-  const at = (isoDay: string) => ({ now: new Date(`${isoDay}T03:00:00Z`), timezone: 'Asia/Jakarta', language: 'id' as const })
+  const at = (isoDay: string) => ({ now: new Date(`${isoDay}T03:00:00Z`), timezone: 'Asia/Jakarta' })
 
   it('"minggu depan" means next Monday, not next Sunday', () => {
     const r = parse('rapat minggu depan', at('2026-08-07')) // Friday

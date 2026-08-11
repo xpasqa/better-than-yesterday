@@ -47,9 +47,9 @@ async function enqueue(node: Node): Promise<void> {
  */
 export async function createTaskFromQuickAdd(
   input: string,
-  ctx: { timezone: string; language: 'id' | 'en'; defaultParentId?: string | null },
+  ctx: { timezone: string; defaultParentId?: string | null },
 ): Promise<Node> {
-  const parsed = parse(input, { now: new Date(), timezone: ctx.timezone, language: ctx.language })
+  const parsed = parse(input, { now: new Date(), timezone: ctx.timezone })
 
   // Most of the eight spec.md §8 recurrence patterns ("setiap hari", "setiap
   // bulan", "setiap tahun", "setiap tanggal N", "setiap N hari", "setiap

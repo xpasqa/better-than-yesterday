@@ -33,7 +33,6 @@ export interface ParseSpan {
 export interface ParseContext {
   now: Date
   timezone: string
-  language: 'id' | 'en'
 }
 
 export interface ParseResult {

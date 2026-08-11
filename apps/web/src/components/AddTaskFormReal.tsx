@@ -75,7 +75,7 @@ export default function AddTaskFormReal({
   const parsePreview = (() => {
     const trimmed = content.trim()
     if (!trimmed) return null
-    const parsed = parse(trimmed, { now: new Date(), timezone, language: 'id' })
+    const parsed = parse(trimmed, { now: new Date(), timezone })
     const parts: string[] = []
     if (parsed.dueDate) parts.push(formatPreviewDate(parsed.dueDate))
     if (parsed.priority) parts.push(`P${parsed.priority}`)
@@ -94,7 +94,6 @@ export default function AddTaskFormReal({
 
     const node = await createTaskFromQuickAdd(input, {
       timezone,
-      language: 'id',
       defaultParentId: parentId,
     })
 

@@ -301,8 +301,20 @@ describe('reanchorRecurrence — issue #75, the due date the user just picked wi
     expect(reanchorRecurrence('FREQ=WEEKLY', '2026-08-20')).toBe('FREQ=WEEKLY')
   })
 
-  it('leaves BYDAY alone — "setiap senin" names its own day, and #75 is not about weekday rules', () => {
-    expect(reanchorRecurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-19')).toBe('FREQ=WEEKLY;BYDAY=MO')
+  it('moves BYDAY to the new dueDate\'s weekday (issue #85) — the picked date wins here too', () => {
+    // 2026-08-19 is a Wednesday. "setiap senin" (BYDAY=MO) moved to that date
+    // via the calendar must become BYDAY=WE, or completing it would jump the
+    // task back to Monday — the same class of bug #75 fixed for MONTHLY/YEARLY.
+    expect(reanchorRecurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-19')).toBe('FREQ=WEEKLY;BYDAY=WE')
+  })
+
+  it('leaves BYDAY alone when the re-anchored date already falls on that weekday', () => {
+    // 2026-08-17 is a Monday.
+    expect(reanchorRecurrence('FREQ=WEEKLY;BYDAY=MO', '2026-08-17')).toBe('FREQ=WEEKLY;BYDAY=MO')
+  })
+
+  it('moves a multi-day BYDAY list to a single day — the picked date is one specific day, not a set', () => {
+    expect(reanchorRecurrence('FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', '2026-08-22')).toBe('FREQ=WEEKLY;BYDAY=SA')
   })
 
   it('is a no-op for a null rule or a null dueDate', () => {
