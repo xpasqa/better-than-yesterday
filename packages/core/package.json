@@ -18,6 +18,8 @@
     "./inline-markdown": "./src/inline-markdown.ts",
     "./storage-validate": "./src/storage-validate.ts",
     "./storage-tree": "./src/storage-tree.ts",
+    "./finance-validate": "./src/finance-validate.ts",
+    "./finance-action": "./src/finance-action.ts",
     "./logbook": "./src/logbook.ts",
     "./search": "./src/search.ts",
     "./board": "./src/board.ts"
