@@ -523,6 +523,69 @@ describe('endpoint tulis §8', () => {
     expect(row!.isArchived).toBe(true)
   })
 
+  it('POST/PATCH akun dan kategori tidak membocorkan kolom backend-only', async () => {
+    const user = await createTestUser('w10@example.com')
+    const cookie = await loginCookie('w10@example.com')
+    await ensureFinanceSeed(user.id)
+
+    const createdAccount = await readJson(await app.request('/api/finance/accounts', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Tabungan', kind: 'bank', pocket: 'personal', isSpendable: false }),
+    }))
+    for (const forbidden of ['userId', 'createdAt', 'isSystem']) {
+      expect(createdAccount.account).not.toHaveProperty(forbidden)
+    }
+    expect(createdAccount.account).toMatchObject({ name: 'Tabungan', kind: 'bank', pocket: 'personal', isSpendable: false, isArchived: false })
+
+    const updatedAccount = await readJson(await app.request(`/api/finance/accounts/${createdAccount.account.id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Tabungan BCA' }),
+    }))
+    for (const forbidden of ['userId', 'createdAt', 'isSystem']) {
+      expect(updatedAccount.account).not.toHaveProperty(forbidden)
+    }
+    expect(updatedAccount.account.name).toBe('Tabungan BCA')
+
+    const createdCategory = await readJson(await app.request('/api/finance/categories', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Kado', type: 'expense' }),
+    }))
+    for (const forbidden of ['userId', 'createdAt']) {
+      expect(createdCategory.category).not.toHaveProperty(forbidden)
+    }
+
+    const updatedCategory = await readJson(await app.request(`/api/finance/categories/${createdCategory.category.id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Kado & Hadiah' }),
+    }))
+    for (const forbidden of ['userId', 'createdAt']) {
+      expect(updatedCategory.category).not.toHaveProperty(forbidden)
+    }
+    expect(updatedCategory.category.name).toBe('Kado & Hadiah')
+  })
+
+  it('PATCH/DELETE akun terikat ke user_id sesi — id akun milik user lain ditolak 404', async () => {
+    const owner = await createTestUser('w11a@example.com')
+    await ensureFinanceSeed(owner.id)
+    const ownerDompet = await accountIdByName(owner.id, 'Dompet')
+
+    await createTestUser('w11b@example.com')
+    const intruderCookie = await loginCookie('w11b@example.com')
+
+    const rename = await app.request(`/api/finance/accounts/${ownerDompet}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie: intruderCookie },
+      body: JSON.stringify({ name: 'Diambil alih' }),
+    })
+    expect(rename.status).toBe(404)
+
+    const archive = await app.request(`/api/finance/accounts/${ownerDompet}`, { method: 'DELETE', headers: { cookie: intruderCookie } })
+    expect(archive.status).toBe(404)
+
+    const [row] = await db.select().from(financeAccount).where(eq(financeAccount.id, ownerDompet))
+    expect(row!.name).toBe('Dompet')
+    expect(row!.isArchived).toBe(false)
+  })
+
   it('PATCH /api/me menyimpan setting finance (§5.5)', async () => {
     await createTestUser('w9@example.com')
     const cookie = await loginCookie('w9@example.com')

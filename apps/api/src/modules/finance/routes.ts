@@ -10,7 +10,7 @@ import { appUser } from '../../db/schema/user.ts'
 import { financeAccount, financeCategory, financeTransaction } from '../../db/schema/finance.ts'
 import { ensureFinanceSeed } from './seed.ts'
 import { accountBalances, monthlySummary, netWorth, receivables, spendablePersonal } from './queries.ts'
-import { toTransactionDto } from './dto.ts'
+import { toAccountDto, toCategoryDto, toTransactionDto } from './dto.ts'
 import { createTransaction, updateTransaction, deleteTransaction } from './service.ts'
 
 export const financeRoutes = new Hono()
@@ -50,7 +50,7 @@ financeRoutes.get('/finance/categories', async (c) => {
   const rows = await db.select().from(financeCategory).where(eq(financeCategory.userId, c.get('userId')))
   return c.json({
     categories: rows
-      .map((r) => ({ id: r.id, name: r.name, type: r.type, icon: r.icon, isArchived: r.isArchived, sortOrder: r.sortOrder }))
+      .map(toCategoryDto)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
   })
 })
@@ -210,7 +210,7 @@ financeRoutes.post('/finance/accounts', async (c) => {
   const [row] = await db.insert(financeAccount)
     .values({ id: uuidv7(), userId: c.get('userId'), ...parsed.data })
     .returning()
-  return c.json({ account: row }, 201)
+  return c.json({ account: toAccountDto(row!) }, 201)
 })
 
 /** Akun sistem (Piutang) kebal rename dan arsip — spec §5.1. */
@@ -226,15 +226,23 @@ financeRoutes.patch('/finance/accounts/:id', async (c) => {
   const parsed = accountInput.partial().safeParse(await c.req.json().catch(() => ({})))
   if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
 
-  await ownedAccount(c.get('userId'), c.req.param('id'))
+  const userId = c.get('userId')
+  await ownedAccount(userId, c.req.param('id'))
+  // ownedAccount() sudah memastikan baris ini milik user & bukan akun sistem
+  // (404/409 duluan) — filter user_id di UPDATE ini adalah defense-in-depth,
+  // bukan pengganti: setiap UPDATE/DELETE tetap wajib terikat langsung ke
+  // user_id sesi, bukan cuma percaya id dari client.
   const [row] = await db.update(financeAccount).set(parsed.data)
-    .where(eq(financeAccount.id, c.req.param('id'))).returning()
-  return c.json({ account: row })
+    .where(and(eq(financeAccount.userId, userId), eq(financeAccount.id, c.req.param('id'))))
+    .returning()
+  return c.json({ account: toAccountDto(row!) })
 })
 
 financeRoutes.delete('/finance/accounts/:id', async (c) => {
-  await ownedAccount(c.get('userId'), c.req.param('id'))
-  await db.update(financeAccount).set({ isArchived: true }).where(eq(financeAccount.id, c.req.param('id')))
+  const userId = c.get('userId')
+  await ownedAccount(userId, c.req.param('id'))
+  await db.update(financeAccount).set({ isArchived: true })
+    .where(and(eq(financeAccount.userId, userId), eq(financeAccount.id, c.req.param('id'))))
   return c.json({ ok: true })
 })
 
@@ -252,7 +260,7 @@ financeRoutes.post('/finance/categories', async (c) => {
   const [row] = await db.insert(financeCategory)
     .values({ id: uuidv7(), userId: c.get('userId'), ...parsed.data })
     .returning()
-  return c.json({ category: row }, 201)
+  return c.json({ category: toCategoryDto(row!) }, 201)
 })
 
 financeRoutes.patch('/finance/categories/:id', async (c) => {
@@ -263,7 +271,7 @@ financeRoutes.patch('/finance/categories/:id', async (c) => {
     .where(and(eq(financeCategory.userId, c.get('userId')), eq(financeCategory.id, c.req.param('id'))))
     .returning()
   if (!row) throw new AppError('NOT_FOUND', 404, 'Category not found')
-  return c.json({ category: row })
+  return c.json({ category: toCategoryDto(row) })
 })
 
 financeRoutes.delete('/finance/categories/:id', async (c) => {
