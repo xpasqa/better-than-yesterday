@@ -338,6 +338,28 @@ describe('GET /finance/transactions §8', () => {
     expect(page2.transactions[0].amount).toBe(999_999)
     expect(page2.nextCursor).toBeNull()
   })
+
+  it('account_id menyaring ke transaksi yang menyentuh akun itu saja', async () => {
+    const user = await createTestUser('tx3@example.com')
+    const cookie = await loginCookie('tx3@example.com')
+    const { receivableAccountId } = await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+
+    // Menyentuh Dompet (fromAccountId).
+    await insertTx(user.id, { date: '2026-08-05', type: 'expense', amount: 20_000, fromAccountId: dompet, fromPocket: 'personal' })
+    // Menyentuh Piutang (toAccountId) — bukan Dompet.
+    await insertTx(user.id, {
+      date: '2026-08-06', type: 'transfer', amount: 500_000, counterparty: 'Budi',
+      fromAccountId: dompet, fromPocket: 'personal', toAccountId: receivableAccountId, toPocket: 'personal',
+    })
+
+    const body = await readJson(
+      await app.request(`/api/finance/transactions?account_id=${receivableAccountId}`, { headers: { cookie } }),
+    )
+    expect(body.transactions).toHaveLength(1)
+    expect(body.transactions[0].amount).toBe(500_000)
+    expect(body.transactions[0].toAccountId).toBe(receivableAccountId)
+  })
 })
 
 describe('endpoint tulis §8', () => {

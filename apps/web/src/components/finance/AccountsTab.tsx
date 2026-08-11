@@ -2,7 +2,7 @@
 // kekayaan bersih (§9.7) yang sengaja tidak diletakkan di beranda.
 import { useEffect, useState } from 'react'
 import type { FinanceAccount, FinancePocket } from '../../types'
-import { archiveAccount, getNetWorth, postAccount } from '../../store/finance-api'
+import { archiveAccount, getNetWorth, postAccount, FinanceApiError } from '../../store/finance-api'
 import { formatRupiah } from './format'
 
 interface Props {
@@ -18,22 +18,43 @@ export default function AccountsTab({ accounts, onChanged }: Props) {
   const [kind, setKind] = useState<'cash' | 'bank'>('bank')
   const [pocket, setPocket] = useState<FinancePocket>('personal')
   const [isSavings, setIsSavings] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!showNetWorth) return
     getNetWorth().then(setNetWorth).catch(() => setNetWorth(null))
   }, [showNetWorth, accounts])
 
+  function message(e: unknown): string {
+    return e instanceof FinanceApiError ? e.message : 'Gagal memproses. Coba lagi.'
+  }
+
   async function add() {
-    // Satu akun = satu tempat yang benar-benar terpisah secara fisik (§4.3).
-    await postAccount({ name: name.trim(), kind, pocket, isSpendable: !isSavings })
-    setAdding(false)
-    setName('')
-    onChanged()
+    setError(null)
+    try {
+      // Satu akun = satu tempat yang benar-benar terpisah secara fisik (§4.3).
+      await postAccount({ name: name.trim(), kind, pocket, isSpendable: !isSavings })
+      setAdding(false)
+      setName('')
+      onChanged()
+    } catch (e) {
+      setError(message(e))
+    }
+  }
+
+  async function archive(id: string) {
+    setError(null)
+    try {
+      await archiveAccount(id)
+      onChanged()
+    } catch (e) {
+      setError(message(e))
+    }
   }
 
   return (
     <div className="finance__body">
+      {error && <p className="finance-form__error">{error}</p>}
       <ul className="finance-account-list">
         {accounts.filter((a) => !a.isArchived).map((a) => (
           <li key={a.id} className="finance-account">
@@ -49,7 +70,7 @@ export default function AccountsTab({ accounts, onChanged }: Props) {
             </span>
             {/* Akun yang punya transaksi tidak dihapus, hanya diarsipkan (§11.6) */}
             {!a.isSystem && (
-              <button type="button" onClick={() => void archiveAccount(a.id).then(onChanged)}>Arsipkan</button>
+              <button type="button" onClick={() => void archive(a.id)}>Arsipkan</button>
             )}
           </li>
         ))}

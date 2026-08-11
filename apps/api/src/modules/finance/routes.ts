@@ -1,7 +1,7 @@
 // Endpoint Finance — docs/feature/30.finance/spec.md §8.
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { and, desc, eq, isNull, lt, gte, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, lt, gte, or, sql } from 'drizzle-orm'
 import { todayInTimezone, firstOfNextMonth } from '@better/core/date'
 import { uuidv7 } from '@better/core/id'
 import { AppError } from '../../http/errors.ts'
@@ -82,6 +82,15 @@ financeRoutes.get('/finance/transactions', async (c) => {
   if (q.data.month) {
     filters.push(gte(financeTransaction.date, `${q.data.month}-01`))
     filters.push(lt(financeTransaction.date, firstOfNextMonth(`${q.data.month}-01`)))
+  }
+  // account_id menyaring transaksi yang menyentuh akun itu di salah satu
+  // sisi — dipakai client untuk mempersempit pencarian (mis. cari catatan
+  // Piutang tertentu) ketimbang menyisir 50 transaksi terbaru lintas akun.
+  if (q.data.account_id) {
+    filters.push(or(
+      eq(financeTransaction.fromAccountId, q.data.account_id),
+      eq(financeTransaction.toAccountId, q.data.account_id),
+    )!)
   }
   // Cursor membawa (date, id) dari baris terakhir halaman sebelumnya, bukan
   // id saja — transaksi boleh backdate bebas (§11.5), jadi id (UUIDv7,
