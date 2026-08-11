@@ -339,3 +339,180 @@ describe('GET /finance/transactions §8', () => {
     expect(page2.nextCursor).toBeNull()
   })
 })
+
+describe('endpoint tulis §8', () => {
+  async function post(cookie: string, body: unknown, key?: string) {
+    const res = await app.request('/api/finance/transactions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie, ...(key ? { 'idempotency-key': key } : {}) },
+      body: JSON.stringify(body),
+    })
+    return { status: res.status, body: await readJson(res) }
+  }
+
+  async function expenseBody(userId: string, amount: number) {
+    const dompet = await accountIdByName(userId, 'Dompet')
+    const [cat] = await db.select().from(financeCategory)
+      .where(and(eq(financeCategory.userId, userId), eq(financeCategory.name, 'Makan')))
+    return {
+      date: new Date().toISOString().slice(0, 10),
+      type: 'expense', amount, categoryId: cat!.id,
+      fromAccountId: dompet, fromPocket: 'personal',
+      toAccountId: null, toPocket: null, counterparty: null, note: null,
+    }
+  }
+
+  it('POST membuat transaksi dan menggeser saldo', async () => {
+    const user = await createTestUser('w1@example.com')
+    const cookie = await loginCookie('w1@example.com')
+    await ensureFinanceSeed(user.id)
+
+    const { status, body } = await post(cookie, await expenseBody(user.id, 25_000))
+    expect(status).toBe(201)
+    expect(body.transaction.amount).toBe(25_000)
+    expect(body.transaction).not.toHaveProperty('userId')
+
+    const dompet = await accountIdByName(user.id, 'Dompet')
+    expect((await accountBalances(user.id)).find((a) => a.id === dompet)!.balance).toBe(-25_000)
+  })
+
+  it('POST dua kali dengan Idempotency-Key sama menghasilkan satu baris', async () => {
+    const user = await createTestUser('w2@example.com')
+    const cookie = await loginCookie('w2@example.com')
+    await ensureFinanceSeed(user.id)
+    const payload = await expenseBody(user.id, 40_000)
+
+    const first = await post(cookie, payload, 'key-abc')
+    const second = await post(cookie, payload, 'key-abc')
+
+    expect(first.status).toBe(201)
+    expect(second.status).toBe(200)
+    expect(second.body.transaction.id).toBe(first.body.transaction.id)
+
+    const rows = await db.select().from(financeTransaction).where(eq(financeTransaction.userId, user.id))
+    expect(rows).toHaveLength(1)
+  })
+
+  it('POST menolak bentuk yang melanggar §6 dengan 422 dan daftar pelanggaran', async () => {
+    const user = await createTestUser('w3@example.com')
+    const cookie = await loginCookie('w3@example.com')
+    await ensureFinanceSeed(user.id)
+    const payload = { ...(await expenseBody(user.id, 25_000)), categoryId: null }
+
+    const { status, body } = await post(cookie, payload)
+    expect(status).toBe(422)
+    expect(body.error.details.violations).toContainEqual({ field: 'categoryId', code: 'CATEGORY_REQUIRED' })
+  })
+
+  it('PATCH mengedit transaksi tanpa langkah rekalkulasi apa pun (prinsip 2)', async () => {
+    const user = await createTestUser('w4@example.com')
+    const cookie = await loginCookie('w4@example.com')
+    await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+    const created = await post(cookie, await expenseBody(user.id, 25_000))
+
+    const res = await app.request(`/api/finance/transactions/${created.body.transaction.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ amount: 75_000 }),
+    })
+    expect(res.status).toBe(200)
+    expect((await accountBalances(user.id)).find((a) => a.id === dompet)!.balance).toBe(-75_000)
+
+    const del = await app.request(`/api/finance/transactions/${created.body.transaction.id}`, { method: 'DELETE', headers: { cookie } })
+    expect(del.status).toBe(200)
+    expect((await accountBalances(user.id)).find((a) => a.id === dompet)!.balance).toBe(0)
+  })
+
+  it('DELETE pinjaman yang sudah dibayar sebagian meminta konfirmasi dulu (§11.2)', async () => {
+    const user = await createTestUser('w5@example.com')
+    const cookie = await loginCookie('w5@example.com')
+    const { receivableAccountId } = await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+
+    const [lend] = await db.insert(financeTransaction).values({
+      id: uuidv7(), userId: user.id, date: '2026-08-01', type: 'transfer', amount: 500_000, counterparty: 'Budi',
+      fromAccountId: dompet, fromPocket: 'personal', toAccountId: receivableAccountId, toPocket: 'personal',
+    }).returning()
+    await db.insert(financeTransaction).values({
+      id: uuidv7(), userId: user.id, date: '2026-08-05', type: 'transfer', amount: 200_000, counterparty: 'Budi',
+      fromAccountId: receivableAccountId, fromPocket: 'personal', toAccountId: dompet, toPocket: 'personal',
+    })
+
+    const blocked = await app.request(`/api/finance/transactions/${lend!.id}`, { method: 'DELETE', headers: { cookie } })
+    expect(blocked.status).toBe(409)
+    const body = await readJson(blocked)
+    expect(body.error.code).toBe('CONFLICT')
+    expect(body.error.details).toMatchObject({ counterparty: 'Budi', otherCount: 1, otherTotal: 200_000 })
+
+    const one = await app.request(`/api/finance/transactions/${lend!.id}?cascade=one`, { method: 'DELETE', headers: { cookie } })
+    expect(one.status).toBe(200)
+    // Sisa jadi negatif — ditampilkan merah, tidak diblokir (§11.4).
+    expect(await receivables(user.id, receivableAccountId)).toEqual([{ counterparty: 'Budi', sisa: -200_000 }])
+  })
+
+  it('DELETE cascade=all menghapus seluruh catatan counterparty itu', async () => {
+    const user = await createTestUser('w6@example.com')
+    const cookie = await loginCookie('w6@example.com')
+    const { receivableAccountId } = await ensureFinanceSeed(user.id)
+    const dompet = await accountIdByName(user.id, 'Dompet')
+
+    const [lend] = await db.insert(financeTransaction).values({
+      id: uuidv7(), userId: user.id, date: '2026-08-01', type: 'transfer', amount: 500_000, counterparty: 'Budi',
+      fromAccountId: dompet, fromPocket: 'personal', toAccountId: receivableAccountId, toPocket: 'personal',
+    }).returning()
+    await db.insert(financeTransaction).values({
+      id: uuidv7(), userId: user.id, date: '2026-08-05', type: 'transfer', amount: 200_000, counterparty: 'Budi',
+      fromAccountId: receivableAccountId, fromPocket: 'personal', toAccountId: dompet, toPocket: 'personal',
+    })
+
+    const res = await app.request(`/api/finance/transactions/${lend!.id}?cascade=all`, { method: 'DELETE', headers: { cookie } })
+    expect(res.status).toBe(200)
+    expect(await receivables(user.id, receivableAccountId)).toEqual([])
+  })
+
+  it('akun sistem tidak bisa di-rename maupun diarsipkan (§11.6)', async () => {
+    const user = await createTestUser('w7@example.com')
+    const cookie = await loginCookie('w7@example.com')
+    const { receivableAccountId } = await ensureFinanceSeed(user.id)
+
+    const rename = await app.request(`/api/finance/accounts/${receivableAccountId}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Bukan Piutang' }),
+    })
+    expect(rename.status).toBe(409)
+
+    const archive = await app.request(`/api/finance/accounts/${receivableAccountId}`, { method: 'DELETE', headers: { cookie } })
+    expect(archive.status).toBe(409)
+  })
+
+  it('DELETE akun biasa mengarsipkan, tidak menghapus (§11.6)', async () => {
+    const user = await createTestUser('w8@example.com')
+    const cookie = await loginCookie('w8@example.com')
+    await ensureFinanceSeed(user.id)
+
+    const created = await readJson(await app.request('/api/finance/accounts', {
+      method: 'POST', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ name: 'Tabungan', kind: 'bank', pocket: 'personal', isSpendable: false }),
+    }))
+    const res = await app.request(`/api/finance/accounts/${created.account.id}`, { method: 'DELETE', headers: { cookie } })
+    expect(res.status).toBe(200)
+
+    const [row] = await db.select().from(financeAccount).where(eq(financeAccount.id, created.account.id))
+    expect(row!.isArchived).toBe(true)
+  })
+
+  it('PATCH /api/me menyimpan setting finance (§5.5)', async () => {
+    await createTestUser('w9@example.com')
+    const cookie = await loginCookie('w9@example.com')
+
+    const res = await app.request('/api/me', {
+      method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ financeBusinessEnabled: true, financeSavingsTargetMode: 'amount', financeSavingsTargetValue: 2_000_000 }),
+    })
+    expect(res.status).toBe(200)
+    const body = await readJson(res)
+    expect(body.user.financeBusinessEnabled).toBe(true)
+    expect(body.user.financeSavingsTargetValue).toBe(2_000_000)
+  })
+})

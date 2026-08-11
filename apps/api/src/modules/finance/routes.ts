@@ -3,13 +3,15 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { and, desc, eq, isNull, lt, gte, sql } from 'drizzle-orm'
 import { todayInTimezone, firstOfNextMonth } from '@better/core/date'
+import { uuidv7 } from '@better/core/id'
 import { AppError } from '../../http/errors.ts'
 import { db } from '../../db/client.ts'
 import { appUser } from '../../db/schema/user.ts'
-import { financeCategory, financeTransaction } from '../../db/schema/finance.ts'
+import { financeAccount, financeCategory, financeTransaction } from '../../db/schema/finance.ts'
 import { ensureFinanceSeed } from './seed.ts'
 import { accountBalances, monthlySummary, netWorth, receivables, spendablePersonal } from './queries.ts'
 import { toTransactionDto } from './dto.ts'
+import { createTransaction, updateTransaction, deleteTransaction } from './service.ts'
 
 export const financeRoutes = new Hono()
 
@@ -150,4 +152,124 @@ financeRoutes.get('/finance/overview', async (c) => {
     chips,
     businessEnabled: user.financeBusinessEnabled,
   })
+})
+
+const pocketEnum = z.enum(['personal', 'business'])
+
+const draftSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  type: z.enum(['income', 'expense', 'transfer']),
+  amount: z.number().int(),
+  categoryId: z.string().nullable().default(null),
+  fromAccountId: z.string().nullable().default(null),
+  fromPocket: pocketEnum.nullable().default(null),
+  toAccountId: z.string().nullable().default(null),
+  toPocket: pocketEnum.nullable().default(null),
+  counterparty: z.string().trim().min(1).nullable().default(null),
+  note: z.string().nullable().default(null),
+})
+
+financeRoutes.post('/finance/transactions', async (c) => {
+  const parsed = draftSchema.safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  const key = c.req.header('idempotency-key') ?? null
+  const { row, created } = await createTransaction(c.get('userId'), parsed.data, key)
+  return c.json({ transaction: toTransactionDto(row) }, created ? 201 : 200)
+})
+
+financeRoutes.patch('/finance/transactions/:id', async (c) => {
+  const parsed = draftSchema.partial().safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  const row = await updateTransaction(c.get('userId'), c.req.param('id'), parsed.data)
+  return c.json({ transaction: toTransactionDto(row) })
+})
+
+financeRoutes.delete('/finance/transactions/:id', async (c) => {
+  const cascade = new URL(c.req.url).searchParams.get('cascade')
+  if (cascade !== null && cascade !== 'one' && cascade !== 'all') {
+    throw new AppError('VALIDATION_ERROR', 422, 'cascade must be "one" or "all"')
+  }
+  return c.json(await deleteTransaction(c.get('userId'), c.req.param('id'), cascade))
+})
+
+const accountInput = z.object({
+  name: z.string().trim().min(1).max(60),
+  // 'receivable' tidak ada di sini: akun Piutang hanya lahir dari seed.
+  kind: z.enum(['cash', 'bank']),
+  pocket: pocketEnum.default('personal'),
+  isSpendable: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+})
+
+financeRoutes.post('/finance/accounts', async (c) => {
+  const parsed = accountInput.safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  const [row] = await db.insert(financeAccount)
+    .values({ id: uuidv7(), userId: c.get('userId'), ...parsed.data })
+    .returning()
+  return c.json({ account: row }, 201)
+})
+
+/** Akun sistem (Piutang) kebal rename dan arsip — spec §5.1. */
+async function ownedAccount(userId: string, id: string) {
+  const [row] = await db.select().from(financeAccount)
+    .where(and(eq(financeAccount.userId, userId), eq(financeAccount.id, id)))
+  if (!row) throw new AppError('NOT_FOUND', 404, 'Account not found')
+  if (row.isSystem) throw new AppError('CONFLICT', 409, 'System account cannot be modified')
+  return row
+}
+
+financeRoutes.patch('/finance/accounts/:id', async (c) => {
+  const parsed = accountInput.partial().safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  await ownedAccount(c.get('userId'), c.req.param('id'))
+  const [row] = await db.update(financeAccount).set(parsed.data)
+    .where(eq(financeAccount.id, c.req.param('id'))).returning()
+  return c.json({ account: row })
+})
+
+financeRoutes.delete('/finance/accounts/:id', async (c) => {
+  await ownedAccount(c.get('userId'), c.req.param('id'))
+  await db.update(financeAccount).set({ isArchived: true }).where(eq(financeAccount.id, c.req.param('id')))
+  return c.json({ ok: true })
+})
+
+const categoryInput = z.object({
+  name: z.string().trim().min(1).max(60),
+  type: z.enum(['income', 'expense']),
+  icon: z.string().nullable().default(null),
+  sortOrder: z.number().int().default(0),
+})
+
+financeRoutes.post('/finance/categories', async (c) => {
+  const parsed = categoryInput.safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  const [row] = await db.insert(financeCategory)
+    .values({ id: uuidv7(), userId: c.get('userId'), ...parsed.data })
+    .returning()
+  return c.json({ category: row }, 201)
+})
+
+financeRoutes.patch('/finance/categories/:id', async (c) => {
+  const parsed = categoryInput.partial().safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 422, 'Invalid body', parsed.error.flatten())
+
+  const [row] = await db.update(financeCategory).set(parsed.data)
+    .where(and(eq(financeCategory.userId, c.get('userId')), eq(financeCategory.id, c.req.param('id'))))
+    .returning()
+  if (!row) throw new AppError('NOT_FOUND', 404, 'Category not found')
+  return c.json({ category: row })
+})
+
+financeRoutes.delete('/finance/categories/:id', async (c) => {
+  const [row] = await db.update(financeCategory).set({ isArchived: true })
+    .where(and(eq(financeCategory.userId, c.get('userId')), eq(financeCategory.id, c.req.param('id'))))
+    .returning()
+  if (!row) throw new AppError('NOT_FOUND', 404, 'Category not found')
+  return c.json({ ok: true })
 })
