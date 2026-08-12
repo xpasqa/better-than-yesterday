@@ -17,6 +17,8 @@ export interface MailMessage {
   isFlagged: boolean
   /** Decorative only — filenames shown as disabled chips in the reading pane */
   attachments?: string[]
+  /** Sanitized HTML from server, for reading pane iframe */
+  bodyHtml?: string
 }
 
 export type StorageFileType = 'pdf' | 'image' | 'doc' | 'sheet' | 'zip' | 'other'

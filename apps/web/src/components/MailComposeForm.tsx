@@ -6,6 +6,10 @@ export interface ComposeDraft {
   to: string
   subject: string
   body: string
+  /** RFC 2822 threading header — set by MailView for reply/forward */
+  inReplyTo?: string
+  /** RFC 2822 threading header — set by MailView for reply/forward */
+  references?: string
 }
 
 interface MailComposeFormProps {
