@@ -27,12 +27,15 @@ export default function ActionPicker({ accounts, categories, timezone, businessE
               {actions.map((a) => (
                 <li key={a.id}>
                   <button type="button" className="finance-action" onClick={() => setChosen(a)}>
-                    <span aria-hidden="true">{a.emoji}</span> {a.label}
+                    <span className="finance-action__emoji" aria-hidden="true">{a.emoji}</span>
+                    {a.label}
                   </button>
                 </li>
               ))}
             </ul>
-            <button type="button" className="finance-sheet__close" onClick={onClose}>Batal</button>
+            <button type="button" className="finance-btn finance-btn--secondary finance-btn--block" onClick={onClose}>
+              Batal
+            </button>
           </>
         ) : (
           <TransactionForm

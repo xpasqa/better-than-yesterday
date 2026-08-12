@@ -1,5 +1,6 @@
 // Setup awal — spec §10.4. Tiga pertanyaan, sisanya default; target < 1 menit.
 import { useState } from 'react'
+import { PlusIcon } from '@phosphor-icons/react'
 import type { FinancePocket } from '../../types'
 import { patchSettings, postAccount, FinanceApiError } from '../../store/finance-api'
 
@@ -70,18 +71,22 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
       {step === 1 && (
         <section>
           <h2 className="finance-section__title">Punya rekening apa?</h2>
-          <p className="finance-empty">Dompet tunai sudah dibuatkan. Tambahkan rekening lain kalau ada.</p>
-          <ul className="finance-tx-list">
-            {drafts.map((d) => <li key={d.name} className="finance-tx">{d.name}{d.isSavings ? ' · tabungan' : ''}</li>)}
-          </ul>
+          <p className="finance-setup__hint">Dompet tunai sudah dibuatkan. Tambahkan rekening lain kalau ada.</p>
+          {drafts.length > 0 && (
+            <ul className="finance-tx-list">
+              {drafts.map((d) => <li key={d.name} className="finance-tx">{d.name}{d.isSavings ? ' · tabungan' : ''}</li>)}
+            </ul>
+          )}
           <label className="finance-field"><span>Nama rekening</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="finance-check">
             <input type="checkbox" checked={isSavings} onChange={(e) => setIsSavings(e.target.checked)} />
             Ini tabungan — jangan hitung sebagai uang yang bisa dipakai
           </label>
           <div className="finance-form__actions">
-            <button type="button" onClick={addDraft}>Tambah</button>
-            <button type="button" onClick={() => setStep(2)}>Lanjut</button>
+            <button type="button" className="finance-btn finance-btn--secondary" onClick={addDraft}>
+              <PlusIcon size={14} weight="bold" /> Tambah
+            </button>
+            <button type="button" className="finance-btn finance-btn--primary" onClick={() => setStep(2)}>Lanjut</button>
           </div>
         </section>
       )}
@@ -89,10 +94,14 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
       {step === 2 && (
         <section>
           <h2 className="finance-section__title">Punya usaha atau project sampingan?</h2>
-          <p className="finance-empty">Kalau ya, uang bisnis dipisah dari uang pribadi dan omzet tidak mengotori ringkasan personal.</p>
+          <p className="finance-setup__hint">Kalau ya, uang bisnis dipisah dari uang pribadi dan omzet tidak mengotori ringkasan personal.</p>
           <div className="finance-form__actions">
-            <button type="button" onClick={() => { setBusinessEnabled(false); setStep(3) }}>Tidak</button>
-            <button type="button" onClick={() => { setBusinessEnabled(true); setStep(3) }}>Ya</button>
+            <button type="button" className="finance-btn finance-btn--secondary" onClick={() => { setBusinessEnabled(false); setStep(3) }}>
+              Tidak
+            </button>
+            <button type="button" className="finance-btn finance-btn--primary" onClick={() => { setBusinessEnabled(true); setStep(3) }}>
+              Ya
+            </button>
           </div>
         </section>
       )}
@@ -116,7 +125,9 @@ export default function FinanceSetup({ onDone }: { onDone: () => void }) {
           )}
           {error && <p className="finance-form__error">{error}</p>}
           <div className="finance-form__actions">
-            <button type="button" disabled={saving} onClick={() => void finish()}>Selesai</button>
+            <button type="button" className="finance-btn finance-btn--primary" disabled={saving} onClick={() => void finish()}>
+              Selesai
+            </button>
           </div>
         </section>
       )}

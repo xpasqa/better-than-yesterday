@@ -195,8 +195,10 @@ export default function TransactionForm({ action, accounts, categories, timezone
       {serverError && <p className="finance-form__error">{serverError}</p>}
 
       <div className="finance-form__actions">
-        <button type="button" onClick={onBack}>Kembali</button>
-        <button type="submit" disabled={saving || violations.length > 0}>Simpan</button>
+        <button type="button" className="finance-btn finance-btn--secondary" onClick={onBack}>Kembali</button>
+        <button type="submit" className="finance-btn finance-btn--primary" disabled={saving || violations.length > 0}>
+          Simpan
+        </button>
       </div>
     </form>
   )

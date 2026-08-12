@@ -67,7 +67,11 @@ export default function TransactionList({ accounts, categories, timezone, revisi
           </li>
         ))}
       </ul>
-      {cursor && <button type="button" onClick={() => void loadMore()}>Muat lebih banyak</button>}
+      {cursor && (
+        <button type="button" className="finance-btn finance-btn--secondary finance-btn--block" onClick={() => void loadMore()}>
+          Muat lebih banyak
+        </button>
+      )}
     </div>
   )
 }

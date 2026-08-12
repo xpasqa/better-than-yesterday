@@ -1,6 +1,7 @@
 // Tab Akun — saldo tiap akun (§9.1), pecahannya per kantong (§9.3), dan
 // kekayaan bersih (§9.7) yang sengaja tidak diletakkan di beranda.
 import { useEffect, useState, type ReactNode } from 'react'
+import { ArchiveIcon, ArrowCounterClockwiseIcon, CaretDownIcon, CaretUpIcon, PlusIcon } from '@phosphor-icons/react'
 import type { FinanceAccount, FinancePocket } from '../../types'
 import { archiveAccount, getNetWorth, patchAccount, patchSettings, postAccount, FinanceApiError } from '../../store/finance-api'
 import { formatRupiah } from './format'
@@ -128,7 +129,9 @@ export default function AccountsTab({ accounts, businessEnabled, onChanged }: Pr
           a,
           // Akun yang punya transaksi tidak dihapus, hanya diarsipkan (§11.6)
           a.isSystem ? null : (
-            <button type="button" disabled={busy} onClick={() => void archive(a.id)}>Arsipkan</button>
+            <button type="button" className="finance-btn finance-btn--ghost finance-btn--small" disabled={busy} onClick={() => void archive(a.id)}>
+              <ArchiveIcon size={14} /> Arsipkan
+            </button>
           ),
         ))}
       </ul>
@@ -159,24 +162,29 @@ export default function AccountsTab({ accounts, businessEnabled, onChanged }: Pr
             Ini tabungan — jangan hitung sebagai uang yang bisa dipakai
           </label>
           <div className="finance-form__actions">
-            <button type="button" onClick={() => setAdding(false)}>Batal</button>
-            <button type="submit" disabled={busy || name.trim() === ''}>Simpan</button>
+            <button type="button" className="finance-btn finance-btn--secondary" onClick={() => setAdding(false)}>Batal</button>
+            <button type="submit" className="finance-btn finance-btn--primary" disabled={busy || name.trim() === ''}>Simpan</button>
           </div>
         </form>
       ) : (
-        <button type="button" onClick={() => setAdding(true)}>Tambah akun</button>
+        <button type="button" className="finance-btn finance-btn--primary" onClick={() => setAdding(true)}>
+          <PlusIcon size={14} weight="bold" /> Tambah akun
+        </button>
       )}
 
       {archived.length > 0 && (
         <section className="finance-archived">
-          <button type="button" onClick={() => setShowArchived((v) => !v)}>
+          <button type="button" className="finance-btn finance-btn--ghost" onClick={() => setShowArchived((v) => !v)}>
+            {showArchived ? <CaretUpIcon size={14} /> : <CaretDownIcon size={14} />}
             {showArchived ? 'Sembunyikan' : 'Lihat'} akun yang diarsipkan ({archived.length})
           </button>
           {showArchived && (
             <ul className="finance-account-list">
               {archived.map((a) => row(
                 a,
-                <button type="button" disabled={busy} onClick={() => void reactivate(a.id)}>Aktifkan lagi</button>,
+                <button type="button" className="finance-btn finance-btn--ghost finance-btn--small" disabled={busy} onClick={() => void reactivate(a.id)}>
+                  <ArrowCounterClockwiseIcon size={14} /> Aktifkan lagi
+                </button>,
               ))}
             </ul>
           )}
@@ -184,7 +192,8 @@ export default function AccountsTab({ accounts, businessEnabled, onChanged }: Pr
       )}
 
       <section className="finance-networth">
-        <button type="button" onClick={() => setShowNetWorth((v) => !v)}>
+        <button type="button" className="finance-btn finance-btn--ghost" onClick={() => setShowNetWorth((v) => !v)}>
+          {showNetWorth ? <CaretUpIcon size={14} /> : <CaretDownIcon size={14} />}
           {showNetWorth ? 'Sembunyikan' : 'Lihat'} kekayaan bersih
         </button>
         {showNetWorth && netWorth !== null && (

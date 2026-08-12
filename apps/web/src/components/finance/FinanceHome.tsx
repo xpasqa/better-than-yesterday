@@ -1,23 +1,18 @@
 // Beranda Finance — spec §9.4 (headline), §9.5 (ringkasan), target, chip.
 // Satu round-trip lewat /finance/overview.
 import { useEffect, useState } from 'react'
-import type { FinanceAccount, FinanceCategory, FinanceOverview, FinanceTransaction } from '../../types'
+import type { FinanceCategory, FinanceOverview, FinanceTransaction } from '../../types'
 import { getOverview, getTransactions } from '../../store/finance-api'
 import { formatMonth, formatRupiah } from './format'
-import ActionPicker from './ActionPicker'
 
 interface Props {
-  accounts: FinanceAccount[]
   categories: FinanceCategory[]
-  timezone: string
   revision: number
-  onChanged: () => void
 }
 
-export default function FinanceHome({ accounts, categories, timezone, revision, onChanged }: Props) {
+export default function FinanceHome({ categories, revision }: Props) {
   const [overview, setOverview] = useState<FinanceOverview | null>(null)
   const [recent, setRecent] = useState<FinanceTransaction[]>([])
-  const [picking, setPicking] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -92,18 +87,6 @@ export default function FinanceHome({ accounts, categories, timezone, revision, 
           ))}
         </ul>
       </section>
-
-      <button className="finance-fab" type="button" aria-label="Catat transaksi" onClick={() => setPicking(true)}>+</button>
-      {picking && (
-        <ActionPicker
-          accounts={accounts}
-          categories={categories}
-          timezone={timezone}
-          businessEnabled={overview.businessEnabled}
-          onClose={() => setPicking(false)}
-          onSaved={() => { setPicking(false); onChanged() }}
-        />
-      )}
     </div>
   )
 }

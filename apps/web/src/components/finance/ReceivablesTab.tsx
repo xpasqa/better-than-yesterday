@@ -1,6 +1,7 @@
 // Tab Piutang — daftar sisa (§9.6), hapus dengan konfirmasi (§11.2), dan
 // "Ikhlaskan" yang cuma pintasan membuat expense dari akun Piutang (§11.3).
 import { useEffect, useRef, useState } from 'react'
+import { HandHeartIcon, TrashIcon } from '@phosphor-icons/react'
 import { buildTransaction } from '@better/core/finance-action'
 import { todayInTimezone } from '@better/core/date'
 import type { FinanceAccount, FinanceCategory, FinanceReceivable, FinanceTransaction } from '../../types'
@@ -160,9 +161,13 @@ export default function ReceivablesTab({ accounts, categories, timezone, revisio
             <span className="finance-tx__label">{r.counterparty}</span>
             {/* Sisa negatif tetap ditampilkan merah — sinyal salah input (§11.4) */}
             <span className={`finance-tx__amount ${r.sisa < 0 ? 'finance-amount--negative' : ''}`}>{formatRupiah(r.sisa)}</span>
-            <button type="button" disabled={busy} onClick={() => void removeLatest(r.counterparty)}>Hapus</button>
+            <button type="button" className="finance-btn finance-btn--danger finance-btn--small" disabled={busy} onClick={() => void removeLatest(r.counterparty)}>
+              <TrashIcon size={14} /> Hapus
+            </button>
             {r.sisa > 0 && (
-              <button type="button" disabled={busy} onClick={() => void forgive(r.counterparty, r.sisa)}>Ikhlaskan</button>
+              <button type="button" className="finance-btn finance-btn--ghost finance-btn--small" disabled={busy} onClick={() => void forgive(r.counterparty, r.sisa)}>
+                <HandHeartIcon size={14} /> Ikhlaskan
+              </button>
             )}
           </li>
         ))}
@@ -177,9 +182,15 @@ export default function ReceivablesTab({ accounts, categories, timezone, revisio
               {formatRupiah(confirm.otherTotal)}. Hapus juga?
             </p>
             <div className="finance-form__actions">
-              <button type="button" disabled={busy} onClick={() => setConfirm(null)}>Batal</button>
-              <button type="button" disabled={busy} onClick={() => void resolveConfirm('one')}>Hapus satu saja</button>
-              <button type="button" disabled={busy} onClick={() => void resolveConfirm('all')}>Hapus semua</button>
+              <button type="button" className="finance-btn finance-btn--secondary" disabled={busy} onClick={() => setConfirm(null)}>
+                Batal
+              </button>
+              <button type="button" className="finance-btn finance-btn--danger" disabled={busy} onClick={() => void resolveConfirm('one')}>
+                Hapus satu saja
+              </button>
+              <button type="button" className="finance-btn finance-btn--danger" disabled={busy} onClick={() => void resolveConfirm('all')}>
+                Hapus semua
+              </button>
             </div>
           </div>
         </div>
