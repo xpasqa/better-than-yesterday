@@ -138,11 +138,12 @@ export const db = new BetterDb()
 
 /** Wipes all local data — called on logout, or on login as a different user than whatever was cached (single-device-sharing safety net). */
 export async function clearLocalStore(): Promise<void> {
-  await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.outbox, db.meta, async () => {
+  await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.notifications, db.outbox, db.meta, async () => {
     await db.nodes.clear()
     await db.tags.clear()
     await db.completions.clear()
     await db.reminders.clear()
+    await db.notifications.clear()
     await db.outbox.clear()
     await db.meta.clear()
   })

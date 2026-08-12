@@ -15,6 +15,9 @@
     <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/icons.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- VAPID public key for Web Push — must match VAPID_PUBLIC_KEY on the server.
+         Key rotation requires updating this value AND the server env var together,
+         then redeploying both API and frontend. -->
     <meta name="vapid-public-key" content="BBKAzwVz_qcw8KYcJ88wJdeW9z62Ev3ZRhSJ5Pm0XKteb0_fVHC_Z4I8jxjmPf3cjabQKp_oTOxxWYJ2Y_dmEMY" />
 
     <script>

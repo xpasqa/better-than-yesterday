@@ -34,7 +34,7 @@ export async function getOrCreateSubscription(): Promise<PushSubscription | null
 
   // Send to server
   const sub = subscription.toJSON()
-  await fetch('/api/push-subscriptions', {
+  const res = await fetch('/api/push-subscriptions', {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -45,6 +45,9 @@ export async function getOrCreateSubscription(): Promise<PushSubscription | null
       userAgent: navigator.userAgent.slice(0, 200),
     }),
   })
+  if (!res.ok) {
+    throw new Error(`Failed to register push subscription: ${res.status}`)
+  }
 
   return subscription
 }
