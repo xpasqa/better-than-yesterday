@@ -149,6 +149,17 @@ describe('logbook', () => {
     expect(result).toHaveLength(0)
   })
 
+  // docs/feature/32.outline-task-decoupling/spec.md §6.1 — an Outline row
+  // is never "completed" in the Todo sense, even if it somehow carries a
+  // completedAt.
+  it('kind=note nodes are excluded even if completedAt is set', () => {
+    const nodes = [
+      makeNode({ id: 'note', kind: 'note', completedAt: '2026-08-05T10:00:00Z' }),
+    ]
+    const result = logbook(nodes, [])
+    expect(result).toHaveLength(0)
+  })
+
   it('two entries with identical completedAt timestamps keep a stable order', () => {
     const ts = '2026-08-05T10:00:00Z'
     const nodes = [

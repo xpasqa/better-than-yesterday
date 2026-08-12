@@ -34,7 +34,12 @@ export function matches(node: Node, tokens: string[]): boolean {
 /**
  * Return all items that match `query`, sorted by relevance then due date.
  *
- * Candidates: `kind === 'item'` && `deletedAt === null`.
+ * Candidates: `kind === 'item' || kind === 'note'`, `deletedAt === null`.
+ * Outline rows (kind='note') are included on purpose — search finds
+ * writing, not just work; a note that can't be found is effectively lost.
+ * See docs/feature/32.outline-task-decoupling/spec.md §6.3. Callers that
+ * render results are expected to visually distinguish note hits from task
+ * hits so the two aren't mistaken for each other.
  * `completedAt` is intentionally NOT part of the filter — see the module-level
  * comment above.
  *
@@ -50,7 +55,7 @@ export function search(nodes: Node[], query: string): Node[] {
   const tokens = tokenize(query)
   if (tokens.length === 0) return []
 
-  const candidates = nodes.filter((n) => n.kind === 'item' && n.deletedAt === null)
+  const candidates = nodes.filter((n) => (n.kind === 'item' || n.kind === 'note') && n.deletedAt === null)
 
   const scored = candidates
     .filter((n) => matches(n, tokens))

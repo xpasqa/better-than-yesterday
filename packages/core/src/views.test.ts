@@ -349,6 +349,55 @@ describe('includeCompleted toggle', () => {
   })
 })
 
+// docs/feature/32.outline-task-decoupling/spec.md §6.1 — Outline rows
+// (kind='note') must stay invisible to every Todo view, even when they
+// carry the fields that would otherwise qualify them (a due date, isSomeday,
+// completedAt). isActiveItem()'s kind === 'item' check is what's doing this
+// work; these tests lock that in.
+describe('kind=note is excluded from every Todo view', () => {
+  it('today: a note with a due date is not shown, even overdue', () => {
+    const nodes = [
+      makeNode({ id: 'note-today', kind: 'note', dueDate: TODAY }),
+      makeNode({ id: 'note-overdue', kind: 'note', dueDate: '2026-08-01' }),
+    ]
+    const result = today(nodes, TODAY)
+    expect(result.today).toEqual([])
+    expect(result.overdue).toEqual([])
+  })
+
+  it('upcoming: a note with a future due date is not grouped', () => {
+    const nodes = [makeNode({ id: 'note-future', kind: 'note', dueDate: '2026-08-06' })]
+    expect(upcoming(nodes, TODAY)).toEqual([])
+  })
+
+  it('anytime: an undated note is not included', () => {
+    const nodes = [makeNode({ id: 'note-plain', kind: 'note' })]
+    expect(anytime(nodes, TODAY)).toEqual([])
+  })
+
+  it('someday: a note flagged isSomeday is not included', () => {
+    const nodes = [makeNode({ id: 'note-someday', kind: 'note', isSomeday: true })]
+    expect(someday(nodes)).toEqual([])
+  })
+
+  it('inbox: a note inside the Inbox is not included', () => {
+    const root = makeNode({ id: 'inbox-root', kind: 'project', isInbox: true })
+    const note = makeNode({ id: 'note-in-inbox', kind: 'note', parentId: 'inbox-root' })
+    expect(inbox([root, note])).toEqual([])
+  })
+
+  it('project: a note inside a project subtree is not included', () => {
+    const proj = makeNode({ id: 'proj', kind: 'project' })
+    const note = makeNode({ id: 'note-in-project', kind: 'note', parentId: 'proj' })
+    expect(project([proj, note], 'proj')).toEqual([])
+  })
+
+  it('completed: a note with completedAt set is not included', () => {
+    const nodes = [makeNode({ id: 'note-done', kind: 'note', completedAt: '2026-08-05T00:00:00Z' })]
+    expect(completed(nodes)).toEqual([])
+  })
+})
+
 describe('completed', () => {
   it('returns only completed items, most recently completed first', () => {
     const nodes = [

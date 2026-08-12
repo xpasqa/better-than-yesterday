@@ -79,4 +79,12 @@ describe('board', () => {
     const cols = board([P, a], 'p')
     expect(cols).toHaveLength(0)
   })
+
+  // docs/feature/32.outline-task-decoupling/spec.md §6.1 — an Outline row
+  // parented under a project is a note, never a board card.
+  it('excludes kind=note nodes', () => {
+    const note = n({ id: 'note', kind: 'note', parentId: 'p', rank: 'a' })
+    const cols = board([P, note], 'p')
+    expect(cols).toHaveLength(0)
+  })
 })

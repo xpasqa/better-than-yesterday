@@ -189,6 +189,13 @@ describe('search', () => {
     expect(search(nodes, 'milk')).toEqual([])
   })
 
+  // docs/feature/32.outline-task-decoupling/spec.md §6.3 — a note that
+  // can't be found is effectively lost, so search must include it.
+  it('kind=note is included — search finds writing, not just tasks', () => {
+    const nodes = [makeNode({ id: 'note', kind: 'note', content: 'Buy milk note' })]
+    expect(search(nodes, 'milk').map((n) => n.id)).toEqual(['note'])
+  })
+
   it('node with note:null does not throw', () => {
     const nodes = [makeNode({ id: 'a', content: 'Buy milk', note: null })]
     expect(() => search(nodes, 'milk')).not.toThrow()

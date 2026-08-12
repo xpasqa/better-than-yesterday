@@ -147,6 +147,34 @@
   border-bottom: none;
 }
 
+/* Search hit for a kind=note Outline row — deliberately checkbox-less and
+   date-less so it can't be mistaken for a task (32.outline-task-decoupling
+   §6.3). */
+.search-note-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.search-note-row__icon {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.search-note-row__content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .real-view__check-icon {
   flex-shrink: 0;
   color: var(--control-border);

@@ -270,7 +270,7 @@ function App() {
         ) : activeView === 'project' && activeProjectId ? (
           <ProjectReal key={activeProjectId} user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
         ) : activeView === 'search' ? (
-          <SearchView user={user} onOpenNode={setOpenNodeId} />
+          <SearchView user={user} onOpenNode={setOpenNodeId} onOpenNote={() => navigate(pathForView('outline'))} />
         ) : activeView === 'tags' ? (
           <TagsView />
         ) : activeView === 'settings' ? (

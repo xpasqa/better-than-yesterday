@@ -1,18 +1,42 @@
 import { useRef, useState } from 'react'
-import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { MagnifyingGlassIcon, NoteIcon } from '@phosphor-icons/react'
 import { search, tokenize } from '@better/core/search'
+import type { Node } from '@better/core/node'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import type { AuthUser } from '../store/auth-api'
 import TaskRow from './TaskRow'
 import SyncStatusBadge from './SyncStatusBadge'
+import { highlightTokens } from './highlightTokens'
 import './RealView.css'
 
 interface SearchViewProps {
   user: AuthUser
   onOpenNode?: (id: string) => void
+  /** kind='note' results open Outline instead of the task detail modal (32.outline-task-decoupling/spec.md §6.3). */
+  onOpenNote?: () => void
 }
 
-function SearchView({ user, onOpenNode }: SearchViewProps) {
+/**
+ * A search hit that's a plain Outline row, not a task — rendered without
+ * TaskRow's checkbox and due-date chrome so it can't be mistaken for one.
+ * Clicking hands off to Outline; there is no per-node zoom route yet, so
+ * this only switches views (spec §9 lists zoom routing as out of scope
+ * for this feature).
+ */
+function SearchNoteRow({ node, tokens, onOpen }: { node: Node; tokens: string[]; onOpen?: () => void }) {
+  return (
+    <li className="real-view__list-item">
+      <button type="button" className="search-note-row" onClick={onOpen}>
+        <NoteIcon size={16} className="search-note-row__icon" />
+        <span className="search-note-row__content">
+          {highlightTokens(node.content || '(kosong)', tokens)}
+        </span>
+      </button>
+    </li>
+  )
+}
+
+function SearchView({ user, onOpenNode, onOpenNote }: SearchViewProps) {
   const nodes = useAllNodes()
   const tags = useAllTags()
   const tagsById = new Map(tags.map((t) => [t.id, t]))
@@ -66,17 +90,21 @@ function SearchView({ user, onOpenNode }: SearchViewProps) {
           <section aria-label="Search results">
             <h2 className="real-view__group-label">{results.length} hasil</h2>
             <ul className="real-view__list">
-              {results.map((n) => (
-                <TaskRow
-                  key={n.id}
-                  node={n}
-                  tagsById={tagsById}
-                  allNodes={nodes}
-                  timezone={timezone}
-                  tokens={tokens}
-                  onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined}
-                />
-              ))}
+              {results.map((n) =>
+                n.kind === 'note' ? (
+                  <SearchNoteRow key={n.id} node={n} tokens={tokens} onOpen={onOpenNote} />
+                ) : (
+                  <TaskRow
+                    key={n.id}
+                    node={n}
+                    tagsById={tagsById}
+                    allNodes={nodes}
+                    timezone={timezone}
+                    tokens={tokens}
+                    onOpenNode={onOpenNode ? (n) => onOpenNode(n.id) : undefined}
+                  />
+                ),
+              )}
             </ul>
           </section>
         )}
