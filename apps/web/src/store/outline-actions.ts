@@ -4,6 +4,11 @@
 // back Tab/Shift+Tab. Reparenting itself is core/tree.ts (2.outline/spec.md
 // §7, §12) — this is just the Dexie-write wrapper around it, mirroring
 // node-actions.ts's enqueue pattern.
+//
+// blankNode() creates kind='note', not kind='item': an Outline row is a
+// plain sentence, never a task, until #project + the link popup says
+// otherwise — even when written inside a project's zoomed view. See
+// docs/feature/32.outline-task-decoupling/spec.md §2, §3.1.
 import { uuidv7 } from '@better/core/id'
 import { between } from '@better/core/rank'
 import { indent as treeIndent, outdent as treeOutdent, move as treeMove } from '@better/core/tree'
@@ -38,7 +43,7 @@ function blankNode(parentId: string | null, rank: string): Node {
     id: uuidv7(),
     userId: '',
     parentId,
-    kind: 'item',
+    kind: 'note',
     rank,
     content: '',
     note: null,
