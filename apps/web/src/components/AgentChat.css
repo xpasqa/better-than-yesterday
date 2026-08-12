@@ -125,6 +125,18 @@
   border-color: var(--border-focus);
 }
 
+/* Read-only composer replacement when viewing a closed session
+   (34.sidebar-workspace/spec.md §4.3) */
+.agent-chat__closed-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-idle);
+  border-radius: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+
 .agent-chat__input {
   flex: 1;
   min-width: 0;

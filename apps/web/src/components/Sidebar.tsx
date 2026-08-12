@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
   SparkleIcon, StarIcon, TagIcon, TrayIcon, WalletIcon, XIcon,
 } from '@phosphor-icons/react'
@@ -13,6 +13,7 @@ import type { ViewType } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import ThemeToggle from './ThemeToggle'
 import NotificationPanel from './NotificationPanel'
+import { fetchRecentSessions, type RecentSession } from '../api/agent-sessions'
 import { db } from '../store/db'
 import './Sidebar.css'
 
@@ -42,6 +43,8 @@ interface SidebarProps {
   onLogout: () => void
   /** Opens the ProjectModal in edit mode for a given area or project node */
   onEditNode?: (node: TaskNode) => void
+  /** Opens the Agent view on a specific session (Recent Chats click) */
+  onOpenChat?: (sessionId: string) => void
 }
 
 const ChevronDown = ({ open }: { open: boolean }) => (
@@ -101,7 +104,7 @@ export default function Sidebar({
   theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
   onViewChange, onProjectChange, onToggleCollapse, onAddProject, onLogout,
-  onEditNode,
+  onEditNode, onOpenChat,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [favoritesExpanded, setFavoritesExpanded] = useState(true)
@@ -114,6 +117,18 @@ export default function Sidebar({
   useEffect(() => {
     localStorage.setItem('sidebar-workspace-expanded', String(workspaceExpanded))
   }, [workspaceExpanded])
+  const [chatsExpanded, setChatsExpanded] = useState(true)
+  // Real agent sessions (34.sidebar-workspace/spec.md §4.2) — fetched once
+  // per mount. Perfect freshness is not a sidebar's job; the list catches up
+  // on the next visit/reload, and an empty list hides the section entirely.
+  const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetchRecentSessions()
+      .then((sessions) => { if (!cancelled) setRecentSessions(sessions) })
+      .catch(() => { /* not logged in / network — section simply stays hidden */ })
+    return () => { cancelled = true }
+  }, [])
   const profileRef = useRef<HTMLDivElement>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   // Rendered via a portal (below) rather than inline: the "My Projects"
@@ -601,6 +616,40 @@ export default function Sidebar({
             </ul>
           )}
         </div>
+
+        {/* Recent Chats — real agent sessions; hidden entirely when empty
+            (an empty header is noisier than nothing, spec §3) */}
+        {recentSessions.length > 0 && (
+          <div className="sidebar__section">
+            <div className="sidebar__section-header">
+              <span className="sidebar__section-title">Recent Chats</span>
+              <button
+                className="sidebar__section-chevron"
+                onClick={() => setChatsExpanded(e => !e)}
+                title={chatsExpanded ? 'Collapse' : 'Expand'}
+                type="button"
+              >
+                <ChevronDown open={chatsExpanded} />
+              </button>
+            </div>
+            {chatsExpanded && (
+              <ul className="sidebar__nav-list">
+                {recentSessions.map(session => (
+                  <li key={session.id}>
+                    <button
+                      className="sidebar__nav-item"
+                      onClick={() => onOpenChat?.(session.id)}
+                      type="button"
+                    >
+                      <span className="sidebar__nav-icon"><ChatCircleIcon size={18} /></span>
+                      <span className="sidebar__nav-label">{session.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </nav>
       {bellOpen && createPortal(
         <NotificationPanel anchorRef={bellRef} onClose={() => setBellOpen(false)} />,

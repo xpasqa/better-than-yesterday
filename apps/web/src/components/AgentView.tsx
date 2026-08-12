@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import AgentChat from './AgentChat'
+import { fetchSession } from '../api/agent-sessions'
 import type { AgentFile } from '../agent/mockFiles'
 import './AgentView.css'
 
@@ -35,10 +36,19 @@ function timeNow() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function AgentView() {
+interface AgentViewProps {
+  /** Set when opened from Recent Chats (/agent/:sessionId) — loads that session's history. */
+  sessionId?: string | null
+}
+
+export default function AgentView({ sessionId = null }: AgentViewProps) {
   const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<'chat' | 'cowork'>('chat')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  // closedAt set on the loaded session — composer goes read-only, because
+  // /chat always targets the ACTIVE session: typing "into" a closed one
+  // would silently write somewhere else (34.sidebar-workspace/spec.md §4.3).
+  const [sessionClosed, setSessionClosed] = useState(false)
   const [files, setFiles] = useState<AgentFile[]>([])
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -46,6 +56,31 @@ export default function AgentView() {
   const [isStreaming, setIsStreaming] = useState(false)
   // nodeId: null = global context, set to project node id when in a project
   const nodeId = useRef<string | null>(null)
+
+  // Server has been persisting session history all along — this is the first
+  // place the client reads it back. Map assistant → 'agent' (the local role
+  // name) and render as ordinary bubbles.
+  useEffect(() => {
+    if (!sessionId) return
+    let cancelled = false
+    fetchSession(sessionId)
+      .then((session) => {
+        if (cancelled) return
+        setMessages(session.messages.map((m) => ({
+          id: generateId(),
+          role: m.role === 'user' ? 'user' : 'agent',
+          kind: 'text',
+          content: m.content,
+          time: '',
+        })))
+        setSessionClosed(session.closedAt !== null)
+      })
+      .catch(() => {
+        // 404/network — land on the fresh-composer screen instead of erroring
+        if (!cancelled) setMessages([])
+      })
+    return () => { cancelled = true }
+  }, [sessionId])
 
   const selectFile = (path: string) => {
     setSelectedPath(path)
@@ -59,7 +94,7 @@ export default function AgentView() {
 
   const sendText = async (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed || isStreaming) return
+    if (!trimmed || isStreaming || sessionClosed) return
 
     const userMsgId = generateId()
     const agentMsgId = generateId()
@@ -196,6 +231,7 @@ export default function AgentView() {
         onOpenPanel={() => setPanelOpen(true)}
         onClosePanel={() => setPanelOpen(false)}
         isStreaming={isStreaming}
+        disabledNote={sessionClosed ? 'Sesi ini sudah ditutup' : undefined}
       />
     )
   }

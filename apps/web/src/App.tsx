@@ -229,6 +229,7 @@ function App() {
           userName={user.name}
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
+          onOpenChat={(sessionId) => { navigate(pathForView('agent', null, sessionId)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
           onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
           onLogout={handleLogout}
@@ -254,7 +255,7 @@ function App() {
             onSubChange={(sub) => navigate(pathForView('finance', null, sub))}
           />
         ) : activeView === 'agent' ? (
-          <AgentView />
+          <AgentView key={activeSub ?? 'new'} sessionId={activeSub} />
         ) : activeView === 'today' ? (
           <TodayReal user={user} onOpenNode={setOpenNodeId} />
         ) : activeView === 'inbox' ? (

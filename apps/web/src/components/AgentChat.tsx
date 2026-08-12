@@ -19,12 +19,15 @@ interface AgentChatProps {
   onOpenPanel: () => void
   onClosePanel: () => void
   isStreaming?: boolean
+  /** Set to replace the composer with a read-only note — e.g. viewing a closed session. */
+  disabledNote?: string
 }
 
 export default function AgentChat({
   messages, prompt, onPromptChange, onSend, onBack,
   files, panelOpen, selectedPath, unseenPaths, onSelectFile, onOpenPanel, onClosePanel,
   isStreaming: _isStreaming = false,
+  disabledNote,
 }: AgentChatProps) {
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -92,27 +95,31 @@ export default function AgentChat({
 
         <div className="agent-chat__composer">
           <div className="agent-chat__inner">
-            <div className="agent-chat__input-bar">
-              <textarea
-                className="agent-chat__input"
-                placeholder="Reply"
-                value={prompt}
-                onChange={e => onPromptChange(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend() }
-                }}
-                rows={1}
-              />
-              <button
-                className="agent-chat__send-btn"
-                onClick={onSend}
-                disabled={!prompt.trim()}
-                aria-label="Send"
-                type="button"
-              >
-                <PaperPlaneTiltIcon size={15} weight="fill" />
-              </button>
-            </div>
+            {disabledNote ? (
+              <p className="agent-chat__closed-note">{disabledNote}</p>
+            ) : (
+              <div className="agent-chat__input-bar">
+                <textarea
+                  className="agent-chat__input"
+                  placeholder="Reply"
+                  value={prompt}
+                  onChange={e => onPromptChange(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend() }
+                  }}
+                  rows={1}
+                />
+                <button
+                  className="agent-chat__send-btn"
+                  onClick={onSend}
+                  disabled={!prompt.trim()}
+                  aria-label="Send"
+                  type="button"
+                >
+                  <PaperPlaneTiltIcon size={15} weight="fill" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>
