@@ -107,7 +107,7 @@ export default function Sidebar({
   activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
   theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
-  onViewChange, onProjectChange, onToggleCollapse, onAddProject, onOpenSettings, onLogout,
+  onViewChange, onProjectChange, onToggleCollapse, onAddProject, onLogout,
   onEditNode,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
