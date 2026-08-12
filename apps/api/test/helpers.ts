@@ -71,6 +71,7 @@ export function makeNodeDto(overrides: Record<string, unknown> & { id: string })
     rank: 'a0',
     content: 'untitled',
     note: null,
+    linkedTaskId: null,
     dueDate: null,
     dueTime: null,
     durationMin: null,
