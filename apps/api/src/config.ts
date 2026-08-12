@@ -17,6 +17,10 @@ const envSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().optional(),
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_BUCKET: z.string().optional(),
+  // Web Push VAPID keys (reminders spec §3.6)
+  VAPID_PUBLIC_KEY: z.string().min(1, 'VAPID_PUBLIC_KEY is required'),
+  VAPID_PRIVATE_KEY: z.string().min(1, 'VAPID_PRIVATE_KEY is required'),
+  VAPID_SUBJECT: z.string().min(1, 'VAPID_SUBJECT is required'),
 })
 
 function loadConfig() {

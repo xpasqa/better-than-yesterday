@@ -5,10 +5,18 @@ import { uuidv7 } from '@better/core/id'
 import type { Reminder } from '@better/core/reminder'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
+import { getOrCreateSubscription } from '../lib/push-subscription.ts'
 
 export async function createReminder(
   reminder: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>,
 ): Promise<Reminder> {
+  // Request notification permission and register push subscription the first
+  // time a reminder is created. Fire-and-forget — a denied permission or
+  // missing VAPID key must not block the write.
+  getOrCreateSubscription().catch((err) => {
+    console.warn('Push subscription failed (non-fatal):', err)
+  })
+
   const now = new Date().toISOString()
   const full: Reminder = {
     ...reminder,
