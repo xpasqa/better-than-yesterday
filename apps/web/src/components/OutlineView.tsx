@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useCallback, Fragment, type KeyboardEvent } from 'react'
-import { CaretDownIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, FlagIcon, LinkBreakIcon } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { parseInlineMarkdown } from '@better/core/inline-markdown'
 import { parse } from '@better/core/parse'
 import type { Node } from '@better/core/node'
 import { useAllNodes } from '../store/use-nodes'
-import { toggleTaskComplete, deleteTask } from '../store/node-actions'
+import { toggleTaskComplete, updateNode, deleteTask } from '../store/node-actions'
 import {
   patchNode,
   createSiblingNode,
@@ -112,6 +112,13 @@ function OutlineNodeRow(props: RowProps) {
         (n) => n.kind === 'project' && n.deletedAt === null && n.content.toLowerCase().includes(projectQuery.toLowerCase()),
       )
 
+  // Status chip (32.outline-task-decoupling/spec.md §5): a row with no
+  // linkedTaskId is a plain sentence and gets no checkbox at all. A linked
+  // row mirrors its task's live status; if the task was deleted, the chip
+  // goes dead with a clear-link action instead of pretending it's still there.
+  const linkedTask = node.linkedTaskId ? allNodes.find((n) => n.id === node.linkedTaskId) ?? null : null
+  const linkIsDead = node.linkedTaskId !== null && (linkedTask === null || linkedTask.deletedAt !== null)
+
   // Pick up remote/other-tab edits, but never clobber what's being typed right now.
   useEffect(() => {
     if (!isFocused) {
@@ -171,13 +178,15 @@ function OutlineNodeRow(props: RowProps) {
 
     if (mod && e.key === 'Enter') {
       e.preventDefault()
-      void toggleTaskComplete(node, timezone)
+      // A row with no linked task has nothing to complete (§5.1) — a dead
+      // link has nothing valid to complete either.
+      if (linkedTask && !linkIsDead) void toggleTaskComplete(linkedTask, timezone)
     } else if (mod && e.key === '.') {
       e.preventDefault()
       if (hasChildren) void patchNode(node, { collapsed: !node.collapsed })
     } else if (mod && (e.key === 't' || e.key === 'T')) {
       e.preventDefault()
-      void patchNode(node, { dueDate: todayInTimezone(timezone) })
+      if (linkedTask && !linkIsDead) void updateNode(linkedTask.id, { dueDate: todayInTimezone(timezone) })
     } else if (mod && e.key === 'ArrowUp') {
       e.preventDefault()
       void swapWithSibling(node, allNodes, 'up')
@@ -214,11 +223,11 @@ function OutlineNodeRow(props: RowProps) {
     }
   }
 
-  const isOverdue = node.dueDate !== null && node.dueDate < todayInTimezone(timezone)
+  const isOverdue = !!linkedTask?.dueDate && linkedTask.dueDate < todayInTimezone(timezone)
 
   return (
     <div>
-      <div className={`outline-node ${node.completedAt ? 'outline-node--completed' : ''}`}>
+      <div className={`outline-node ${linkedTask?.completedAt ? 'outline-node--completed' : ''}`}>
         <button
           className={`outline-node__collapse ${hasChildren ? 'outline-node__collapse--visible' : ''}`}
           onClick={() => hasChildren && void patchNode(node, { collapsed: !node.collapsed })}
@@ -232,14 +241,22 @@ function OutlineNodeRow(props: RowProps) {
           />
         </button>
 
-        <button
-          className="outline-node__bullet"
-          onClick={() => void toggleTaskComplete(node, timezone)}
-          tabIndex={-1}
-          aria-label="Toggle complete"
-        >
-          <span className="outline-node__bullet-dot" />
-        </button>
+        {linkedTask && !linkIsDead ? (
+          <button
+            className="outline-node__bullet"
+            onClick={() => void toggleTaskComplete(linkedTask, timezone)}
+            tabIndex={-1}
+            aria-label="Toggle complete"
+          >
+            <span className="outline-node__bullet-dot" />
+          </button>
+        ) : (
+          // No checkbox at all for a plain sentence (spec §5.1) — a bullet
+          // that can't be checked would just invite confusion.
+          <span className="outline-node__bullet outline-node__bullet--static" tabIndex={-1} aria-hidden="true">
+            <span className="outline-node__bullet-dot" />
+          </span>
+        )}
 
         {isFocused ? (
           <div className="outline-node__input-wrapper">
@@ -290,9 +307,30 @@ function OutlineNodeRow(props: RowProps) {
           </div>
         )}
 
-        {node.dueDate && (
+        {linkIsDead && (
+          <button
+            type="button"
+            className="outline-node__link-dead"
+            onClick={() => void patchNode(node, { linkedTaskId: null })}
+            title="Linked task was deleted — click to clear the link"
+          >
+            <LinkBreakIcon size={13} />
+            task deleted
+          </button>
+        )}
+
+        {linkedTask && !linkIsDead && linkedTask.priority && (
+          <FlagIcon
+            size={14}
+            weight="fill"
+            className="outline-node__priority"
+            style={{ color: `var(--priority-p${linkedTask.priority})` }}
+          />
+        )}
+
+        {linkedTask && !linkIsDead && linkedTask.dueDate && (
           <span className={`outline-node__date ${isOverdue ? 'outline-node__date--overdue' : ''}`}>
-            {node.dueDate}
+            {linkedTask.dueDate}
           </span>
         )}
 

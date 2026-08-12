@@ -252,6 +252,40 @@
   background: var(--brand-red-tint);
 }
 
+/* Unlinked row (32.outline-task-decoupling/spec.md §5.1): the bullet stays
+   as a plain tree marker, not a checkbox — no hover affordance, no click. */
+.outline-node__bullet--static {
+  cursor: default;
+}
+
+.outline-node__bullet--static:hover .outline-node__bullet-dot {
+  background: var(--text-secondary);
+}
+
+.outline-node__priority {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.outline-node__link-dead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: none;
+  border: 1px dashed var(--control-border);
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+.outline-node__link-dead:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
 /* Note — Shift+Enter toggles this open under the row it belongs to */
 .outline-node__note {
   display: block;
