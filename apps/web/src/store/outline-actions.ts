@@ -16,6 +16,13 @@ import { sanitizeNode, type Node } from '@better/core/node'
 import { db } from './db.ts'
 import { triggerSync } from './sync-client.ts'
 
+export interface LinkTaskDraft {
+  parentId: string
+  content: string
+  dueDate: string | null
+  priority: 1 | 2 | 3 | null
+}
+
 /**
  * `sanitizeNode` (shared with node-actions.ts's `enqueue` — issue #28)
  * enforces the DB's date/recurrence/time CHECK constraints before the write
@@ -35,6 +42,57 @@ async function enqueueNode(node: Node): Promise<void> {
 
 export async function patchNode(node: Node, patch: Partial<Node>): Promise<void> {
   await enqueueNode({ ...node, ...patch, updatedAt: new Date().toISOString() })
+}
+
+/**
+ * `#project` + the link popup, saved (32.outline-task-decoupling/spec.md
+ * §4): creates a real task under `draft.parentId` and points `row` at it
+ * via `linkedTaskId`. Both writes land in one Dexie transaction — a crash
+ * between them would otherwise either orphan a task nothing points to, or
+ * leave `row` linked to a task that was never actually written.
+ */
+export async function linkOutlineRowToNewTask(row: Node, allNodes: Node[], draft: LinkTaskDraft): Promise<Node> {
+  const siblings = allNodes.filter((n) => n.parentId === draft.parentId && n.kind === 'item' && n.deletedAt === null)
+  const lastRank = siblings.length > 0 ? siblings.reduce((a, b) => (a.rank > b.rank ? a : b)).rank : null
+  const now = new Date().toISOString()
+
+  const task: Node = {
+    id: uuidv7(),
+    userId: '',
+    parentId: draft.parentId,
+    kind: 'item',
+    rank: between(lastRank, null),
+    content: draft.content,
+    note: null,
+    linkedTaskId: null,
+    dueDate: draft.dueDate,
+    dueTime: null,
+    durationMin: null,
+    recurrence: null,
+    priority: draft.priority,
+    tagIds: [],
+    color: null,
+    isFavorite: false,
+    isInbox: false,
+    isSomeday: false,
+    collapsed: false,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    seq: 0,
+  }
+  const updatedRow = sanitizeNode({ ...row, linkedTaskId: task.id, updatedAt: now })
+  const safeTask = sanitizeNode(task)
+
+  await db.transaction('rw', db.nodes, db.outbox, async () => {
+    await db.nodes.put(safeTask)
+    await db.outbox.put({ key: `node:${safeTask.id}`, entityType: 'node', payload: safeTask })
+    await db.nodes.put(updatedRow)
+    await db.outbox.put({ key: `node:${updatedRow.id}`, entityType: 'node', payload: updatedRow })
+  })
+  triggerSync()
+  return safeTask
 }
 
 function blankNode(parentId: string | null, rank: string): Node {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, Fragment, type KeyboardEvent 
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { parseInlineMarkdown } from '@better/core/inline-markdown'
+import { parse } from '@better/core/parse'
 import type { Node } from '@better/core/node'
 import { useAllNodes } from '../store/use-nodes'
 import { toggleTaskComplete, deleteTask } from '../store/node-actions'
@@ -14,6 +15,7 @@ import {
   swapWithSibling,
 } from '../store/outline-actions'
 import type { AuthUser } from '../store/auth-api'
+import LinkTaskModal from './LinkTaskModal'
 import './OutlineView.css'
 
 /*
@@ -100,6 +102,15 @@ function OutlineNodeRow(props: RowProps) {
   const [note, setNote] = useState(node.note ?? '')
   const contentDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const noteDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // `#project` autocomplete + link popup (32.outline-task-decoupling/spec.md
+  // §4). Only offered while the row has no task yet — one row, one task.
+  const [projectQuery, setProjectQuery] = useState<string | null>(null)
+  const [linkDraft, setLinkDraft] = useState<{ projectId: string; initialTitle: string } | null>(null)
+  const matchingProjects = projectQuery === null
+    ? []
+    : allNodes.filter(
+        (n) => n.kind === 'project' && n.deletedAt === null && n.content.toLowerCase().includes(projectQuery.toLowerCase()),
+      )
 
   // Pick up remote/other-tab edits, but never clobber what's being typed right now.
   useEffect(() => {
@@ -134,6 +145,19 @@ function OutlineNodeRow(props: RowProps) {
     setText(value)
     clearTimeout(contentDebounce.current)
     contentDebounce.current = setTimeout(() => flushContent(value), 500)
+
+    if (node.linkedTaskId) {
+      setProjectQuery(null)
+      return
+    }
+    const parsed = parse(value, { now: new Date(), timezone })
+    setProjectQuery(parsed.projectQuery)
+  }
+
+  const handlePickProject = (projectId: string) => {
+    const parsed = parse(text, { now: new Date(), timezone })
+    setProjectQuery(null)
+    setLinkDraft({ projectId, initialTitle: parsed.content })
   }
 
   const handleNoteChange = (value: string) => {
@@ -163,6 +187,9 @@ function OutlineNodeRow(props: RowProps) {
     } else if (e.shiftKey && e.key === 'Enter') {
       e.preventDefault()
       setNoteOpen((o) => !o)
+    } else if (e.key === 'Escape' && projectQuery !== null) {
+      e.preventDefault()
+      setProjectQuery(null)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       flushContent(text)
@@ -215,15 +242,38 @@ function OutlineNodeRow(props: RowProps) {
         </button>
 
         {isFocused ? (
-          <input
-            ref={inputRef}
-            className="outline-node__input"
-            value={text}
-            placeholder="Type something…"
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={() => flushContent(text)}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="outline-node__input-wrapper">
+            <input
+              ref={inputRef}
+              className="outline-node__input"
+              value={text}
+              placeholder="Type something…"
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={() => flushContent(text)}
+              onKeyDown={handleKeyDown}
+            />
+            {projectQuery !== null && (
+              <div className="outline-node__project-dropdown">
+                {matchingProjects.length > 0 ? (
+                  matchingProjects.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="outline-node__project-option"
+                      // onMouseDown (not onClick) fires before the input's onBlur,
+                      // so the click registers before React unmounts this dropdown.
+                      onMouseDown={(e) => { e.preventDefault(); handlePickProject(p.id) }}
+                    >
+                      <span className="outline-node__project-hash" style={{ color: p.color ?? undefined }}>#</span>
+                      {p.content}
+                    </button>
+                  ))
+                ) : (
+                  <span className="outline-node__project-empty">No matching project</span>
+                )}
+              </div>
+            )}
+          </div>
         ) : (
           <div
             className="outline-node__text"
@@ -265,6 +315,17 @@ function OutlineNodeRow(props: RowProps) {
             <OutlineNodeRow key={child.id} {...props} node={child} />
           ))}
         </div>
+      )}
+
+      {linkDraft && (
+        <LinkTaskModal
+          row={node}
+          allNodes={allNodes}
+          projectId={linkDraft.projectId}
+          initialTitle={linkDraft.initialTitle}
+          onClose={() => setLinkDraft(null)}
+          onLinked={() => setLinkDraft(null)}
+        />
       )}
     </div>
   )

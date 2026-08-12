@@ -1,0 +1,25 @@
+/* LinkTaskModal — priority chip row (32.outline-task-decoupling/spec.md §4) */
+.link-task-modal__priorities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.link-task-modal__priority {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--control-border);
+  border-radius: var(--border-radius-small);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.link-task-modal__priority--active {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}

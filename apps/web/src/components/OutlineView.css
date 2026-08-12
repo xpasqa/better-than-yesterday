@@ -130,8 +130,14 @@
 }
 
 /* Input */
-.outline-node__input {
+.outline-node__input-wrapper {
+  position: relative;
   flex: 1;
+  min-width: 0;
+}
+
+.outline-node__input {
+  width: 100%;
   font-size: 15px;
   color: var(--text-primary);
   line-height: 21px;
@@ -139,6 +145,7 @@
   border-radius: 3px;
   min-width: 0;
   caret-color: var(--brand-red-idle);
+  box-sizing: border-box;
 }
 
 .outline-node__input:focus {
@@ -148,6 +155,54 @@
 
 .outline-node__input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* #project autocomplete (32.outline-task-decoupling/spec.md §4) */
+.outline-node__project-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 4px;
+  z-index: 20;
+  min-width: 180px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--divider-primary);
+  border-radius: var(--border-radius-small);
+  box-shadow: var(--shadow-raised-2);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.outline-node__project-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-small);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  border-radius: var(--border-radius-small);
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.outline-node__project-option:hover {
+  background: var(--bg-highlight);
+}
+
+.outline-node__project-hash {
+  font-weight: var(--font-weight-medium);
+}
+
+.outline-node__project-empty {
+  font-size: var(--font-size-small);
+  color: var(--text-tertiary);
+  padding: 6px 8px;
 }
 
 /* Static (unfocused) row text — same box model as the input so focusing
