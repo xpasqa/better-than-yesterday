@@ -177,7 +177,7 @@ baris bertaut tidak memunculkan autocomplete.
    Anytime bersih setelah mengetik catatan, popup terbuka dan batal tidak
    meninggalkan jejak, centang dari Outline berubah di Today.
 3. **Perbarui spec lama** [2.backend/2.outline/spec.md](../2.backend/2.outline/spec.md)
-   §4 dan §9: tandai keputusan "`#` tidak ditawarkan di outline" sebagai
+   §3.1 dan §9: tandai keputusan "`#` tidak ditawarkan di outline" sebagai
    dibatalkan, dengan tautan ke spec ini.
 
 ---

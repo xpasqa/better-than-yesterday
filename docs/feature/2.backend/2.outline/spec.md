@@ -80,11 +80,19 @@ Tidak ada permukaan di mana ia berarti sesuatu yang lain. Selengkapnya di
 | `@` | Sebut task/project lain → chip hidup §3.3 |
 | `$` | Tempelkan label ke baris ini |
 | `!` | Beri prioritas 1–4 pada baris ini (dan baris itu menjadi task) |
-| `#` | **Tidak ditawarkan di outline** — `#` berarti "taruh di project ini", sementara sebuah baris outline sudah punya tempatnya. Memindahkannya dilakukan dengan `Tab`/`Shift+Tab`/seret |
+| `#` | **Dibatalkan** — lihat catatan di bawah. Melahirkan task tertaut lewat popup, bukan memindahkan baris |
 
 Pemilih `@` mencari seluruh pohon dan menampilkan breadcrumb tiap kandidat,
 sehingga dua task bernama mirip di project berbeda bisa dibedakan sebelum
 dipilih.
+
+> **Dibatalkan (docs/feature/32.outline-task-decoupling/spec.md §4, 2026-08-12):**
+> baris di atas melarang `#` di outline dengan alasan "sebuah baris outline
+> sudah punya tempatnya" — itu berlaku ketika setiap baris outline *adalah*
+> task Todo. Sejak `kind='note'` (feature #32), baris outline default tidak
+> punya tempat di Todo sama sekali, jadi `#` berhenti berarti "pindahkan" dan
+> mulai berarti "lahirkan task tertaut di sana", lewat popup — bukan
+> `Tab`/`Shift+Tab`/seret. Lihat spec #32 §4 untuk alur lengkapnya.
 
 ### 3.2 Format penyimpanan
 
@@ -259,14 +267,25 @@ diklik, dan membuat PWA punya alamat yang masuk akal.
 ## 9. Tampilan Akar & Hubungannya dengan Project
 
 Outline menampilkan **seluruh pohon** — termasuk project Todo Anda. Zoom ke
-sebuah project berarti melihat task-nya sebagai baris outline yang bisa
-di-indent; menyunting di sana langsung terlihat di Today dan Board. Inilah
-wujud paling langsung dari janji "satu pohon".
+sebuah project berarti melihat task-task yang *sudah* task-nya sebagai baris
+outline yang bisa di-indent; menyunting task yang sudah ada di sana langsung
+terlihat di Today dan Board. Inilah wujud paling langsung dari janji "satu
+pohon".
 
 Supaya level akar tetap tenang: **akar dirender tertutup**, dan ada satu
 sakelar *sembunyikan project* bagi yang ingin outline berisi catatan saja.
 Node akar biasa (bukan `kind='project'`) adalah dokumen catatan — ia tidak
 punya warna dan tidak muncul di daftar project sidebar.
+
+> **Diperbarui (docs/feature/32.outline-task-decoupling/spec.md, 2026-08-12):**
+> "satu pohon" tidak lagi berarti "satu keanggotaan". Baris **baru** yang
+> diketik di Outline — termasuk saat sedang zoom ke dalam sebuah project —
+> dibuat `kind='note'` dan **tidak** muncul di Today/Board/dst sampai
+> ditandai `#project` secara eksplisit lewat popup. Konsistensi ini disengaja:
+> tidak ada baris outline yang pernah jadi task tanpa aksi eksplisit, di mana
+> pun ia ditulis. Task yang sudah ada (`kind='item'`) tetap tampil dan bisa
+> disunting persis seperti sebelumnya. Lihat spec #32 §2 (prinsip 2) dan §9
+> (out-of-scope) untuk alasan lengkapnya.
 
 ---
 

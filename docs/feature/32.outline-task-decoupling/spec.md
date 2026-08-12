@@ -4,7 +4,7 @@
 **Status:** disetujui, siap ditulis plan.md
 **Asal:** brainstorm 2026-08-12 — riwayat keputusannya di [context.md](context.md)
 
-Mengubah [2.backend/2.outline/spec.md](../2.backend/2.outline/spec.md) §4 dan
+Mengubah [2.backend/2.outline/spec.md](../2.backend/2.outline/spec.md) §3.1 dan
 §9. Bagian lain spec itu tetap berlaku.
 
 ---
@@ -95,7 +95,7 @@ Ikut ditambahkan ke DTO sync, tipe `Node` di `@better/core`, dan skema Dexie.
 Baris yang sudah punya `linked_task_id` tidak menawarkan `#` lagi — satu baris,
 satu task. Untuk menautkan ke tempat lain, putuskan tautannya dulu (§7).
 
-Ini membatalkan [2.outline §4](../2.backend/2.outline/spec.md) yang melarang
+Ini membatalkan [2.outline §3.1](../2.backend/2.outline/spec.md) yang melarang
 `#` di outline. Alasan pembatalannya di [context.md §4](context.md).
 
 ## 5. Tampilan & sinkronisasi

@@ -93,7 +93,7 @@ saat mengedit, dan satu baris bisa punya banyak tautan tanpa maksud.
 
 ## 4. Keputusan spec lama yang dibatalkan
 
-[2.backend/2.outline §4](../2.backend/2.outline/spec.md) menyatakan:
+[2.backend/2.outline §3.1](../2.backend/2.outline/spec.md) menyatakan:
 
 > `#` **tidak ditawarkan di outline** — `#` berarti "taruh di project ini",
 > sementara sebuah baris outline sudah punya tempatnya.
