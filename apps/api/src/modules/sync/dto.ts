@@ -74,6 +74,19 @@ export const reminderDto = z.object({
 })
 export type ReminderDto = z.infer<typeof reminderDto>
 
+// Server-created only — client reads, never pushes. Only action from client
+// is PATCH /api/notifications/:id/read. NOT in syncRequest.changes.
+export const notificationDto = z.object({
+  id: z.string().uuid(),
+  kind: z.enum(['reminder', 'digest', 'overdue']),
+  nodeId: z.string().uuid().nullable(),
+  title: z.string(),
+  body: z.string(),
+  createdAt: z.string().datetime(),
+  readAt: z.string().datetime().nullable(),
+})
+export type NotificationDto = z.infer<typeof notificationDto>
+
 const MAX_BATCH = 500
 
 export const syncRequest = z.object({

@@ -8,8 +8,9 @@ import { node } from '../../db/schema/node.ts'
 import { tag } from '../../db/schema/tag.ts'
 import { completion } from '../../db/schema/completion.ts'
 import { reminder } from '../../db/schema/reminder.ts'
+import { notification } from '../../db/schema/notification.ts'
 import { AppError } from '../../http/errors.ts'
-import { syncRequest, type NodeDto, type TagDto, type CompletionDto, type ReminderDto } from './dto.ts'
+import { syncRequest, type NodeDto, type TagDto, type CompletionDto, type ReminderDto, type NotificationDto } from './dto.ts'
 
 export const syncRoutes = new Hono()
 
@@ -261,6 +262,18 @@ function reminderToDto(row: typeof reminder.$inferSelect): ReminderDto {
   }
 }
 
+function notificationToDto(row: typeof notification.$inferSelect): NotificationDto {
+  return {
+    id: row.id,
+    kind: row.kind,
+    nodeId: row.nodeId,
+    title: row.title,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+    readAt: row.readAt?.toISOString() ?? null,
+  }
+}
+
 syncRoutes.post('/sync', async (c) => {
   const userId = c.get('userId' as never) as string
   if (!userId) throw new AppError('UNAUTHORIZED', 401, 'Unauthorized')
@@ -276,8 +289,9 @@ syncRoutes.post('/sync', async (c) => {
   if (changes.completions.length > 0) await applyIncomingCompletions(userId, changes.completions)
   if (changes.reminders.length > 0) await applyIncomingReminders(userId, changes.reminders)
 
-  // Pull: fetch everything newer than cursor across all four entity types.
-  const [nodeRows, tagRows, completionRows, reminderRows] = await Promise.all([
+  // Pull: fetch everything newer than cursor across all syncable entity types.
+  // notifications are pull-only (server writes, client never pushes them).
+  const [nodeRows, tagRows, completionRows, reminderRows, notificationRows] = await Promise.all([
     db
       .select()
       .from(node)
@@ -302,16 +316,23 @@ syncRoutes.post('/sync', async (c) => {
       .where(and(eq(reminder.userId, userId), gt(reminder.seq, cursorBigint)))
       .orderBy(reminder.seq)
       .limit(500),
+    db
+      .select()
+      .from(notification)
+      .where(and(eq(notification.userId, userId), gt(notification.seq, cursorBigint)))
+      .orderBy(notification.seq)
+      .limit(500),
   ])
 
   // seq is one sequence shared by every syncable table, so the highest seq
-  // seen across all four result sets is the correct next cursor regardless
+  // seen across all five result sets is the correct next cursor regardless
   // of which table it came from.
   let nextCursor = cursorBigint
   for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of tagRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of completionRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of reminderRows) if (r.seq > nextCursor) nextCursor = r.seq
+  for (const r of notificationRows) if (r.seq > nextCursor) nextCursor = r.seq
 
   return c.json({
     cursor: nextCursor.toString(),
@@ -320,6 +341,7 @@ syncRoutes.post('/sync', async (c) => {
       tags: tagRows.map(tagToDto),
       completions: completionRows.map(completionToDto),
       reminders: reminderRows.map(reminderToDto),
+      notifications: notificationRows.map(notificationToDto),
     },
   })
 })

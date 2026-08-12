@@ -6,6 +6,7 @@ import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
 import type { Completion } from '@better/core/completion'
 import type { Reminder } from '@better/core/reminder'
+import type { Notification } from '@better/core/notification'
 
 /**
  * A local write not yet confirmed by the server, keyed `${entityType}:${id}`
@@ -33,6 +34,7 @@ export class BetterDb extends Dexie {
   tags!: Table<Tag, string>
   completions!: Table<Completion, string>
   reminders!: Table<Reminder, string>
+  notifications!: Table<Notification, string>
   outbox!: Table<OutboxEntry, string>
   meta!: Table<MetaEntry, string>
 
@@ -116,6 +118,16 @@ export class BetterDb extends Dexie {
       tags: 'id, name',
       completions: 'id, nodeId',
       reminders: 'id, nodeId',
+      outbox: 'key, entityType',
+      meta: 'key',
+    })
+    // v7 adds notifications table — pull-only from server, client never writes.
+    this.version(7).stores({
+      nodes: 'id, parentId, dueDate, [parentId+rank], isInbox',
+      tags: 'id, name',
+      completions: 'id, nodeId',
+      reminders: 'id, nodeId',
+      notifications: 'id, readAt',
       outbox: 'key, entityType',
       meta: 'key',
     })

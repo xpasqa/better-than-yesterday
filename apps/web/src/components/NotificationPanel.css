@@ -1,0 +1,134 @@
+/* NotificationPanel — anchored dropdown below the bell button.
+   Follows the same CSS variable conventions as AgentSettingsModal.css. */
+
+.notif-panel {
+  position: fixed;
+  z-index: 1200;
+  width: 320px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  border: 1px solid var(--divider-primary);
+  border-radius: 10px;
+  box-shadow: var(--shadow-raised-2);
+  overflow: hidden;
+}
+
+.notif-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--divider-primary);
+  flex-shrink: 0;
+}
+
+.notif-panel__title {
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.notif-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+
+.notif-panel__close:hover {
+  background: var(--bg-highlight);
+}
+
+.notif-panel__list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.notif-panel__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 16px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-small);
+}
+
+.notif-panel__item {
+  border-radius: 6px;
+  margin: 2px 4px;
+}
+
+.notif-panel__item--unread {
+  background: var(--bg-highlight);
+}
+
+.notif-panel__item-btn {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 10px;
+  text-align: left;
+  border-radius: 6px;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.notif-panel__item-btn:hover {
+  background: var(--bg-hover);
+}
+
+.notif-panel__item-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notif-panel__item-title {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-panel__item-text {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-panel__item-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notif-panel__unread-dot {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent, #4f8ef7);
+  flex-shrink: 0;
+}

@@ -5,6 +5,7 @@ import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
 import type { Completion } from '@better/core/completion'
 import type { Reminder } from '@better/core/reminder'
+import type { Notification } from '@better/core/notification'
 import { db, getCursor, setCursor } from './db.ts'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline'
@@ -66,10 +67,10 @@ export async function syncOnce(): Promise<void> {
     if (!res.ok) throw new Error(`sync failed: ${res.status}`)
     const body = await res.json() as {
       cursor: string
-      changes: { nodes: Node[]; tags: Tag[]; completions: Completion[]; reminders: Reminder[] }
+      changes: { nodes: Node[]; tags: Tag[]; completions: Completion[]; reminders: Reminder[]; notifications: Notification[] }
     }
 
-    await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.outbox, async () => {
+    await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.notifications, db.outbox, async () => {
       await db.outbox.clear()
       await mergeIncoming(db.nodes, body.changes.nodes)
       await mergeIncoming(db.tags, body.changes.tags)
@@ -77,6 +78,10 @@ export async function syncOnce(): Promise<void> {
         await db.completions.put(row)
       }
       await mergeIncoming(db.reminders, body.changes.reminders)
+      // Notifications are pull-only — db.put directly (no updatedAt field).
+      for (const row of body.changes.notifications) {
+        await db.notifications.put(row)
+      }
     })
     await setCursor(body.cursor)
     setStatus('idle')

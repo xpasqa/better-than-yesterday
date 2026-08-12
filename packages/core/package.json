@@ -22,7 +22,8 @@
     "./finance-action": "./src/finance-action.ts",
     "./logbook": "./src/logbook.ts",
     "./search": "./src/search.ts",
-    "./board": "./src/board.ts"
+    "./board": "./src/board.ts",
+    "./notification": "./src/notification.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
