@@ -14,8 +14,6 @@ import Login from './components/Login'
 import ProjectModal from './components/ProjectModal'
 import type { ProjectModalKind } from './components/ProjectModal'
 import NodeDetailModal from './components/NodeDetailModal'
-import AgentSettingsModal from './components/AgentSettingsModal'
-import MailSettingsModal from './components/MailSettingsModal'
 import ShortcutsModal from './components/ShortcutsModal'
 import UndoToast from './components/UndoToast'
 import TodayReal from './components/TodayReal'
@@ -99,8 +97,6 @@ function App() {
   } | null>(null)
 
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
-  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
-  const [mailSettingsOpen, setMailSettingsOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
 
   // Pending "g" prefix for two-key nav shortcuts (g→i, g→t, g→u)
@@ -108,7 +104,7 @@ function App() {
   const pendingG = useRef(false)
 
   useEffect(() => {
-    const modalOpen = Boolean(projectModal) || agentSettingsOpen || mailSettingsOpen || Boolean(openNodeId) || showShortcuts
+    const modalOpen = Boolean(projectModal) || Boolean(openNodeId) || showShortcuts
 
     const handler = (e: KeyboardEvent) => {
       if (shouldIgnore(e, modalOpen)) return
@@ -235,7 +231,6 @@ function App() {
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
           onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
-          onOpenSettings={() => setAgentSettingsOpen(true)}
           onLogout={handleLogout}
           onEditNode={(node) => setProjectModal({
             mode: 'edit',
@@ -249,7 +244,7 @@ function App() {
         {activeView === 'outline' ? (
           <OutlineView user={user} />
         ) : activeView === 'mail' ? (
-          <MailView />
+          <MailView onOpenSettings={() => navigate(pathForView('settings'))} />
         ) : activeView === 'storage' ? (
           <StorageView />
         ) : activeView === 'finance' ? (
@@ -298,12 +293,6 @@ function App() {
             setDrawerOpen(false)
           }}
         />
-      )}
-      {agentSettingsOpen && (
-        <AgentSettingsModal onClose={() => setAgentSettingsOpen(false)} />
-      )}
-      {mailSettingsOpen && (
-        <MailSettingsModal onClose={() => setMailSettingsOpen(false)} />
       )}
       {showShortcuts && (
         <ShortcutsModal onClose={() => setShowShortcuts(false)} />

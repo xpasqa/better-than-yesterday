@@ -15,7 +15,6 @@ import {
 import { buildReplyHeaders } from '@better/core/mail-threading'
 import MailComposeForm from './MailComposeForm'
 import type { ComposeDraft } from './MailComposeForm'
-import MailSettingsModal from './MailSettingsModal'
 import './MailView.css'
 
 const FOLDERS: { id: MailFolderView; name: string; icon: typeof EnvelopeSimpleIcon }[] = [
@@ -45,7 +44,7 @@ function classifyError(err: unknown): MailError {
   return 'MAIL_UNAVAILABLE'
 }
 
-export default function MailView() {
+export default function MailView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const [messages, setMessages] = useState<MailMessage[]>([])
   const [activeFolder, setActiveFolder] = useState<MailFolderView>('inbox')
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null)
@@ -54,7 +53,6 @@ export default function MailView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<MailError>(null)
   const [showImages, setShowImages] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const loadFolder = useCallback(async (folder: MailFolderView) => {
     setLoading(true)
@@ -242,7 +240,7 @@ export default function MailView() {
         </ul>
         <button
           className="mail-view__settings-btn"
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => onOpenSettings?.()}
           aria-label="Mail settings"
           type="button"
         >
@@ -279,7 +277,7 @@ export default function MailView() {
             <p>No mail account configured.</p>
             <button
               className="mail-view__status-cta"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => onOpenSettings?.()}
               type="button"
             >
               Configure mail account

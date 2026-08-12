@@ -39,8 +39,6 @@ interface SidebarProps {
   onToggleCollapse: () => void
   /** Opens the Create Project modal */
   onAddProject: (kind: 'project' | 'area') => void
-  /** Opens the Agent Settings modal */
-  onOpenSettings: () => void
   onLogout: () => void
   /** Opens the ProjectModal in edit mode for a given area or project node */
   onEditNode?: (node: TaskNode) => void
@@ -220,15 +218,6 @@ export default function Sidebar({
           </button>
           {profileOpen && (
             <div className="sidebar__profile-menu" role="menu">
-              <button
-                className="sidebar__profile-item"
-                role="menuitem"
-                type="button"
-                onClick={() => { setProfileOpen(false); onOpenSettings() }}
-              >
-                <GearIcon size={15} />
-                Agent settings
-              </button>
               <button
                 className="sidebar__profile-item"
                 role="menuitem"
