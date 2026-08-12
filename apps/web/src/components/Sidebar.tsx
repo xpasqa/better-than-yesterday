@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
+  BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
   SparkleIcon, StarIcon, TagIcon, TrayIcon, WalletIcon, XIcon,
 } from '@phosphor-icons/react'
@@ -43,13 +43,6 @@ interface SidebarProps {
   /** Opens the ProjectModal in edit mode for a given area or project node */
   onEditNode?: (node: TaskNode) => void
 }
-
-const recentChats = [
-  'Dashboard panel overflow',
-  'Refactor auth flow',
-  'Generate a REST API',
-  'Explain React hooks',
-]
 
 const ChevronDown = ({ open }: { open: boolean }) => (
   <CaretDownIcon
@@ -111,8 +104,16 @@ export default function Sidebar({
   onEditNode,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
-  const [chatsExpanded, setChatsExpanded] = useState(true)
   const [favoritesExpanded, setFavoritesExpanded] = useState(true)
+  // Workspace fold survives reload (34.sidebar-workspace/spec.md §3) — the
+  // other section chevrons reset per visit, but Workspace is the one fold
+  // that expresses a lasting preference ("I live in Todo, tuck the rest away").
+  const [workspaceExpanded, setWorkspaceExpanded] = useState(
+    () => localStorage.getItem('sidebar-workspace-expanded') !== 'false',
+  )
+  useEffect(() => {
+    localStorage.setItem('sidebar-workspace-expanded', String(workspaceExpanded))
+  }, [workspaceExpanded])
   const profileRef = useRef<HTMLDivElement>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   // Rendered via a portal (below) rather than inline: the "My Projects"
@@ -351,66 +352,6 @@ export default function Sidebar({
               <span className="sidebar__nav-label">Logbook</span>
             </button>
           </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'tags' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('tags')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><TagIcon size={18} /></span>
-              <span className="sidebar__nav-label">Tags</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'mail' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('mail')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><EnvelopeSimpleIcon size={18} /></span>
-              <span className="sidebar__nav-label">Mail</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'storage' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('storage')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><FolderIcon size={18} /></span>
-              <span className="sidebar__nav-label">Storage</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'finance' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('finance')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><WalletIcon size={18} /></span>
-              <span className="sidebar__nav-label">Finance</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'outline' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('outline')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><ListBulletsIcon size={18} /></span>
-              <span className="sidebar__nav-label">Outline</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`sidebar__nav-item ${activeView === 'agent' ? 'sidebar__nav-item--active' : ''}`}
-              onClick={() => onViewChange('agent')}
-              type="button"
-            >
-              <span className="sidebar__nav-icon"><SparkleIcon size={18} /></span>
-              <span className="sidebar__nav-label">Agent</span>
-            </button>
-          </li>
         </ul>
 
         {/* Favorites — only shown when there is at least one favourite project */}
@@ -580,29 +521,83 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Recent Chats — mock list, mirrors the Agent page's conversation history */}
+        {/* Workspace — the side-by-side modules, quarantined below the Things
+            skeleton (34.sidebar-workspace/spec.md §3). Tags lives here too:
+            it's a filtering tool, not a daily place of work. */}
         <div className="sidebar__section">
           <div className="sidebar__section-header">
-            <span className="sidebar__section-title">Recent Chats</span>
+            <span className="sidebar__section-title">Workspace</span>
             <button
               className="sidebar__section-chevron"
-              onClick={() => setChatsExpanded(e => !e)}
-              title={chatsExpanded ? 'Collapse' : 'Expand'}
+              onClick={() => setWorkspaceExpanded(e => !e)}
+              title={workspaceExpanded ? 'Collapse' : 'Expand'}
               type="button"
             >
-              <ChevronDown open={chatsExpanded} />
+              <ChevronDown open={workspaceExpanded} />
             </button>
           </div>
-          {chatsExpanded && (
+          {workspaceExpanded && (
             <ul className="sidebar__nav-list">
-              {recentChats.map(title => (
-                <li key={title}>
-                  <button className="sidebar__nav-item" onClick={() => onViewChange('agent')} type="button">
-                    <span className="sidebar__nav-icon"><ChatCircleIcon size={18} /></span>
-                    <span className="sidebar__nav-label">{title}</span>
-                  </button>
-                </li>
-              ))}
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'outline' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('outline')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><ListBulletsIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Outline</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'mail' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('mail')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><EnvelopeSimpleIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Mail</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'storage' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('storage')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><FolderIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Storage</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'finance' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('finance')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><WalletIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Finance</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'agent' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('agent')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><SparkleIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Agent</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`sidebar__nav-item ${activeView === 'tags' ? 'sidebar__nav-item--active' : ''}`}
+                  onClick={() => onViewChange('tags')}
+                  type="button"
+                >
+                  <span className="sidebar__nav-icon"><TagIcon size={18} /></span>
+                  <span className="sidebar__nav-label">Tags</span>
+                </button>
+              </li>
             </ul>
           )}
         </div>
