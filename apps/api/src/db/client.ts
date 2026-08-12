@@ -15,6 +15,7 @@ import * as agentFile from './schema/agent-file.ts'
 import * as agentSession from './schema/agent-session.ts'
 import * as storage from './schema/storage.ts'
 import * as finance from './schema/finance.ts'
+import * as mail from './schema/mail.ts'
 
 export const schema = {
   ...appUser,
@@ -31,6 +32,7 @@ export const schema = {
   ...agentSession,
   ...storage,
   ...finance,
+  ...mail,
 }
 
 const queryClient = postgres(config.DATABASE_URL)

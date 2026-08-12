@@ -14,6 +14,11 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'RATE_LIMITED'
   | 'INTERNAL'
+  // Mail-specific
+  | 'MAIL_NOT_CONFIGURED'
+  | 'MAIL_AUTH_FAILED'
+  | 'MAIL_UNAVAILABLE'
+  | 'MAIL_FOLDERS_UNRESOLVED'
 
 export class AppError extends Error {
   readonly code: ErrorCode

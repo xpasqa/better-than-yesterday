@@ -160,4 +160,19 @@ describe('cross-user isolation', () => {
     const res = await app.request('/auth/me', { headers: { cookie: `better_session=${tampered}` } })
     expect(res.status).toBe(401)
   })
+
+  it('user B GET /api/mail/account → 404 (bukan akun user A)', async () => {
+    // User A tidak punya akun mail — setup dengan DB bersih.
+    // Cukup verifikasi bahwa user B tidak bisa melihat akun A,
+    // dan response-nya 404 bukan 403 (no leakage of existence).
+    await createTestUser('mailIsoA@example.com')
+    await createTestUser('mailIsoB@example.com')
+    const cookieB = await loginCookie('mailIsoB@example.com')
+
+    const res = await app.request('/api/mail/account', { headers: { cookie: cookieB } })
+    // B has no account → 404, not 403 (spec §8: no existence leakage)
+    expect(res.status).toBe(404)
+    const body = await readJson(res)
+    expect(body.error.code).toBe('MAIL_NOT_CONFIGURED')
+  })
 })

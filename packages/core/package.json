@@ -23,7 +23,10 @@
     "./logbook": "./src/logbook.ts",
     "./search": "./src/search.ts",
     "./board": "./src/board.ts",
-    "./notification": "./src/notification.ts"
+    "./notification": "./src/notification.ts",
+    "./mail-id": "./src/mail-id.ts",
+    "./mail-threading": "./src/mail-threading.ts",
+    "./mail-folders": "./src/mail-folders.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
