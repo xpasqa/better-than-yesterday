@@ -4,6 +4,7 @@
 import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
 import type { Completion } from '@better/core/completion'
+import type { Reminder } from '@better/core/reminder'
 import { db, getCursor, setCursor } from './db.ts'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline'
@@ -53,24 +54,29 @@ export async function syncOnce(): Promise<void> {
     const nodes = outboxEntries.filter((e) => e.entityType === 'node').map((e) => e.payload as Node)
     const tags = outboxEntries.filter((e) => e.entityType === 'tag').map((e) => e.payload as Tag)
     const completions = outboxEntries.filter((e) => e.entityType === 'completion').map((e) => e.payload as Completion)
+    const reminders = outboxEntries.filter((e) => e.entityType === 'reminder').map((e) => e.payload as Reminder)
     const cursor = await getCursor()
 
     const res = await fetch('/api/sync', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cursor, changes: { nodes, tags, completions } }),
+      body: JSON.stringify({ cursor, changes: { nodes, tags, completions, reminders } }),
     })
     if (!res.ok) throw new Error(`sync failed: ${res.status}`)
-    const body = await res.json() as { cursor: string; changes: { nodes: Node[]; tags: Tag[]; completions: Completion[] } }
+    const body = await res.json() as {
+      cursor: string
+      changes: { nodes: Node[]; tags: Tag[]; completions: Completion[]; reminders: Reminder[] }
+    }
 
-    await db.transaction('rw', db.nodes, db.tags, db.completions, db.outbox, async () => {
+    await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.outbox, async () => {
       await db.outbox.clear()
       await mergeIncoming(db.nodes, body.changes.nodes)
       await mergeIncoming(db.tags, body.changes.tags)
       for (const row of body.changes.completions) {
         await db.completions.put(row)
       }
+      await mergeIncoming(db.reminders, body.changes.reminders)
     })
     await setCursor(body.cursor)
     setStatus('idle')

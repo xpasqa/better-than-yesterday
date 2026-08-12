@@ -5,6 +5,7 @@ import Dexie, { type Table } from 'dexie'
 import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
 import type { Completion } from '@better/core/completion'
+import type { Reminder } from '@better/core/reminder'
 
 /**
  * A local write not yet confirmed by the server, keyed `${entityType}:${id}`
@@ -13,8 +14,8 @@ import type { Completion } from '@better/core/completion'
  */
 export interface OutboxEntry {
   key: string
-  entityType: 'node' | 'tag' | 'completion'
-  payload: Node | Tag | Completion
+  entityType: 'node' | 'tag' | 'completion' | 'reminder'
+  payload: Node | Tag | Completion | Reminder
 }
 
 export interface MetaEntry {
@@ -31,6 +32,7 @@ export class BetterDb extends Dexie {
   nodes!: Table<Node, string>
   tags!: Table<Tag, string>
   completions!: Table<Completion, string>
+  reminders!: Table<Reminder, string>
   outbox!: Table<OutboxEntry, string>
   meta!: Table<MetaEntry, string>
 
@@ -108,6 +110,15 @@ export class BetterDb extends Dexie {
           }
         }
       })
+    // v6 adds reminders table for local-first reminder storage.
+    this.version(6).stores({
+      nodes: 'id, parentId, dueDate, [parentId+rank], isInbox',
+      tags: 'id, name',
+      completions: 'id, nodeId',
+      reminders: 'id, nodeId',
+      outbox: 'key, entityType',
+      meta: 'key',
+    })
   }
 }
 
@@ -115,10 +126,11 @@ export const db = new BetterDb()
 
 /** Wipes all local data — called on logout, or on login as a different user than whatever was cached (single-device-sharing safety net). */
 export async function clearLocalStore(): Promise<void> {
-  await db.transaction('rw', db.nodes, db.tags, db.completions, db.outbox, db.meta, async () => {
+  await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.outbox, db.meta, async () => {
     await db.nodes.clear()
     await db.tags.clear()
     await db.completions.clear()
+    await db.reminders.clear()
     await db.outbox.clear()
     await db.meta.clear()
   })

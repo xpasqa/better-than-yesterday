@@ -59,6 +59,21 @@ export const completionDto = z.object({
 })
 export type CompletionDto = z.infer<typeof completionDto>
 
+// deliveredAt is NOT included — server sets it, client never sends it.
+// userId is NOT included — server adds it from session, same as node/tag.
+export const reminderDto = z.object({
+  id: z.string().uuid(),
+  nodeId: z.string().uuid(),
+  kind: z.enum(['absolute', 'relative']),
+  remindAt: z.string().datetime().nullable(),   // kind='absolute'
+  offsetMin: z.number().int().nullable(),        // kind='relative'
+  fireAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable(),
+})
+export type ReminderDto = z.infer<typeof reminderDto>
+
 const MAX_BATCH = 500
 
 export const syncRequest = z.object({
@@ -67,6 +82,7 @@ export const syncRequest = z.object({
     nodes: z.array(nodeDto).max(MAX_BATCH).default([]),
     tags: z.array(tagDto).max(MAX_BATCH).default([]),
     completions: z.array(completionDto).max(MAX_BATCH).default([]),
+    reminders: z.array(reminderDto).max(MAX_BATCH).default([]),
   }),
 })
 export type SyncRequest = z.infer<typeof syncRequest>

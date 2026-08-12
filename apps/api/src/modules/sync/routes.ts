@@ -1,15 +1,15 @@
 // POST /api/sync — the one endpoint behind Todo and Outline (spec induk
-// §3.1, §3.2; 1.todo/spec.md §4). Scope of this version: `nodes`, `tags`,
-// and `completions`. reminder/notification sync are not wired yet — they
-// follow the identical upsert-with-LWW shape once needed.
+// §3.1, §3.2; 1.todo/spec.md §4). Scope: `nodes`, `tags`, `completions`,
+// and `reminders`.
 import { Hono } from 'hono'
 import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db/client.ts'
 import { node } from '../../db/schema/node.ts'
 import { tag } from '../../db/schema/tag.ts'
 import { completion } from '../../db/schema/completion.ts'
+import { reminder } from '../../db/schema/reminder.ts'
 import { AppError } from '../../http/errors.ts'
-import { syncRequest, type NodeDto, type TagDto, type CompletionDto } from './dto.ts'
+import { syncRequest, type NodeDto, type TagDto, type CompletionDto, type ReminderDto } from './dto.ts'
 
 export const syncRoutes = new Hono()
 
@@ -131,6 +131,53 @@ function toCompletionRow(userId: string, dto: CompletionDto) {
   }
 }
 
+function toReminderRow(userId: string, dto: ReminderDto) {
+  return {
+    id: dto.id,
+    userId,
+    nodeId: dto.nodeId,
+    kind: dto.kind,
+    remindAt: dto.remindAt ? new Date(dto.remindAt) : null,
+    offsetMin: dto.offsetMin,
+    fireAt: new Date(dto.fireAt),
+    createdAt: new Date(dto.createdAt),
+    updatedAt: new Date(dto.updatedAt),
+    deletedAt: dto.deletedAt ? new Date(dto.deletedAt) : null,
+  }
+}
+
+/**
+ * Same LWW + ownership guard as applyIncomingNodes, against `reminder`.
+ * Ownership guard: reminder.nodeId must belong to the same userId.
+ * Soft-deletes are accepted (deletedAt set) — the server just records them.
+ */
+async function applyIncomingReminders(userId: string, dtos: ReminderDto[]): Promise<void> {
+  for (const dto of dtos) {
+    // Ownership guard: only accept reminders for nodes this user owns.
+    const owner = await db.select({ id: node.id }).from(node)
+      .where(and(eq(node.id, dto.nodeId), eq(node.userId, userId)))
+      .limit(1)
+    if (owner.length === 0) continue
+    const row = toReminderRow(userId, dto)
+    await db
+      .insert(reminder)
+      .values(row)
+      .onConflictDoUpdate({
+        target: reminder.id,
+        set: {
+          kind: row.kind,
+          remindAt: row.remindAt,
+          offsetMin: row.offsetMin,
+          fireAt: row.fireAt,
+          updatedAt: row.updatedAt,
+          deletedAt: row.deletedAt,
+          seq: sql`nextval('sync_seq')`,
+        },
+        setWhere: sql`${reminder.userId} = ${userId} and excluded.updated_at >= ${reminder.updatedAt}`,
+      })
+  }
+}
+
 /**
  * Insert-only: completions are immutable after creation (spec §8). The
  * DO NOTHING on conflict means a retry is always safe — the original row
@@ -200,6 +247,20 @@ function completionToDto(row: typeof completion.$inferSelect) {
   }
 }
 
+function reminderToDto(row: typeof reminder.$inferSelect): ReminderDto {
+  return {
+    id: row.id,
+    nodeId: row.nodeId,
+    kind: row.kind,
+    remindAt: row.remindAt?.toISOString() ?? null,
+    offsetMin: row.offsetMin,
+    fireAt: row.fireAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+  }
+}
+
 syncRoutes.post('/sync', async (c) => {
   const userId = c.get('userId' as never) as string
   if (!userId) throw new AppError('UNAUTHORIZED', 401, 'Unauthorized')
@@ -213,9 +274,10 @@ syncRoutes.post('/sync', async (c) => {
   if (changes.nodes.length > 0) await applyIncomingNodes(userId, changes.nodes)
   if (changes.tags.length > 0) await applyIncomingTags(userId, changes.tags)
   if (changes.completions.length > 0) await applyIncomingCompletions(userId, changes.completions)
+  if (changes.reminders.length > 0) await applyIncomingReminders(userId, changes.reminders)
 
-  // Pull: fetch everything newer than cursor across all three entity types.
-  const [nodeRows, tagRows, completionRows] = await Promise.all([
+  // Pull: fetch everything newer than cursor across all four entity types.
+  const [nodeRows, tagRows, completionRows, reminderRows] = await Promise.all([
     db
       .select()
       .from(node)
@@ -234,15 +296,22 @@ syncRoutes.post('/sync', async (c) => {
       .where(and(eq(completion.userId, userId), gt(completion.seq, cursorBigint)))
       .orderBy(completion.seq)
       .limit(500),
+    db
+      .select()
+      .from(reminder)
+      .where(and(eq(reminder.userId, userId), gt(reminder.seq, cursorBigint)))
+      .orderBy(reminder.seq)
+      .limit(500),
   ])
 
   // seq is one sequence shared by every syncable table, so the highest seq
-  // seen across all three result sets is the correct next cursor regardless
+  // seen across all four result sets is the correct next cursor regardless
   // of which table it came from.
   let nextCursor = cursorBigint
   for (const r of nodeRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of tagRows) if (r.seq > nextCursor) nextCursor = r.seq
   for (const r of completionRows) if (r.seq > nextCursor) nextCursor = r.seq
+  for (const r of reminderRows) if (r.seq > nextCursor) nextCursor = r.seq
 
   return c.json({
     cursor: nextCursor.toString(),
@@ -250,6 +319,7 @@ syncRoutes.post('/sync', async (c) => {
       nodes: nodeRows.map(nodeToDto),
       tags: tagRows.map(tagToDto),
       completions: completionRows.map(completionToDto),
+      reminders: reminderRows.map(reminderToDto),
     },
   })
 })
