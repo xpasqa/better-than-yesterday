@@ -493,7 +493,9 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
                           kind: 'relative',
                           offsetMin: preset.offsetMin,
                           remindAt: null,
-                          fireAt: fireAt ?? new Date().toISOString(),
+                          // No due date — fireAt set far future; recalculateFireAt will correct it
+                          // when user adds a due date. Never use now() here — it would fire immediately.
+                          fireAt: fireAt ?? new Date('2099-01-01T00:00:00.000Z').toISOString(),
                         })
                         setReminders(prev => [...prev, created])
                         setOpenField(null)
