@@ -11,6 +11,7 @@ import { agentRoutes } from './modules/agent/routes.ts'
 import { storageRoutes } from './modules/storage/routes.ts'
 import { userRoutes } from './modules/user/routes.ts'
 import { financeRoutes } from './modules/finance/routes.ts'
+import { mailAccountRoutes } from './modules/mail/account-routes.ts'
 import { scheduleOrphanSweep } from './modules/storage/sweep.ts'
 
 export function createApp() {
@@ -34,6 +35,7 @@ export function createApp() {
   app.route('/api', storageRoutes)
   app.route('/api', financeRoutes)
   app.route('/api', userRoutes)
+  app.route('/api', mailAccountRoutes)
 
   // Schedule weekly orphan sweep in-process
   scheduleOrphanSweep()
