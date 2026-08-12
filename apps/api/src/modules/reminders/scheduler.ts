@@ -97,6 +97,7 @@ export async function deliverDueReminders(): Promise<void> {
               .update(pushSubscription)
               .set({ failedAt: new Date() })
               .where(eq(pushSubscription.endpoint, sub.endpoint))
+              .catch((e) => console.error('[reminder-scheduler] failedAt update error:', e))
           } else {
             // Transient error — log but don't mark as failed; next tick will retry
             console.error('[reminder-scheduler] push error (transient):', err)
