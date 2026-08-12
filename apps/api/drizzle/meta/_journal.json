@@ -64,6 +64,13 @@
       "when": 1786551600000,
       "tag": "0008_mail_account",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786563600000,
+      "tag": "0009_outline_note_kind",
+      "breakpoints": true
     }
   ]
 }

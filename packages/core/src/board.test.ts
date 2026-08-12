@@ -5,7 +5,7 @@ import type { Node } from './node.ts'
 // Minimal factory — only the fields board() actually reads.
 function n(over: Partial<Node> & Pick<Node, 'id' | 'kind'>): Node {
   return {
-    parentId: null, rank: 'm', content: over.id, note: null, dueDate: null,
+    parentId: null, rank: 'm', content: over.id, note: null, linkedTaskId: null, dueDate: null,
     dueTime: null, durationMin: null, recurrence: null, priority: null,
     tagIds: [], color: null, isFavorite: false, isInbox: false,
     isSomeday: false, collapsed: false, completedAt: null, deletedAt: null, userId: 'u',

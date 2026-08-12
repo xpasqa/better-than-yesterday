@@ -54,7 +54,7 @@ async function main() {
       isInbox: false, isFavorite: false, isSomeday: false, collapsed: false,
       createdAt: now, updatedAt: now,
     })
-    existingNodes.push({ id, userId: user.id, parentId: null, kind: 'project', rank: between(lastRank, null), content, color, isInbox: false, isFavorite: false, isSomeday: false, collapsed: false, createdAt: now, updatedAt: now, deletedAt: null, note: null, dueDate: null, dueTime: null, durationMin: null, recurrence: null, priority: null, tagIds: [], completedAt: null, seq: 0n })
+    existingNodes.push({ id, userId: user.id, parentId: null, kind: 'project', rank: between(lastRank, null), content, color, isInbox: false, isFavorite: false, isSomeday: false, collapsed: false, createdAt: now, updatedAt: now, deletedAt: null, note: null, linkedTaskId: null, dueDate: null, dueTime: null, durationMin: null, recurrence: null, priority: null, tagIds: [], completedAt: null, seq: 0n })
     console.log(`  created project: ${content}`)
     return id
   }
@@ -100,7 +100,7 @@ async function main() {
       isInbox: false, isFavorite: false, isSomeday: false, collapsed: false,
       createdAt: now, updatedAt: now,
     })
-    existingNodes.push({ id, userId: user.id, parentId: opts.parentId, kind: 'item', rank: between(lastRank, null), content: opts.content, note: opts.note ?? null, priority: opts.priority ?? null, dueDate: opts.dueDate ?? null, dueTime: null, durationMin: null, recurrence: null, tagIds: opts.tagIds ?? [], color: null, isInbox: false, isFavorite: false, isSomeday: false, collapsed: false, completedAt: null, createdAt: now, updatedAt: now, deletedAt: null, seq: 0n })
+    existingNodes.push({ id, userId: user.id, parentId: opts.parentId, kind: 'item', rank: between(lastRank, null), content: opts.content, note: opts.note ?? null, linkedTaskId: null, priority: opts.priority ?? null, dueDate: opts.dueDate ?? null, dueTime: null, durationMin: null, recurrence: null, tagIds: opts.tagIds ?? [], color: null, isInbox: false, isFavorite: false, isSomeday: false, collapsed: false, completedAt: null, createdAt: now, updatedAt: now, deletedAt: null, seq: 0n })
     console.log(`  created task: ${opts.content}`)
   }
 

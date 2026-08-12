@@ -29,10 +29,14 @@ export const node = pgTable(
       .notNull()
       .references(() => appUser.id, { onDelete: 'cascade' }),
     parentId: text('parent_id').references((): AnyPgColumn => node.id),
-    kind: text('kind', { enum: ['area', 'project', 'section', 'item'] }).notNull().default('item'),
+    kind: text('kind', { enum: ['area', 'project', 'section', 'item', 'note'] }).notNull().default('item'),
     rank: text('rank').notNull(),
     content: text('content').notNull().default(''),
     note: text('note'),
+    // kind='note' only — the task this Outline row links to via #project
+    // (32.outline-task-decoupling/spec.md §3.2). No cascade: deletion on
+    // either side is independent (spec §7).
+    linkedTaskId: text('linked_task_id').references((): AnyPgColumn => node.id),
 
     dueDate: date('due_date', { mode: 'string' }),
     dueTime: time('due_time'),
@@ -62,7 +66,7 @@ export const node = pgTable(
       .on(table.userId, table.dueDate)
       .where(sql`${table.completedAt} is null and ${table.deletedAt} is null`),
     uniqueIndex('node_one_inbox_per_user').on(table.userId).where(sql`${table.isInbox}`),
-    check('node_kind_check', sql`${table.kind} in ('area','project','section','item')`),
+    check('node_kind_check', sql`${table.kind} in ('area','project','section','item','note')`),
     check('node_priority_check', sql`${table.priority} is null or ${table.priority} between 1 and 3`),
     check('node_content_length', sql`length(${table.content}) <= 2000`),
     check('node_time_needs_date', sql`${table.dueTime} is null or ${table.dueDate} is not null`),

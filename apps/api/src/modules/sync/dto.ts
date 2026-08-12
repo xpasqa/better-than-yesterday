@@ -6,10 +6,11 @@ import { z } from 'zod'
 export const nodeDto = z.object({
   id: z.string().uuid(),
   parentId: z.string().uuid().nullable(),
-  kind: z.enum(['area', 'project', 'section', 'item']),
+  kind: z.enum(['area', 'project', 'section', 'item', 'note']),
   rank: z.string().min(1),
   content: z.string().max(2000),
   note: z.string().nullable(),
+  linkedTaskId: z.string().uuid().nullable(),
   dueDate: z.string().date().nullable(),
   dueTime: z
     .string()

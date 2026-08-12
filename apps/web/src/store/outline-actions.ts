@@ -42,6 +42,7 @@ function blankNode(parentId: string | null, rank: string): Node {
     rank,
     content: '',
     note: null,
+    linkedTaskId: null,
     dueDate: null,
     dueTime: null,
     durationMin: null,

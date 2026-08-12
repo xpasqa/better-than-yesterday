@@ -3,7 +3,10 @@
 // no separate Task/Project/Section/OutlineNode type. Mirrors the `node`
 // table in docs/feature/2.backend/1.todo/spec.md §3.1 field for field.
 // node.tagIds stores tag entity ids (never names) — see tag.ts.
-export type NodeKind = 'area' | 'project' | 'section' | 'item'
+// 'note' (docs/feature/32.outline-task-decoupling/spec.md §3.1): a plain
+// Outline row, excluded from every Todo view (kind === 'item' is their only
+// membership test) unless linked to a task via linkedTaskId.
+export type NodeKind = 'area' | 'project' | 'section' | 'item' | 'note'
 
 export interface Node {
   id: string
@@ -13,6 +16,7 @@ export interface Node {
   rank: string
   content: string
   note: string | null
+  linkedTaskId: string | null // kind='note' only — the task this Outline row links to via #project (32.outline-task-decoupling/spec.md §3.2)
 
   dueDate: string | null // 'YYYY-MM-DD'
   dueTime: string | null // 'HH:MM', requires dueDate

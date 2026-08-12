@@ -17,6 +17,7 @@ function makeNode(overrides: Partial<Node> & { id: string }): Node {
     rank: nextRank(),
     content: overrides.id,
     note: null,
+    linkedTaskId: null,
     dueDate: null,
     dueTime: null,
     durationMin: null,

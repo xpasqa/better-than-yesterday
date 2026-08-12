@@ -10,6 +10,7 @@ function makeNode(overrides: Partial<Node>): Node {
     rank: 'a0',
     content: 'test',
     note: null,
+    linkedTaskId: null,
     dueDate: null,
     dueTime: null,
     durationMin: null,

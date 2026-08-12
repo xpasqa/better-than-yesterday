@@ -23,6 +23,7 @@ function toNodeRow(userId: string, dto: NodeDto) {
     rank: dto.rank,
     content: dto.content,
     note: dto.note,
+    linkedTaskId: dto.linkedTaskId,
     dueDate: dto.dueDate,
     dueTime: dto.dueTime,
     durationMin: dto.durationMin,
@@ -64,6 +65,7 @@ async function applyIncomingNodes(userId: string, dtos: NodeDto[]): Promise<void
           rank: row.rank,
           content: row.content,
           note: row.note,
+          linkedTaskId: row.linkedTaskId,
           dueDate: row.dueDate,
           dueTime: row.dueTime,
           durationMin: row.durationMin,
@@ -206,6 +208,7 @@ function nodeToDto(row: typeof node.$inferSelect): NodeDto {
     rank: row.rank,
     content: row.content,
     note: row.note,
+    linkedTaskId: row.linkedTaskId,
     dueDate: row.dueDate,
     // Postgres TIME columns return 'HH:MM:SS' — strip the seconds so the
     // value is always in the 'HH:MM' format the client expects.
