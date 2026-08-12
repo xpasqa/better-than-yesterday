@@ -70,7 +70,7 @@ export async function syncOnce(): Promise<void> {
       changes: { nodes: Node[]; tags: Tag[]; completions: Completion[]; reminders: Reminder[]; notifications: Notification[] }
     }
 
-    await db.transaction('rw', db.nodes, db.tags, db.completions, db.reminders, db.notifications, db.outbox, async () => {
+    await db.transaction('rw', [db.nodes, db.tags, db.completions, db.reminders, db.notifications, db.outbox], async () => {
       await db.outbox.clear()
       await mergeIncoming(db.nodes, body.changes.nodes)
       await mergeIncoming(db.tags, body.changes.tags)

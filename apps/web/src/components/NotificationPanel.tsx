@@ -40,10 +40,10 @@ export default function NotificationPanel({ anchorRef, onClose }: NotificationPa
   const panelRef = useRef<HTMLDivElement>(null)
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({})
 
-  const notifications = useLiveQuery<Notification[]>(
+  const notifications = useLiveQuery(
     () => db.notifications.orderBy('createdAt').reverse().limit(50).toArray(),
     [],
-    [],
+    [] as Notification[],
   )
 
   // Position the panel below the anchor button.

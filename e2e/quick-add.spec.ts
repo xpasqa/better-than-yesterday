@@ -58,11 +58,17 @@ test('a date phrase typed from Today wins over the view\'s default date', async 
   await page.getByRole('main').getByRole('button', { name: /add task/i }).click()
 
   const input = page.getByLabel('Quick add a task')
+  // Unlike the tests above, the only assertion between submit and navigation
+  // is a toBeHidden() — which passes the instant it finds nothing, giving no
+  // synchronisation at all. Arm the sync wait before pressing Enter, or the
+  // goto() below can outrun the write and land on a page with nothing to show.
+  const syncPromise = page.waitForResponse((r) => r.url().includes('/api/sync') && r.ok())
   await input.fill('review pull request besok')
   await input.press('Enter')
 
   // Must NOT show up in Today — it's due tomorrow.
   await expect(page.getByText('review pull request')).toBeHidden()
+  await syncPromise
 
   await page.goto('/upcoming')
   await expect(page.getByText('review pull request')).toBeVisible()

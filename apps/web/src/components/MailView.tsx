@@ -289,7 +289,7 @@ export default function MailView({ onOpenSettings }: { onOpenSettings?: () => vo
             <p>Authentication failed.</p>
             <button
               className="mail-view__status-cta"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => onOpenSettings?.()}
               type="button"
             >
               Update credentials in Settings
@@ -432,10 +432,6 @@ export default function MailView({ onOpenSettings }: { onOpenSettings?: () => vo
           </div>
         )}
       </section>
-
-      {settingsOpen && (
-        <MailSettingsModal onClose={() => setSettingsOpen(false)} />
-      )}
     </main>
   )
 }

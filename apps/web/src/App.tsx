@@ -160,7 +160,7 @@ function App() {
 
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [navigate, projectModal, agentSettingsOpen, openNodeId, showShortcuts])
+  }, [navigate, projectModal, openNodeId, showShortcuts])
 
   /*
    * Below 1024px the sidebar stops being a docked column and becomes an
