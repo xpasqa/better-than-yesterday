@@ -41,7 +41,12 @@ pushRoutes.post('/push-subscriptions', async (c) => {
     if (existing.userId !== userId) {
       throw new AppError('CONFLICT', 409, 'Endpoint already registered to another user')
     }
-    // Already registered — idempotent, nothing to do.
+    // Update keys in case the browser rotated them (same endpoint, new p256dh/auth).
+    // Also clear failedAt so a recovered subscription can receive pushes again.
+    await db
+      .update(pushSubscription)
+      .set({ p256dh, auth, userAgent, failedAt: null })
+      .where(eq(pushSubscription.endpoint, endpoint))
     return c.json({ ok: true }, 200)
   }
 
