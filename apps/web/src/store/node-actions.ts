@@ -15,6 +15,7 @@ import { triggerSync } from './sync-client.ts'
 import { recordUndo } from './undo-store.ts'
 import { resolveOrCreateTagIds } from './tag-actions.ts'
 import { resolveOrCreateProjectId } from './project-actions.ts'
+import { recalculateFireAt } from './reminder-actions.ts'
 
 /**
  * Every Todo node write funnels through here (see the file's header
@@ -304,6 +305,10 @@ export async function updateNode(id: string, patch: Partial<Omit<Node, 'id' | 'u
     updated.recurrence = reanchorRecurrence(updated.recurrence, updated.dueDate)
   }
   await enqueue(updated)
+  // Recalculate fireAt for any relative reminders when dueDate or dueTime changes.
+  if ('dueDate' in patch || 'dueTime' in patch) {
+    void recalculateFireAt(id)
+  }
 }
 
 /**

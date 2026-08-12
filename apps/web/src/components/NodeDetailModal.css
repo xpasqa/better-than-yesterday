@@ -267,6 +267,56 @@
   border-top: 1px solid var(--divider-primary);
 }
 
+/* Reminder list — active reminders below the dropdown trigger */
+.node-modal__reminder-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-modal__reminder-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px 3px 4px;
+  border-radius: 5px;
+  background: rgba(var(--overlay-rgb), 0.04);
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.node-modal__reminder-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-modal__reminder-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background 0.08s, color 0.08s;
+}
+
+.node-modal__reminder-item-remove:hover {
+  background: rgba(var(--overlay-rgb), 0.08);
+  color: var(--text-secondary);
+}
+
 .node-modal__delete-btn {
   display: flex;
   align-items: center;

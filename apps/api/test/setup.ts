@@ -11,3 +11,9 @@ try {
   // no .env — CI is expected to set real env vars directly
 }
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@127.0.0.1:55432/better_test'
+
+// VAPID keys are required by config.ts but unused in tests — provide dummy
+// values so the config validator doesn't abort the process before any test runs.
+process.env.VAPID_PUBLIC_KEY ??= 'BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc'
+process.env.VAPID_PRIVATE_KEY ??= 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+process.env.VAPID_SUBJECT ??= 'mailto:test@example.com'

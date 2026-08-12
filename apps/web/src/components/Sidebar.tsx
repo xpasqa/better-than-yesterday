@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
@@ -11,6 +12,8 @@ import { findInbox, type Node as TaskNode } from '@better/core/node'
 import type { ViewType } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import ThemeToggle from './ThemeToggle'
+import NotificationPanel from './NotificationPanel'
+import { db } from '../store/db'
 import './Sidebar.css'
 
 interface SidebarProps {
@@ -122,6 +125,15 @@ export default function Sidebar({
   const addMenuPortalRef = useRef<HTMLDivElement>(null)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [addMenuPos, setAddMenuPos] = useState<{ top: number; right: number } | null>(null)
+  const bellRef = useRef<HTMLButtonElement>(null)
+  const [bellOpen, setBellOpen] = useState(false)
+
+  // Unread count — live query so the dot updates the moment sync lands.
+  const unreadCount = useLiveQuery(
+    () => db.notifications.filter((n) => n.readAt === null).count(),
+    [],
+    0,
+  )
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -244,9 +256,17 @@ export default function Sidebar({
           {!drawer && (
             <>
               <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-              <button className="sidebar__bell" title="Notifications" type="button">
+              <button
+                ref={bellRef}
+                className="sidebar__bell"
+                title="Notifications"
+                type="button"
+                onClick={() => setBellOpen(o => !o)}
+                aria-haspopup="true"
+                aria-expanded={bellOpen}
+              >
                 <BellIcon size={19} />
-                <span className="sidebar__bell-dot" />
+                {unreadCount > 0 && <span className="sidebar__bell-dot" />}
               </button>
             </>
           )}
@@ -598,6 +618,10 @@ export default function Sidebar({
           )}
         </div>
       </nav>
+      {bellOpen && createPortal(
+        <NotificationPanel anchorRef={bellRef} onClose={() => setBellOpen(false)} />,
+        document.body,
+      )}
     </aside>
   )
 }

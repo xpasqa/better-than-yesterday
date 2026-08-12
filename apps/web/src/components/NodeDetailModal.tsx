@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  CalendarBlankIcon, FlagIcon, HashIcon, TagIcon, XIcon,
+  BellIcon, CalendarBlankIcon, FlagIcon, HashIcon, TagIcon, XIcon,
 } from '@phosphor-icons/react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 import type { Node } from '@better/core/node'
 import type { Tag } from '@better/core/tag'
+import type { Reminder } from '@better/core/reminder'
 import { toggleTaskComplete, updateNode, deleteTask, createSubtask } from '../store/node-actions'
+import { createReminder, deleteReminder } from '../store/reminder-actions'
+import { db } from '../store/db'
 import { useAllTags, useAllNodes } from '../store/use-nodes'
 import CreateTagModal from './CreateTagModal'
 import './NodeDetailModal.css'
@@ -26,7 +29,35 @@ const PRIORITIES = [
   { value: null, label: 'No priority', color: 'var(--text-tertiary)' },
 ]
 
-type OpenField = 'date' | 'priority' | 'tags' | 'project' | null
+type OpenField = 'date' | 'priority' | 'tags' | 'project' | 'reminder' | null
+
+const REMINDER_PRESETS = [
+  { label: 'At due time',       offsetMin: 0    },
+  { label: '30 minutes before', offsetMin: 30   },
+  { label: '1 hour before',     offsetMin: 60   },
+  { label: '1 day before',      offsetMin: 1440 },
+]
+
+/** Returns a display label for a single reminder based on its offsetMin. */
+function formatReminderLabel(r: Reminder): string {
+  if (r.kind === 'absolute') return 'Custom reminder'
+  const preset = REMINDER_PRESETS.find(p => p.offsetMin === r.offsetMin)
+  return preset ? preset.label : `${r.offsetMin ?? 0} min before`
+}
+
+/**
+ * Computes fireAt (ISO string) for a relative reminder using the browser's
+ * local timezone (naive Date constructor) — acceptable per brief.
+ * Returns null if dueDate or dueTime is missing.
+ */
+function computeFireAt(dueDate: string | null | undefined, dueTime: string | null | undefined, offsetMin: number): string | null {
+  if (!dueDate || !dueTime) return null
+  const [y, mo, d] = dueDate.split('-').map(Number)
+  const [h, mi] = dueTime.split(':').map(Number)
+  const due = new Date(y, mo - 1, d, h, mi)
+  const fire = new Date(due.getTime() - offsetMin * 60_000)
+  return fire.toISOString()
+}
 
 function parseISODate(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
@@ -56,6 +87,18 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
   const dateFieldRef = useRef<HTMLButtonElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
   const [calendarPos, setCalendarPos] = useState<{ top: number; left: number } | null>(null)
+
+  const [reminders, setReminders] = useState<Reminder[]>([])
+
+  // Load active reminders for this node from Dexie (cancellable)
+  useEffect(() => {
+    let cancelled = false
+    db.reminders.where('nodeId').equals(node.id).toArray().then((rows) => {
+      if (cancelled) return
+      setReminders(rows.filter(r => r.deletedAt === null))
+    })
+    return () => { cancelled = true }
+  }, [node.id])
 
   // Re-sync local state when node changes (e.g. reactive update from Dexie)
   useEffect(() => { setTitle(node.content) }, [node.content])
@@ -418,6 +461,73 @@ export default function NodeDetailModal({ node, onClose, timezone }: NodeDetailM
                     setShowCreateTag(false)
                   }}
                 />
+              )}
+            </div>
+
+            {/* Remind me */}
+            <div className="node-modal__field">
+              <span className="node-modal__field-label">Remind me</span>
+              <button
+                className="node-modal__field-value"
+                onClick={() => setOpenField(f => f === 'reminder' ? null : 'reminder')}
+                type="button"
+              >
+                <BellIcon size={14} />
+                {reminders.length === 0
+                  ? 'No reminder'
+                  : reminders.length === 1
+                    ? formatReminderLabel(reminders[0])
+                    : `${reminders.length} reminders`}
+              </button>
+              {openField === 'reminder' && (
+                <div className="node-modal__dropdown">
+                  {REMINDER_PRESETS.map(preset => (
+                    <button
+                      key={preset.offsetMin}
+                      className="node-modal__dropdown-item"
+                      type="button"
+                      onClick={async () => {
+                        const fireAt = computeFireAt(node.dueDate, node.dueTime, preset.offsetMin)
+                        const created = await createReminder({
+                          nodeId: node.id,
+                          kind: 'relative',
+                          offsetMin: preset.offsetMin,
+                          remindAt: null,
+                          // No due date — fireAt set far future; recalculateFireAt will correct it
+                          // when user adds a due date. Never use now() here — it would fire immediately.
+                          fireAt: fireAt ?? new Date('2099-01-01T00:00:00.000Z').toISOString(),
+                        })
+                        setReminders(prev => [...prev, created])
+                        setOpenField(null)
+                      }}
+                    >
+                      <BellIcon size={14} />
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Active reminders list */}
+              {reminders.length > 0 && (
+                <ul className="node-modal__reminder-list">
+                  {reminders.map(r => (
+                    <li key={r.id} className="node-modal__reminder-item">
+                      <BellIcon size={12} />
+                      <span className="node-modal__reminder-item-label">{formatReminderLabel(r)}</span>
+                      <button
+                        className="node-modal__reminder-item-remove"
+                        type="button"
+                        aria-label="Remove reminder"
+                        onClick={async () => {
+                          await deleteReminder(r.id)
+                          setReminders(prev => prev.filter(x => x.id !== r.id))
+                        }}
+                      >
+                        <XIcon size={11} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
 

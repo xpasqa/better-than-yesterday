@@ -59,6 +59,34 @@ export const completionDto = z.object({
 })
 export type CompletionDto = z.infer<typeof completionDto>
 
+// deliveredAt is NOT included — server sets it, client never sends it.
+// userId is NOT included — server adds it from session, same as node/tag.
+export const reminderDto = z.object({
+  id: z.string().uuid(),
+  nodeId: z.string().uuid(),
+  kind: z.enum(['absolute', 'relative']),
+  remindAt: z.string().datetime().nullable(),   // kind='absolute'
+  offsetMin: z.number().int().nullable(),        // kind='relative'
+  fireAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable(),
+})
+export type ReminderDto = z.infer<typeof reminderDto>
+
+// Server-created only — client reads, never pushes. Only action from client
+// is PATCH /api/notifications/:id/read. NOT in syncRequest.changes.
+export const notificationDto = z.object({
+  id: z.string().uuid(),
+  kind: z.enum(['reminder', 'digest', 'overdue']),
+  nodeId: z.string().uuid().nullable(),
+  title: z.string(),
+  body: z.string(),
+  createdAt: z.string().datetime(),
+  readAt: z.string().datetime().nullable(),
+})
+export type NotificationDto = z.infer<typeof notificationDto>
+
 const MAX_BATCH = 500
 
 export const syncRequest = z.object({
@@ -67,6 +95,7 @@ export const syncRequest = z.object({
     nodes: z.array(nodeDto).max(MAX_BATCH).default([]),
     tags: z.array(tagDto).max(MAX_BATCH).default([]),
     completions: z.array(completionDto).max(MAX_BATCH).default([]),
+    reminders: z.array(reminderDto).max(MAX_BATCH).default([]),
   }),
 })
 export type SyncRequest = z.infer<typeof syncRequest>

@@ -7,7 +7,14 @@ const { config } = await import('./config.ts')
 const { serve } = await import('@hono/node-server')
 const { createApp } = await import('./app.ts')
 
+const { scheduleReminderDelivery } = await import('./modules/reminders/scheduler.ts')
+
 const app = createApp()
+
+if (config.NODE_ENV !== 'test') {
+  scheduleReminderDelivery()
+}
+
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`better-api listening on :${info.port} (${config.NODE_ENV})`)
 })
