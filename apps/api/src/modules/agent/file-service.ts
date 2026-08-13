@@ -151,15 +151,38 @@ export async function readFile(projectId: string, path: string): Promise<string 
   return row?.content ?? null
 }
 
+/**
+ * Upsert by (project, path).
+ *
+ * Deliberately a read-then-write rather than ON CONFLICT: migration 0011
+ * replaced the flat `(project_id, path)` unique index with three *partial*
+ * scope-aware ones, and `ON CONFLICT (project_id, path)` matches none of them —
+ * it fails with "no unique or exclusion constraint matching". That stayed
+ * invisible for as long as the migration was unregistered and never ran; the
+ * moment it did, every write_file would have failed.
+ *
+ * Blok G reworks these signatures around `scope`; until then this keeps the
+ * behaviour correct under either index layout.
+ */
 export async function writeFile(userId: string, projectId: string, path: string, content: string): Promise<void> {
   const now = new Date()
+  const [existing] = await db
+    .select({ id: agentFile.id })
+    .from(agentFile)
+    .where(and(eq(agentFile.projectId, projectId), eq(agentFile.path, path)))
+    .limit(1)
+
+  if (existing) {
+    await db
+      .update(agentFile)
+      .set({ content, updatedAt: now, deletedAt: null })
+      .where(eq(agentFile.id, existing.id))
+    return
+  }
+
   await db
     .insert(agentFile)
     .values({ id: uuidv7(), userId, projectId, path, content, createdAt: now, updatedAt: now })
-    .onConflictDoUpdate({
-      target: [agentFile.projectId, agentFile.path],
-      set: { content, updatedAt: now, deletedAt: null },
-    })
 }
 
 export async function appendFile(userId: string, projectId: string, path: string, content: string): Promise<void> {
