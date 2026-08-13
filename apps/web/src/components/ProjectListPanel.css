@@ -1,7 +1,7 @@
 /* ProjectListPanel — secondary nav column, same shape as Mail's folder
    column (35.project-secondary-panel). */
 .project-list-panel {
-  flex: 0 0 220px;
+  flex: 0 0 212px;
   min-width: 0;
   height: 100%;
   overflow-y: auto;

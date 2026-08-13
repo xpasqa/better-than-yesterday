@@ -121,7 +121,7 @@
   --shadow-card-hover: 0 1px 4px rgba(0, 0, 0, 0.08);
 
   /* Layout — verified from live Todoist DOM (4 Aug 2026) */
-  --sidebar-width: 280px;
+  --sidebar-width: 224px;
   --editor-max-width: 800px;
   --task-detail-width: 864px;
   /* Nav item metrics */

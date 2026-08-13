@@ -150,7 +150,7 @@ export default function ProjectListPanel({
               const expanded = isAreaExpanded(area.id)
               const areaCount = children.reduce((sum, p) => sum + computeProject(realNodes, p.id).length, 0)
               return (
-                <li key={area.id}>
+                <li key={area.id} className="sidebar__area-group">
                   <div className="sidebar__area-row">
                     <button
                       className="sidebar__area-header"

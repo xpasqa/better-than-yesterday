@@ -31,14 +31,6 @@
   box-shadow: var(--shadow-raised-2);
 }
 
-/* One notch narrower than a 320px phone so the view behind stays visible */
-@media (max-width: 380px) {
-  .sidebar--drawer {
-    width: 260px;
-    min-width: 260px;
-  }
-}
-
 /*
  * Popup mode (phone) — BottomNav's More tab opens the same sections as the
  * drawer, but as a small anchored card instead of a full-height takeover:
@@ -591,9 +583,18 @@
   min-width: 0;
 }
 
-/* Indented project rows (child of an area) */
+/* Area's own projects sit flush below it, not indented inward — the area
+   label itself is what signals grouping, so a child project shares the
+   same left edge as a top-level one (orphan) project. */
 .sidebar__project-row--indented .sidebar__nav-item {
-  padding-left: 28px;
+  padding-left: 5px;
+}
+
+/* Breathing room between one area's group (header + its projects) and the
+   next — otherwise, with no indent to visually separate them, consecutive
+   areas would read as one unbroken list. */
+.sidebar__area-group + .sidebar__area-group {
+  margin-top: 12px;
 }
 
 /* Edit pencil button — hidden until row is hovered */
