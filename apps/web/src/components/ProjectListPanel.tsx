@@ -9,6 +9,7 @@ import { CaretDownIcon, FolderIcon, PencilSimpleIcon, PlusIcon, TrayIcon } from 
 import { project as computeProject } from '@better/core/views'
 import type { Node as TaskNode } from '@better/core/node'
 import { ProjectRow } from './Sidebar'
+import { updateNodeMeta } from '../store/project-actions'
 import './ProjectListPanel.css'
 
 interface ProjectListPanelProps {
@@ -40,6 +41,22 @@ export default function ProjectListPanel({
   const addTriggerRef = useRef<HTMLButtonElement>(null)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [addMenuPos, setAddMenuPos] = useState<{ top: number; right: number } | null>(null)
+
+  // Drag a project onto an Area's header (or onto another project inside/
+  // outside one) to move it there — native HTML5 DnD, same pattern as the
+  // board's task reordering (TaskRow.tsx).
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null)
+  const [dragOverAreaId, setDragOverAreaId] = useState<string | null | 'no-area'>(null)
+
+  async function handleReparent(targetAreaId: string | null) {
+    const id = draggedProjectId
+    setDraggedProjectId(null)
+    setDragOverAreaId(null)
+    if (!id) return
+    const project = realNodes.find((n) => n.id === id)
+    if (!project || project.parentId === targetAreaId) return
+    await updateNodeMeta(id, { parentId: targetAreaId }, realNodes)
+  }
 
   const inboxNode = realNodes.find((n) => n.isInbox)
   const allProjects = realNodes.filter(
@@ -80,6 +97,10 @@ export default function ProjectListPanel({
                   allNodes={realNodes}
                   onProjectChange={onProjectChange}
                   onEditNode={onEditNode}
+                  draggable
+                  onDragStart={() => setDraggedProjectId(project.id)}
+                  onDragEnd={() => { setDraggedProjectId(null); setDragOverAreaId(null) }}
+                  onDropTarget={(targetAreaId) => void handleReparent(targetAreaId)}
                 />
               ))}
             </ul>
@@ -88,7 +109,13 @@ export default function ProjectListPanel({
       )}
 
       <div className="sidebar__section">
-        <div className="sidebar__section-header">
+        <div
+          className={`sidebar__section-header${dragOverAreaId === 'no-area' ? ' sidebar__section-header--drop-target' : ''}`}
+          onDragOver={draggedProjectId ? (e) => { e.preventDefault(); setDragOverAreaId('no-area') } : undefined}
+          onDragLeave={draggedProjectId ? () => setDragOverAreaId(null) : undefined}
+          onDrop={draggedProjectId ? (e) => { e.preventDefault(); void handleReparent(null) } : undefined}
+          title={draggedProjectId ? 'Drop here to remove from its Area' : undefined}
+        >
           <span className="sidebar__section-title">My Projects</span>
           <button
             ref={addTriggerRef}
@@ -153,9 +180,12 @@ export default function ProjectListPanel({
                 <li key={area.id} className="sidebar__area-group">
                   <div className="sidebar__area-row">
                     <button
-                      className="sidebar__area-header"
+                      className={`sidebar__area-header${dragOverAreaId === area.id ? ' sidebar__area-header--drop-target' : ''}`}
                       type="button"
                       onClick={() => setAreaExpanded((s) => ({ ...s, [area.id]: !expanded }))}
+                      onDragOver={draggedProjectId ? (e) => { e.preventDefault(); setDragOverAreaId(area.id) } : undefined}
+                      onDragLeave={draggedProjectId ? () => setDragOverAreaId(null) : undefined}
+                      onDrop={draggedProjectId ? (e) => { e.preventDefault(); void handleReparent(area.id) } : undefined}
                       aria-expanded={expanded}
                     >
                       <span className="sidebar__area-dot" style={{ '--area-dot-color': area.color ?? 'var(--text-secondary)' } as CSSProperties} />
@@ -187,6 +217,10 @@ export default function ProjectListPanel({
                           onProjectChange={onProjectChange}
                           onEditNode={onEditNode}
                           indented
+                          draggable
+                          onDragStart={() => setDraggedProjectId(project.id)}
+                  onDragEnd={() => { setDraggedProjectId(null); setDragOverAreaId(null) }}
+                          onDropTarget={(targetAreaId) => void handleReparent(targetAreaId)}
                         />
                       ))}
                     </ul>
@@ -203,6 +237,10 @@ export default function ProjectListPanel({
                 allNodes={realNodes}
                 onProjectChange={onProjectChange}
                 onEditNode={onEditNode}
+                draggable
+                onDragStart={() => setDraggedProjectId(project.id)}
+                  onDragEnd={() => { setDraggedProjectId(null); setDragOverAreaId(null) }}
+                onDropTarget={(targetAreaId) => void handleReparent(targetAreaId)}
               />
             ))}
           </ul>

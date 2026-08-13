@@ -66,6 +66,10 @@ export function ProjectRow({
   onProjectChange,
   onEditNode,
   indented = false,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
+  onDropTarget,
 }: {
   project: TaskNode
   isActive: boolean
@@ -73,11 +77,26 @@ export function ProjectRow({
   onProjectChange: (id: string) => void
   onEditNode?: (node: TaskNode) => void
   indented?: boolean
+  /** Project rows are drag sources (move between Areas) only inside ProjectListPanel. */
+  draggable?: boolean
+  onDragStart?: () => void
+  /** Fires when the drag ends, dropped on a valid target or not — the reset the drag state needs either way. */
+  onDragEnd?: () => void
+  /** Dropping another project onto this row reparents it into this row's own Area (or no Area, for an orphan row). */
+  onDropTarget?: (targetAreaId: string | null) => void
 }) {
   const count = computeProject(allNodes, project.id).length
+  const [dragOver, setDragOver] = useState(false)
   return (
-    <li>
-      <div className={`sidebar__project-row${indented ? ' sidebar__project-row--indented' : ''}`}>
+    <li
+      draggable={draggable}
+      onDragStart={draggable ? (e) => { e.dataTransfer.setData('text/plain', project.id); onDragStart?.() } : undefined}
+      onDragEnd={draggable ? onDragEnd : undefined}
+      onDragOver={onDropTarget ? (e) => { e.preventDefault(); setDragOver(true) } : undefined}
+      onDragLeave={onDropTarget ? () => setDragOver(false) : undefined}
+      onDrop={onDropTarget ? (e) => { e.preventDefault(); setDragOver(false); onDropTarget(project.parentId) } : undefined}
+    >
+      <div className={`sidebar__project-row${indented ? ' sidebar__project-row--indented' : ''}${dragOver ? ' sidebar__project-row--drop-target' : ''}`}>
         <button
           className={`sidebar__nav-item sidebar__nav-item--project ${isActive ? 'sidebar__nav-item--active' : ''}`}
           onClick={() => onProjectChange(project.id)}

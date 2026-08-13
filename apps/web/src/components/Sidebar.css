@@ -316,6 +316,14 @@
   background: rgba(var(--overlay-rgb), 0.04);
 }
 
+/* "My Projects" header doubling as the "remove from Area" drop target
+   while a project is being dragged (ProjectListPanel.tsx). */
+.sidebar__section-header--drop-target {
+  background: var(--bg-selected);
+  outline: 2px dashed var(--brand-red-idle);
+  outline-offset: -2px;
+}
+
 .sidebar__section-title {
   flex: 1;
   font-weight: var(--font-weight-medium);
@@ -542,6 +550,13 @@
   background: rgba(var(--overlay-rgb), 0.04);
 }
 
+/* Valid drop target while dragging a project onto this Area (ProjectListPanel.tsx) */
+.sidebar__area-header--drop-target {
+  background: var(--bg-selected);
+  outline: 2px dashed var(--brand-red-idle);
+  outline-offset: -2px;
+}
+
 /* Centered in the same 18px column as .sidebar__project-hash, so the dot
    and the "#" glyph line up on the same visual axis. The color itself comes
    in via --area-dot-color (ProjectListPanel.tsx) rather than a plain
@@ -590,11 +605,23 @@
   padding-left: 5px;
 }
 
-/* Breathing room between one area's group (header + its projects) and the
-   next — otherwise, with no indent to visually separate them, consecutive
-   areas would read as one unbroken list. */
-.sidebar__area-group + .sidebar__area-group {
-  margin-top: 12px;
+/* Valid drop target while dragging a project onto another project's row
+   (reparents into that row's own Area — ProjectListPanel.tsx). */
+.sidebar__project-row--drop-target .sidebar__nav-item {
+  background: var(--bg-selected);
+  outline: 2px dashed var(--brand-red-idle);
+  outline-offset: -2px;
+}
+
+/* Breathing room after every area's group (header + its projects) —
+   whatever follows next (another Area, or an orphan project with no Area
+   at all) is unrelated to it, and without indent as the grouping cue,
+   this gap is the only thing left saying so. An empty Area (all its
+   projects dragged elsewhere) needs this every bit as much as a full one:
+   its header alone, sitting flush above an orphan row, reads as a parent
+   otherwise. */
+.sidebar__area-group {
+  margin-bottom: 12px;
 }
 
 /* Edit pencil button — hidden until row is hovered */
