@@ -16,7 +16,15 @@ import OpenAI from 'openai'
 import { accumulate, finalize } from '@better/core/tool-calls'
 import type { ToolCallState } from '@better/core/tool-calls'
 import { executeTool } from './tool-executor.ts'
+import { serializeEvent } from '@better/core/sse'
+import type { AgentEvent } from '@better/core/agent-events'
+import type { SSEStreamingApi } from 'hono/streaming'
 import type { ChatCompletionMessageParam, ChatCompletionChunk } from 'openai/resources/chat/completions'
+
+/** Every event leaves through here, so the wire format is compiler-checked. */
+async function send(stream: SSEStreamingApi, event: AgentEvent): Promise<void> {
+  await stream.writeSSE(serializeEvent(event))
+}
 
 export const commandRoutes = new Hono()
 
@@ -46,7 +54,7 @@ commandRoutes.post('/command', async (c) => {
       const settings = await getAiSettings(userId)
       const apiKey = await getApiKey(userId)
       if (!apiKey) {
-        await stream.writeSSE({ event: 'error', data: 'API key not configured. Go to Settings → Agent.' })
+        await send(stream, { type: 'error', message: 'API key not configured. Go to Settings → Agent.' })
         return
       }
 
@@ -94,7 +102,7 @@ commandRoutes.post('/command', async (c) => {
           })
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          await stream.writeSSE({ event: 'error', data: `AI request failed: ${msg}` })
+          await send(stream, { type: 'error', message: `AI request failed: ${msg}` })
           return
         }
 
@@ -106,7 +114,7 @@ commandRoutes.post('/command', async (c) => {
             const delta = chunk.choices[0]?.delta
             if (delta?.content) {
               currentContent += delta.content
-              await stream.writeSSE({ event: 'token', data: delta.content })
+              await send(stream, { type: 'token', text: delta.content })
             }
             if (delta?.tool_calls) {
               for (const tc of delta.tool_calls) {
@@ -122,7 +130,7 @@ commandRoutes.post('/command', async (c) => {
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          await stream.writeSSE({ event: 'error', data: `Stream error: ${msg}` })
+          await send(stream, { type: 'error', message: `Stream error: ${msg}` })
           return
         }
 
@@ -149,42 +157,38 @@ commandRoutes.post('/command', async (c) => {
 
         // Execute tool calls and notify frontend
         for (const toolCall of toolCalls) {
-          await stream.writeSSE({
-            event: 'tool',
-            data: JSON.stringify({ name: toolCall.name, status: 'start' }),
-          })
+          await send(stream, { type: 'tool', name: toolCall.name, status: 'start' })
 
-          const toolResult = await executeTool(
-            toolCall.name,
-            toolCall.args,
-            { userId, projectId, sessionId, nodeId },
-          )
-
-          await stream.writeSSE({
-            event: 'tool',
-            data: JSON.stringify({ name: toolCall.name, status: 'done' }),
-          })
-
-          // Notify UI to refresh via sync patch
-          if (
-            (toolCall.name === 'add_task' || toolCall.name === 'update_task' || toolCall.name === 'add_subtask') &&
-            !toolResult.startsWith('Error')
-          ) {
-            const id = toolResult.split(': ')[1] ?? ''
-            if (id) {
-              await stream.writeSSE({ event: 'patch', data: JSON.stringify({ nodeId: id }) })
+          let resultText: string
+          if (toolCall.argsError) {
+            // Handed back to the model so it can correct itself (spec §5.1).
+            resultText = `Error: ${toolCall.argsError}`
+          } else {
+            const result = await executeTool(
+              toolCall.name,
+              toolCall.args,
+              { userId, projectId, sessionId, nodeId },
+            )
+            resultText = result.text
+            // Ids come from the write site, not from parsing the reply text.
+            if (!result.isError) {
+              for (const id of result.effects.nodeIds) {
+                await send(stream, { type: 'patch', nodeId: id })
+              }
             }
           }
+
+          await send(stream, { type: 'tool', name: toolCall.name, status: 'done' })
 
           messages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: toolResult,
+            content: resultText,
           })
         }
       }
     } finally {
-      await stream.writeSSE({ event: 'done', data: '' })
+      await send(stream, { type: 'done' })
     }
   })
 })

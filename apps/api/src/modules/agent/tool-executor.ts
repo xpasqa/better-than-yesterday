@@ -28,10 +28,45 @@ interface ToolContext {
   nodeId: string | null // null = global context (chat agent default)
 }
 
+/**
+ * Side effects a tool produced, reported structurally rather than parsed back
+ * out of the human-readable text.
+ *
+ * The previous shape returned a bare string, so callers recovered ids with
+ * `toolResult.split(': ')[1]` and gated on hardcoded tool names — and one of
+ * those name lists had drifted (`runner.ts` watched for `create_task` while
+ * the tool was named `add_task`), so chat never emitted a single `patch` and
+ * the UI never refreshed. Effects are collected at the write site now, where
+ * the id is already in hand and cannot drift.
+ */
+export interface ToolEffects {
+  /** Node ids created or modified — drives the `patch` event. */
+  nodeIds: string[]
+  /** File paths written — drives the `file` event. */
+  files: string[]
+}
+
+export interface ToolResult {
+  text: string
+  isError: boolean
+  effects: ToolEffects
+}
+
 export async function executeTool(
   name: string,
   args: Record<string, unknown>,
   ctx: ToolContext,
+): Promise<ToolResult> {
+  const effects: ToolEffects = { nodeIds: [], files: [] }
+  const text = await runTool(name, args, ctx, effects)
+  return { text, isError: text.startsWith('Error'), effects }
+}
+
+async function runTool(
+  name: string,
+  args: Record<string, unknown>,
+  ctx: ToolContext,
+  effects: ToolEffects,
 ): Promise<string> {
   switch (name) {
     // ── File tools ──────────────────────────────────────────────────────────
@@ -53,6 +88,7 @@ export async function executeTool(
       if (!path?.endsWith('.md')) return 'Error: only .md files are supported'
       if (typeof content !== 'string') return 'Error: content must be a string'
       await writeFile(ctx.userId, ctx.projectId, path, content)
+      effects.files.push(path)
       return `Written: ${path}`
     }
     case 'append_file': {
@@ -60,11 +96,13 @@ export async function executeTool(
       const content = args.content as string
       if (!path?.endsWith('.md')) return 'Error: only .md files are supported'
       await appendFile(ctx.userId, ctx.projectId, path, content)
+      effects.files.push(path)
       return `Appended to: ${path}`
     }
     case 'delete_file': {
       const path = args.path as string
       await deleteFile(ctx.projectId, path)
+      effects.files.push(path)
       return `Deleted: ${path}`
     }
 
@@ -167,6 +205,7 @@ export async function executeTool(
         deletedAt: null,
       }
       await applyIncomingNodes(ctx.userId, [dto])
+      effects.nodeIds.push(id)
       return `Task created: ${id}`
     }
     case 'add_subtask': {
@@ -213,6 +252,7 @@ export async function executeTool(
         deletedAt: null,
       }
       await applyIncomingNodes(ctx.userId, [dto])
+      effects.nodeIds.push(id)
       return `Subtask created: ${id}`
     }
     case 'update_task': {
@@ -256,6 +296,7 @@ export async function executeTool(
         deletedAt: task.deletedAt?.toISOString() ?? null,
       }
       await applyIncomingNodes(ctx.userId, [dto])
+      effects.nodeIds.push(id)
       return `Task updated: ${id}`
     }
 
