@@ -8,6 +8,7 @@ import { useShowCompleted } from '../hooks/useShowCompleted'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
 import SyncStatusBadge from './SyncStatusBadge'
+import TodoCommandBar from './TodoCommandBar'
 import './RealView.css'
 
 interface TodayRealProps {
@@ -92,6 +93,7 @@ function TodayReal({ user, onOpenNode }: TodayRealProps) {
           </button>
         )}
       </div>
+      <TodoCommandBar nodeId={null} />
     </main>
   )
 }

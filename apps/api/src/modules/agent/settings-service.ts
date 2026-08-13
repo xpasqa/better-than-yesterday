@@ -9,14 +9,20 @@ export interface AiSettingsDto {
   baseUrl: string
   model: string
   hasApiKey: boolean
+  maxSteps: number
 }
 
 export async function getAiSettings(userId: string): Promise<AiSettingsDto> {
   const [row] = await db.select().from(aiSettings).where(eq(aiSettings.userId, userId)).limit(1)
   if (!row) {
-    return { baseUrl: 'https://aimurah.my.id/api/v1', model: 'claude-sonnet-4.5', hasApiKey: false }
+    return { baseUrl: 'https://aimurah.my.id/api/v1', model: 'claude-sonnet-4.5', hasApiKey: false, maxSteps: 6 }
   }
-  return { baseUrl: row.baseUrl, model: row.model, hasApiKey: row.apiKeyEnc !== null }
+  return {
+    baseUrl: row.baseUrl,
+    model: row.model,
+    hasApiKey: row.apiKeyEnc !== null,
+    maxSteps: row.maxSteps ?? 6,
+  }
 }
 
 export async function getApiKey(userId: string): Promise<string | null> {

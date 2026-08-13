@@ -3,6 +3,7 @@ import { PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import AgentChat from './AgentChat'
 import { fetchSession } from '../api/agent-sessions'
 import type { AgentFile } from '../agent/mockFiles'
+import { parseSse } from '@better/core/sse'
 import './AgentView.css'
 
 const USER_NAME = 'Pasqa'
@@ -137,61 +138,47 @@ export default function AgentView({ sessionId = null }: AgentViewProps) {
         if (done) break
         buffer += decoder.decode(value, { stream: true })
 
-        // SSE messages are separated by double newlines. Split on that boundary
-        // so each chunk is one complete "event:\ndata:\n" block.
-        const parts = buffer.split('\n\n')
-        // Keep the last (possibly incomplete) part in the buffer
-        buffer = parts.pop() ?? ''
+        const { events, rest } = parseSse(buffer)
+        buffer = rest
 
-        for (const part of parts) {
-          // Extract event name and data from each SSE message block
-          let eventName = 'token'
-          let raw = ''
-          for (const line of part.split('\n')) {
-            if (line.startsWith('event:')) {
-              eventName = line.slice(6).trim()
-            } else if (line.startsWith('data:')) {
-              raw = line.slice(5).trim()
-            }
-          }
-          if (!raw && eventName !== 'done') continue
-
-          if (eventName === 'token') {
+        for (const event of events) {
+          if (event.type === 'token') {
             setMessages(prev =>
               prev.map(m =>
                 m.id === agentMsgId && m.kind === 'text'
-                  ? { ...m, content: m.content + raw }
+                  ? { ...m, content: m.content + event.text }
                   : m,
               ),
             )
-          } else if (eventName === 'file') {
-            try {
-              const { path } = JSON.parse(raw) as { path: string }
-              setFiles(prev => {
-                const exists = prev.some(f => f.path === path)
-                if (exists) return prev
-                const newFile: AgentFile = { path, content: '' }
-                const isFirst = prev.length === 0
-                if (isFirst) {
-                  setPanelOpen(true)
-                  selectFile(path)
-                }
-                setUnseenPaths(p => new Set(p).add(path))
-                setMessages(mp => [
-                  ...mp,
-                  { id: generateId(), role: 'agent', kind: 'file', path, time: timeNow() },
-                ])
-                return [...prev, newFile]
-              })
-            } catch { /* malformed */ }
-          } else if (eventName === 'error') {
+          } else if (event.type === 'file') {
+            const path = event.path
+            setFiles(prev => {
+              const exists = prev.some(f => f.path === path)
+              if (exists) return prev
+              const newFile: AgentFile = { path, content: '' }
+              const isFirst = prev.length === 0
+              if (isFirst) {
+                setPanelOpen(true)
+                selectFile(path)
+              }
+              setUnseenPaths(p => new Set(p).add(path))
+              setMessages(mp => [
+                ...mp,
+                { id: generateId(), role: 'agent', kind: 'file', path, time: timeNow() },
+              ])
+              return [...prev, newFile]
+            })
+          } else if (event.type === 'error') {
             setMessages(prev =>
               prev.map(m =>
                 m.id === agentMsgId && m.kind === 'text'
-                  ? { ...m, content: raw || 'An error occurred.' }
+                  ? { ...m, content: event.message || 'An error occurred.' }
                   : m,
               ),
             )
+          } else if (event.type === 'done') {
+            // isStreaming is released in finally below
+            break
           }
         }
       }
