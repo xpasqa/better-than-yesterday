@@ -12,8 +12,11 @@
 --
 -- NOTE: agent_session.memory column is NOT dropped here — dropped in next
 -- release after backfill is confirmed.
-
-BEGIN;
+--
+-- NOTE: no explicit BEGIN/COMMIT. Drizzle's migrator already runs each
+-- migration inside a transaction; an explicit COMMIT here would close that
+-- outer transaction early and leave the __drizzle_migrations insert outside
+-- it. Every other migration in this folder follows the same convention.
 
 -- ── 1. ai_settings: add max_steps ────────────────────────────────────────────
 
@@ -164,5 +167,3 @@ ALTER TABLE agent_session
 -- nullable. FK from agent_file.project_id still points here — we keep the
 -- table structure but it is no longer written to by the application.
 -- Full drop deferred to next migration once backfill is confirmed in prod.
-
-COMMIT;
