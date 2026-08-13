@@ -528,11 +528,13 @@
 .sidebar__area-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   height: var(--nav-item-height, 34px);
-  padding: 0 8px 0 17px;
+  /* Same 5px inset as .sidebar__nav-item — Area and top-level Project rows
+     share one left edge, not a nested-looking indent. */
+  padding: 0 8px 0 5px;
   font-size: 13px;
   font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
@@ -548,11 +550,26 @@
   background: rgba(var(--overlay-rgb), 0.04);
 }
 
+/* Centered in the same 18px column as .sidebar__project-hash, so the dot
+   and the "#" glyph line up on the same visual axis. The color itself comes
+   in via --area-dot-color (ProjectListPanel.tsx) rather than a plain
+   `background`, so it can target the small ::before circle instead of
+   painting this whole 18px box. */
 .sidebar__area-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar__area-dot::before {
+  content: '';
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  flex-shrink: 0;
+  background: var(--area-dot-color, var(--text-secondary));
 }
 
 .sidebar__area-chevron {

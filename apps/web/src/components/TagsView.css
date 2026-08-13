@@ -1,7 +1,7 @@
+/* Lives inside SettingsView's own padded/max-width content column now —
+   no standalone-page chrome of its own (Tags moved out of the sidebar
+   into a Settings tab). */
 .tags-view {
-  padding: 32px 40px;
-  max-width: 680px;
-  margin: 0 auto;
   flex: 1;
 }
 
@@ -10,8 +10,8 @@
 }
 
 .tags-view__title {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: var(--font-size-large, 1.25rem);
+  font-weight: var(--font-weight-semibold, 600);
   margin: 0;
   color: var(--text-primary, #1a1a1a);
 }

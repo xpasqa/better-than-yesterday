@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import {
   BellIcon, CalendarBlankIcon, CalendarDotsIcon, CaretDownIcon, ChatCircleIcon, CheckCircleIcon, EnvelopeSimpleIcon, FolderIcon,
   GearIcon, ListBulletsIcon, MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, SidebarSimpleIcon, SignOutIcon,
-  SparkleIcon, StarIcon, TagIcon, TrayIcon, WalletIcon, XIcon,
+  SparkleIcon, StarIcon, TrayIcon, WalletIcon, XIcon,
 } from '@phosphor-icons/react'
 import { todayInTimezone } from '@better/core/date'
 import { inbox as computeInbox, project as computeProject, today as computeToday } from '@better/core/views'
@@ -414,16 +414,6 @@ export default function Sidebar({
                 >
                   <span className="sidebar__nav-icon"><SparkleIcon size={18} /></span>
                   <span className="sidebar__nav-label">Agent</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`sidebar__nav-item ${activeView === 'tags' ? 'sidebar__nav-item--active' : ''}`}
-                  onClick={() => onViewChange('tags')}
-                  type="button"
-                >
-                  <span className="sidebar__nav-icon"><TagIcon size={18} /></span>
-                  <span className="sidebar__nav-label">Tags</span>
                 </button>
               </li>
             </ul>

@@ -80,7 +80,7 @@ export default function TagsView() {
   }
 
   return (
-    <main className="tags-view">
+    <div className="tags-view">
       <div className="tags-view__header">
         <h1 className="tags-view__title">Tags</h1>
       </div>
@@ -239,6 +239,6 @@ export default function TagsView() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }

@@ -4,7 +4,9 @@
 // "/*", and a handful of paths this shallow don't earn the extra structure.
 import type { ViewType } from './types'
 
-const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'outline', 'mail', 'storage', 'finance', 'agent', 'search', 'tags', 'settings']
+// 'tags' is deliberately absent: Tags lives inside Settings now, not as its
+// own route — a stray '/tags' bookmark falls through to the 'today' default.
+const PLAIN_VIEWS: ViewType[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'outline', 'mail', 'storage', 'finance', 'agent', 'search', 'settings']
 
 export function pathForView(view: ViewType, projectId?: string | null, sub?: string | null): string {
   if (view === 'project' && projectId) return `/project/${projectId}`

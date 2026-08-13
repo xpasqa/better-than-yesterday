@@ -9,9 +9,10 @@ import {
   type MailAccountConfig,
   type MailSaveParams,
 } from '../api/mail'
+import TagsView from './TagsView'
 import './SettingsView.css'
 
-type TabId = 'profile' | 'agent' | 'mail'
+type TabId = 'profile' | 'agent' | 'mail' | 'tags'
 
 interface SettingsViewProps {
   user: AuthUser
@@ -499,11 +500,19 @@ export default function SettingsView({ user, onUserChange, initialTab = 'profile
           >
             Mail Account
           </button>
+          <button
+            className={`settings__nav-item${activeTab === 'tags' ? ' settings__nav-item--active' : ''}`}
+            onClick={() => setActiveTab('tags')}
+            type="button"
+          >
+            Tags
+          </button>
         </nav>
         <div className="settings__content">
           {activeTab === 'profile' && <ProfileTab user={user} onUserChange={onUserChange} />}
           {activeTab === 'agent' && <AgentTab />}
           {activeTab === 'mail' && <MailTab />}
+          {activeTab === 'tags' && <TagsView />}
         </div>
       </div>
     </main>

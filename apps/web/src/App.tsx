@@ -25,7 +25,6 @@ import SomedayView from './components/SomedayView'
 import LogbookView from './components/LogbookView'
 import ProjectReal from './components/ProjectReal'
 import SearchView from './components/SearchView'
-import TagsView from './components/TagsView'
 import SettingsView from './components/SettingsView'
 import BottomNav from './components/BottomNav'
 import QuickAddModal from './components/QuickAddModal'
@@ -302,8 +301,6 @@ function App() {
           </div>
         ) : activeView === 'search' ? (
           <SearchView user={user} onOpenNode={setOpenNodeId} onOpenNote={() => navigate(pathForView('outline'))} />
-        ) : activeView === 'tags' ? (
-          <TagsView />
         ) : activeView === 'settings' ? (
           <SettingsView user={user} onUserChange={handleUserChange} />
         ) : null /* unreachable: routes.ts only ever derives 'project' alongside an id */}

@@ -3,7 +3,7 @@
 // (35.project-secondary-panel). Favorites + the Area→Project tree used to
 // live inline in the main sidebar; they moved here so the primary nav stays
 // six clean Things views.
-import { useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { CaretDownIcon, FolderIcon, PencilSimpleIcon, PlusIcon, TrayIcon } from '@phosphor-icons/react'
 import { project as computeProject } from '@better/core/views'
@@ -158,7 +158,7 @@ export default function ProjectListPanel({
                       onClick={() => setAreaExpanded((s) => ({ ...s, [area.id]: !expanded }))}
                       aria-expanded={expanded}
                     >
-                      <span className="sidebar__area-dot" style={{ background: area.color ?? 'var(--text-secondary)' }} />
+                      <span className="sidebar__area-dot" style={{ '--area-dot-color': area.color ?? 'var(--text-secondary)' } as CSSProperties} />
                       <span className="sidebar__nav-label">{area.content}</span>
                       {areaCount > 0 && <span className="sidebar__nav-count">{areaCount}</span>}
                       <span className="sidebar__area-chevron">
