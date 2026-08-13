@@ -86,7 +86,7 @@ describe('assemble', () => {
       m => m.role === 'tool' && !prompt.some(
         a => a.role === 'assistant' &&
           'tool_calls' in a &&
-          a.tool_calls?.some(tc => tc.id === (m as typeof tool).tool_call_id)
+          a.tool_calls?.some(tc => tc.id === (m as Extract<ContextMessage, { role: 'tool' }>).tool_call_id)
       )
     )
     expect(hasOrphanTool).toBe(false)
