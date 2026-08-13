@@ -1,16 +1,27 @@
 // Context assembler — builds the messages array for a chat completion call
-// with a token budget. Blok E — docs/feature/35.agent-orchestrator/spec.md §5
+// with a token budget. Blok E — docs/feature/35.agent-orchestrator/spec.md §6
 //
 // Bug #5 fix: history was inserted into the prompt without any budget, so
 // long sessions crashed with context_length_exceeded.
 //
-// Paired eviction: a user+assistant turn is always evicted together with
-// all tool messages that follow the assistant message (they reference
-// tool_call_ids that become orphaned otherwise — a 400 from the provider).
+// Two rules do the real work here:
+//
+//   Priority eviction — layers are dropped lowest-priority-first, so the file
+//   manifest and today-summary go before conversation history does. Pinned
+//   layers (core system prompt, the message the user just sent) never go.
+//
+//   Paired eviction — a user+assistant turn is always evicted together with
+//   the tool messages that follow it. Dropping an assistant message while
+//   keeping its tool results leaves orphaned tool_call_ids, which is a 400
+//   from the provider rather than a merely smaller prompt.
 
 export interface ContextLayer {
-  /** Higher priority = kept longer. System layers should use high values. */
+  /** Stable name, reported in `dropped` so the UI can say what was cut. */
+  id: string
+  /** Higher priority = kept longer. */
   priority: number
+  /** Pinned layers are never evicted, whatever the cap. */
+  pinned?: boolean
   messages: ContextMessage[]
 }
 
@@ -28,8 +39,10 @@ export interface ToolCallRef {
 
 export interface AssembleResult {
   prompt: ContextMessage[]
-  /** Number of history turns that were evicted to fit within cap. */
-  dropped: number
+  /** Ids of layers that lost content, in the order they were evicted. */
+  dropped: string[]
+  /** How many conversation turns were evicted from the history layer. */
+  droppedTurns: number
 }
 
 /**
@@ -52,65 +65,54 @@ function messageTokens(msg: ContextMessage): number {
   return estimateTokens(text) + 4
 }
 
+function layerTokens(messages: ContextMessage[]): number {
+  return messages.reduce((sum, m) => sum + messageTokens(m), 0)
+}
+
 /**
  * Assemble layers into a prompt that fits within `cap` tokens.
  *
- * Layers are sorted descending by priority. Within each layer, messages are
- * included as-is. Only the lowest-priority layer is considered evictable
- * (conventionally the history layer). Higher-priority layers are NEVER
- * evicted — they are pinned regardless of the cap.
- *
- * A "pair" is: the user message + the assistant message that follows + all
- * tool messages attached to that assistant message. Evicting them together
- * prevents orphaned tool_call_ids.
+ * Output order follows priority descending, so the prompt reads
+ * system → memory → workspace map → manifest → today → history.
  */
 export function assemble(layers: ContextLayer[], cap: number): AssembleResult {
-  if (layers.length === 0) return { prompt: [], dropped: 0 }
+  const byPriority = [...layers].sort((a, b) => b.priority - a.priority)
+  const kept = new Map<string, ContextMessage[]>(byPriority.map(l => [l.id, l.messages]))
 
-  // Sort by priority descending so high-priority layers come first
-  const sorted = [...layers].sort((a, b) => b.priority - a.priority)
+  const dropped: string[] = []
+  let droppedTurns = 0
 
-  // The highest-priority layer is always pinned (never evicted).
-  // If there are multiple layers, the lowest-priority one is the evictable
-  // history layer. If there is only one layer, it is pinned and nothing
-  // is evictable — we just return everything regardless of cap.
-  if (sorted.length === 1) {
-    return { prompt: sorted[0]!.messages, dropped: 0 }
+  const total = () => byPriority.reduce((sum, l) => sum + layerTokens(kept.get(l.id)!), 0)
+
+  // Evict lowest priority first. Within a layer, drop whole turns oldest-first
+  // so a long history degrades gradually instead of vanishing at once.
+  const evictable = byPriority.filter(l => !l.pinned).reverse()
+
+  for (const layer of evictable) {
+    if (total() <= cap) break
+
+    const pairs = buildPairs(kept.get(layer.id)!)
+    let survivors = kept.get(layer.id)!
+
+    for (const pair of pairs) {
+      if (total() <= cap) break
+      const evicted = new Set(pair)
+      survivors = survivors.filter(m => !evicted.has(m))
+      kept.set(layer.id, survivors)
+      if (!dropped.includes(layer.id)) dropped.push(layer.id)
+      droppedTurns++
+    }
   }
 
-  // Pinned = all layers except the lowest-priority one (which is evictable)
-  const evictableLayer = sorted[sorted.length - 1]!
-  const pinnedLayers = sorted.slice(0, sorted.length - 1)
-
-  const pinnedMessages: ContextMessage[] = pinnedLayers.flatMap(l => l.messages)
-  const historyMessages: ContextMessage[] = evictableLayer.messages
-
-  // Build evictable pairs from the history layer
-  const pairs = buildPairs(historyMessages)
-
-  // Count total tokens across everything
-  const pinnedTokens = pinnedMessages.reduce((sum, m) => sum + messageTokens(m), 0)
-  let historyTokens = historyMessages.reduce((sum, m) => sum + messageTokens(m), 0)
-  let dropped = 0
-
-  // Evict oldest pairs first until pinned + remaining history fits within cap
-  const evictedSet = new Set<ContextMessage>()
-  for (const pair of pairs) {
-    if (pinnedTokens + historyTokens <= cap) break
-    const pairTokens = pair.reduce((sum, m) => sum + messageTokens(m), 0)
-    historyTokens -= pairTokens
-    dropped++
-    for (const msg of pair) evictedSet.add(msg)
-  }
-
-  // Flatten in priority order: pinned first, then remaining history
-  const remainingHistory = historyMessages.filter(m => !evictedSet.has(m))
-  const prompt = [...pinnedMessages, ...remainingHistory]
-
-  return { prompt, dropped }
+  const prompt = byPriority.flatMap(l => kept.get(l.id)!)
+  return { prompt, dropped, droppedTurns }
 }
 
-/** Group history messages into evictable [user, assistant, ...tool] pairs. */
+/**
+ * Group messages into evictable units: [user, assistant, ...tool].
+ * A message that does not start a turn is its own unit, so a layer that holds
+ * a single system-style message is still evictable as a whole.
+ */
 function buildPairs(messages: ContextMessage[]): ContextMessage[][] {
   const pairs: ContextMessage[][] = []
   let i = 0
@@ -120,11 +122,9 @@ function buildPairs(messages: ContextMessage[]): ContextMessage[][] {
     if (msg.role === 'user') {
       const pair: ContextMessage[] = [msg]
       i++
-      // Collect the assistant message that follows
       if (i < messages.length && messages[i]!.role === 'assistant') {
         pair.push(messages[i]!)
         i++
-        // Collect all tool messages that follow this assistant message
         while (i < messages.length && messages[i]!.role === 'tool') {
           pair.push(messages[i]!)
           i++
@@ -132,7 +132,6 @@ function buildPairs(messages: ContextMessage[]): ContextMessage[][] {
       }
       pairs.push(pair)
     } else {
-      // Orphaned assistant/tool messages — evict as a singleton
       pairs.push([msg])
       i++
     }
@@ -140,4 +139,3 @@ function buildPairs(messages: ContextMessage[]): ContextMessage[][] {
 
   return pairs
 }
-
