@@ -1,5 +1,5 @@
 // POST /api/agent/chat — SSE streaming chat endpoint
-// docs/feature/2.backend/3.agent/spec.md §7, §8, §9
+// docs/feature/35.agent-orchestrator/spec.md §3, §4 (Blok C + D)
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { z } from 'zod'
@@ -25,22 +25,33 @@ chatRoutes.post('/chat', async (c) => {
   const { message, nodeId } = parsed.data
 
   return streamSSE(c, async (stream) => {
-    await runAgent({
-      userId,
-      nodeId,
-      userMessage: message,
-      onToken: async (token) => {
-        await stream.writeSSE({ event: 'token', data: token })
-      },
-      onFileCreated: async (path) => {
-        await stream.writeSSE({ event: 'file', data: JSON.stringify({ path }) })
-      },
-      onDone: async () => {
-        await stream.writeSSE({ event: 'done', data: '' })
-      },
-      onError: async (err) => {
-        await stream.writeSSE({ event: 'error', data: err })
-      },
-    })
+    // done is always sent — even after error — so the client can release
+    // isStreaming regardless of what happened (Blok C spec §3).
+    try {
+      await runAgent({
+        userId,
+        nodeId,
+        userMessage: message,
+        onToken: async (token) => {
+          await stream.writeSSE({ event: 'token', data: token })
+        },
+        onFileCreated: async (path) => {
+          await stream.writeSSE({ event: 'file', data: JSON.stringify({ path }) })
+        },
+        onPatch: async (nodeId: string) => {
+          await stream.writeSSE({ event: 'patch', data: JSON.stringify({ nodeId }) })
+        },
+        onError: async (err) => {
+          await stream.writeSSE({ event: 'error', data: err })
+        },
+        onDone: async () => {
+          // onDone is called in runner's finally block — we send done here
+          // but the stream closes naturally after this handler returns
+        },
+      })
+    } finally {
+      // done is always the last event (Blok C requirement)
+      await stream.writeSSE({ event: 'done', data: '' })
+    }
   })
 })

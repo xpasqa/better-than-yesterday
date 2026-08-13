@@ -27,7 +27,11 @@
     "./reminder": "./src/reminder.ts",
     "./mail-id": "./src/mail-id.ts",
     "./mail-threading": "./src/mail-threading.ts",
-    "./mail-folders": "./src/mail-folders.ts"
+    "./mail-folders": "./src/mail-folders.ts",
+    "./sse": "./src/sse.ts",
+    "./agent-events": "./src/agent-events.ts",
+    "./tool-calls": "./src/tool-calls.ts",
+    "./context": "./src/context.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
