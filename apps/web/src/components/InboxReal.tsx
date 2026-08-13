@@ -8,6 +8,7 @@ import { useShowCompleted } from '../hooks/useShowCompleted'
 import { reorderSibling } from '../store/node-actions'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
+import TodoCommandBar from './TodoCommandBar'
 import SyncStatusBadge from './SyncStatusBadge'
 import './RealView.css'
 
@@ -98,6 +99,7 @@ function InboxReal({ user, onOpenNode }: InboxRealProps) {
           </button>
         )}
       </div>
+      <TodoCommandBar nodeId={null} />
     </main>
   )
 }

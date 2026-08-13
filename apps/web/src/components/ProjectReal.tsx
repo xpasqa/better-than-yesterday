@@ -8,6 +8,7 @@ import { reorderSibling } from '../store/node-actions'
 import type { Node } from '@better/core/node'
 import TaskRow from './TaskRow'
 import AddTaskFormReal from './AddTaskFormReal'
+import TodoCommandBar from './TodoCommandBar'
 import SyncStatusBadge from './SyncStatusBadge'
 import BoardView from './BoardView'
 import './RealView.css'
@@ -153,6 +154,7 @@ function ProjectReal({ user, projectId, onOpenNode }: ProjectRealProps) {
           </p>
         )}
       </div>
+      <TodoCommandBar nodeId={projectId} />
     </main>
   )
 }
