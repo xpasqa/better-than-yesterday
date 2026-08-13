@@ -19,7 +19,6 @@ import './Sidebar.css'
 
 interface SidebarProps {
   activeView: ViewType
-  activeProjectId: string | null
   collapsed: boolean
   /* Below 1024px the sidebar is an off-canvas drawer instead of a docked column */
   drawer?: boolean
@@ -43,13 +42,8 @@ interface SidebarProps {
   timezone?: string
   userName?: string
   onViewChange: (view: ViewType) => void
-  onProjectChange: (id: string) => void
   onToggleCollapse: () => void
-  /** Opens the Create Project modal */
-  onAddProject: (kind: 'project' | 'area') => void
   onLogout: () => void
-  /** Opens the ProjectModal in edit mode for a given area or project node */
-  onEditNode?: (node: TaskNode) => void
   /** Opens the Agent view on a specific session (Recent Chats click) */
   onOpenChat?: (sessionId: string) => void
   /** Opens the centered quick-add task modal */
@@ -64,8 +58,8 @@ const ChevronDown = ({ open }: { open: boolean }) => (
   />
 )
 
-/** A single project row, shared between the Favorites section and area groups. */
-function ProjectRow({
+/** A single project row, shared between Favorites and area groups — also used by ProjectListPanel. */
+export function ProjectRow({
   project,
   isActive,
   allNodes,
@@ -109,14 +103,12 @@ function ProjectRow({
 }
 
 export default function Sidebar({
-  activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false, variant = 'drawer',
+  activeView, collapsed, drawer = false, drawerOpen = false, variant = 'drawer',
   theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
-  onViewChange, onProjectChange, onToggleCollapse, onAddProject, onLogout,
-  onEditNode, onOpenChat, onAddTask,
+  onViewChange, onToggleCollapse, onLogout,
+  onOpenChat, onAddTask,
 }: SidebarProps) {
-  const [projectsExpanded, setProjectsExpanded] = useState(true)
-  const [favoritesExpanded, setFavoritesExpanded] = useState(true)
   // Workspace fold survives reload (34.sidebar-workspace/spec.md §3) — the
   // other section chevrons reset per visit, but Workspace is the one fold
   // that expresses a lasting preference ("I live in Todo, tuck the rest away").
@@ -140,14 +132,6 @@ export default function Sidebar({
   }, [])
   const profileRef = useRef<HTMLDivElement>(null)
   const [profileOpen, setProfileOpen] = useState(false)
-  // Rendered via a portal (below) rather than inline: the "My Projects"
-  // section sits inside a scrolling nav list with overflow-x: hidden, which
-  // clips an inline absolutely-positioned dropdown instead of letting it
-  // overflow — same reason NodeDetailModal's calendar dropdown is a portal.
-  const addTriggerRef = useRef<HTMLButtonElement>(null)
-  const addMenuPortalRef = useRef<HTMLDivElement>(null)
-  const [addMenuOpen, setAddMenuOpen] = useState(false)
-  const [addMenuPos, setAddMenuPos] = useState<{ top: number; right: number } | null>(null)
   const bellRef = useRef<HTMLButtonElement>(null)
   const [bellOpen, setBellOpen] = useState(false)
 
@@ -160,19 +144,15 @@ export default function Sidebar({
 
   // Close dropdown on outside click
   useEffect(() => {
-    if (!profileOpen && !addMenuOpen) return
+    if (!profileOpen) return
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false)
       }
-      const t = e.target as Node
-      if (!addMenuPortalRef.current?.contains(t) && !addTriggerRef.current?.contains(t)) {
-        setAddMenuOpen(false)
-      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [profileOpen, addMenuOpen])
+  }, [profileOpen])
 
   const realTodayStr = todayInTimezone(timezone)
   const realToday = computeToday(realNodes, realTodayStr)
@@ -181,32 +161,11 @@ export default function Sidebar({
 
   const inboxNode = findInbox(realNodes)
 
-  // All non-inbox, non-deleted projects
-  const allProjects = realNodes.filter(
+  // The single "Projects" row's badge — every non-inbox project, however
+  // deep in the Area tree. Per-project counts live in ProjectListPanel now.
+  const projectCount = realNodes.filter(
     (n) => n.kind === 'project' && n.deletedAt === null && n.id !== inboxNode?.id,
-  )
-
-  // Favorites section: projects with isFavorite (spec §4.4)
-  const favoriteProjects = allProjects.filter((n) => n.isFavorite)
-
-  // All non-deleted areas, sorted by rank
-  const areas = realNodes
-    .filter((n) => n.kind === 'area' && n.deletedAt === null)
-    .sort((a, b) => (a.rank < b.rank ? -1 : 1))
-
-  // Projects grouped:
-  //   - under an area: projects with parentId === area.id
-  //   - orphans: projects with parentId === null (no area)
-  const projectsByArea = (areaId: string) =>
-    allProjects.filter((n) => n.parentId === areaId).sort((a, b) => (a.rank < b.rank ? -1 : 1))
-
-  const orphanProjects = allProjects
-    .filter((n) => n.parentId === null)
-    .sort((a, b) => (a.rank < b.rank ? -1 : 1))
-
-  // Expanded state per area (default expanded)
-  const [areaExpanded, setAreaExpanded] = useState<Record<string, boolean>>({})
-  const isAreaExpanded = (id: string) => areaExpanded[id] !== false
+  ).length
 
   if (collapsed) {
     return (
@@ -349,6 +308,17 @@ export default function Sidebar({
           </li>
           <li>
             <button
+              className={`sidebar__nav-item ${activeView === 'project' ? 'sidebar__nav-item--active' : ''}`}
+              onClick={() => onViewChange('project')}
+              type="button"
+            >
+              <span className="sidebar__nav-icon"><FolderIcon size={18} /></span>
+              <span className="sidebar__nav-label">Projects</span>
+              {projectCount > 0 && <span className="sidebar__nav-count">{projectCount}</span>}
+            </button>
+          </li>
+          <li>
+            <button
               className={`sidebar__nav-item ${activeView === 'anytime' ? 'sidebar__nav-item--active' : ''}`}
               onClick={() => onViewChange('anytime')}
               type="button"
@@ -378,173 +348,6 @@ export default function Sidebar({
             </button>
           </li>
         </ul>
-
-        {/* Favorites — only shown when there is at least one favourite project */}
-        {favoriteProjects.length > 0 && (
-          <div className="sidebar__section">
-            <div className="sidebar__section-header">
-              <span className="sidebar__section-icon"><StarIcon size={14} weight="fill" /></span>
-              <span className="sidebar__section-title">Favorites</span>
-              <button
-                className="sidebar__section-chevron"
-                onClick={() => setFavoritesExpanded(e => !e)}
-                title={favoritesExpanded ? 'Collapse' : 'Expand'}
-                type="button"
-              >
-                <ChevronDown open={favoritesExpanded} />
-              </button>
-            </div>
-            {favoritesExpanded && (
-              <ul className="sidebar__nav-list">
-                {favoriteProjects.map(project => (
-                  <ProjectRow
-                    key={`fav-${project.id}`}
-                    project={project}
-                    isActive={activeProjectId === project.id}
-                    allNodes={realNodes}
-                    onProjectChange={onProjectChange}
-                    onEditNode={onEditNode}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {/* Projects — Area→Project hierarchy + orphan projects */}
-        <div className="sidebar__section">
-          <div className="sidebar__section-header">
-            <span className="sidebar__section-title">My Projects</span>
-            <button
-              ref={addTriggerRef}
-              className="sidebar__section-add"
-              title="Add project or area"
-              type="button"
-              onClick={() => {
-                const rect = addTriggerRef.current?.getBoundingClientRect()
-                if (rect) setAddMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
-                setAddMenuOpen(o => !o)
-              }}
-              aria-label="Add project or area"
-              aria-haspopup="true"
-              aria-expanded={addMenuOpen}
-            >
-              <PlusIcon size={16} weight="bold" />
-            </button>
-            {addMenuOpen && addMenuPos && createPortal(
-              <div
-                ref={addMenuPortalRef}
-                className="sidebar__profile-menu sidebar__add-menu"
-                role="menu"
-                style={{ position: 'fixed', top: addMenuPos.top, right: addMenuPos.right }}
-              >
-                <button
-                  className="sidebar__profile-item"
-                  role="menuitem"
-                  type="button"
-                  onClick={() => { setAddMenuOpen(false); onAddProject('project') }}
-                >
-                  <FolderIcon size={15} />
-                  New Project
-                </button>
-                <button
-                  className="sidebar__profile-item"
-                  role="menuitem"
-                  type="button"
-                  onClick={() => { setAddMenuOpen(false); onAddProject('area') }}
-                >
-                  <TrayIcon size={15} />
-                  New Area
-                </button>
-              </div>,
-              document.body,
-            )}
-            <button
-              className="sidebar__section-chevron"
-              onClick={() => setProjectsExpanded(e => !e)}
-              title={projectsExpanded ? 'Collapse' : 'Expand'}
-              type="button"
-            >
-              <ChevronDown open={projectsExpanded} />
-            </button>
-          </div>
-          {projectsExpanded && (
-            <ul className="sidebar__nav-list">
-              {/* Areas with their child projects */}
-              {areas.map(area => {
-                const children = projectsByArea(area.id)
-                const expanded = isAreaExpanded(area.id)
-                // Badge: count of all tasks in the entire area subtree
-                // computeProject is already subtree-wide, so sum across children
-                const areaCount = children.reduce(
-                  (sum, p) => sum + computeProject(realNodes, p.id).length,
-                  0,
-                )
-                return (
-                  <li key={area.id}>
-                    {/* Area header row */}
-                    <div className="sidebar__area-row">
-                      <button
-                        className="sidebar__area-header"
-                        type="button"
-                        onClick={() => setAreaExpanded(s => ({ ...s, [area.id]: !expanded }))}
-                        aria-expanded={expanded}
-                      >
-                        <span
-                          className="sidebar__area-dot"
-                          style={{ background: area.color ?? 'var(--text-secondary)' }}
-                        />
-                        <span className="sidebar__nav-label">{area.content}</span>
-                        {areaCount > 0 && <span className="sidebar__nav-count">{areaCount}</span>}
-                        <span className="sidebar__area-chevron">
-                          <ChevronDown open={expanded} />
-                        </span>
-                      </button>
-                      {onEditNode && (
-                        <button
-                          className="sidebar__row-edit"
-                          type="button"
-                          aria-label={`Edit ${area.content}`}
-                          onClick={() => onEditNode(area)}
-                        >
-                          <PencilSimpleIcon size={13} />
-                        </button>
-                      )}
-                    </div>
-                    {/* Child projects — spec §4.4: favorites appear BOTH here AND in Favorites */}
-                    {expanded && children.length > 0 && (
-                      <ul className="sidebar__nav-list">
-                        {children.map(project => (
-                          <ProjectRow
-                            key={project.id}
-                            project={project}
-                            isActive={activeProjectId === project.id}
-                            allNodes={realNodes}
-                            onProjectChange={onProjectChange}
-                            onEditNode={onEditNode}
-                            indented
-                          />
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                )
-              })}
-
-              {/* Orphan projects (no area) — shown last, no section header */}
-              {orphanProjects.map(project => (
-                <ProjectRow
-                  key={project.id}
-                  project={project}
-                  isActive={activeProjectId === project.id}
-                  allNodes={realNodes}
-                  onProjectChange={onProjectChange}
-                  onEditNode={onEditNode}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
 
         {/* Workspace — the side-by-side modules, quarantined below the Things
             skeleton (34.sidebar-workspace/spec.md §3). Tags lives here too:

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BellIcon, ListIcon } from '@phosphor-icons/react'
+import { BellIcon, CaretLeftIcon, ListIcon } from '@phosphor-icons/react'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import { useTheme } from './hooks/useTheme'
 import Sidebar from './components/Sidebar'
+import ProjectListPanel from './components/ProjectListPanel'
 import ThemeToggle from './components/ThemeToggle'
 import OutlineView from './components/OutlineView'
 import MailView from './components/MailView'
@@ -220,7 +221,6 @@ function App() {
       <div className="app-layout">
         <Sidebar
           activeView={activeView}
-          activeProjectId={activeProjectId}
           collapsed={!isCompact && sidebarCollapsed}
           drawer={isCompact}
           drawerOpen={drawerOpen}
@@ -231,22 +231,29 @@ function App() {
           timezone={user.timezone}
           userName={user.name}
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
-          onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onOpenChat={(sessionId) => { navigate(pathForView('agent', null, sessionId)); setDrawerOpen(false) }}
           onAddTask={() => { setQuickAddOpen(true); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
-          onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
           onLogout={handleLogout}
-          onEditNode={(node) => setProjectModal({
-            mode: 'edit',
-            kind: node.kind as ProjectModalKind,
-            node,
-          })}
         />
         {isCompact && drawerOpen && (
           <div
             className={`app-backdrop${isPhone ? ' app-backdrop--transparent' : ''}`}
             onClick={() => setDrawerOpen(false)}
+          />
+        )}
+        {activeView === 'project' && (
+          <ProjectListPanel
+            realNodes={realNodes}
+            activeProjectId={activeProjectId}
+            onProjectChange={(id) => navigate(pathForView('project', id))}
+            onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
+            onEditNode={(node) => setProjectModal({
+              mode: 'edit',
+              kind: node.kind as ProjectModalKind,
+              node,
+            })}
+            drillDownHidden={isCompact && Boolean(activeProjectId)}
           />
         )}
         {activeView === 'outline' ? (
@@ -276,7 +283,23 @@ function App() {
         ) : activeView === 'logbook' ? (
           <LogbookView />
         ) : activeView === 'project' && activeProjectId ? (
-          <ProjectReal key={activeProjectId} user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
+          <div className="project-content-shell">
+            {isCompact && (
+              <button
+                className="project-content-shell__back"
+                onClick={() => navigate(pathForView('project'))}
+                type="button"
+              >
+                <CaretLeftIcon size={16} weight="bold" />
+                Projects
+              </button>
+            )}
+            <ProjectReal key={activeProjectId} user={user} projectId={activeProjectId} onOpenNode={setOpenNodeId} />
+          </div>
+        ) : activeView === 'project' ? (
+          <div className="project-content-shell project-content-shell--empty">
+            <p>Select a project</p>
+          </div>
         ) : activeView === 'search' ? (
           <SearchView user={user} onOpenNode={setOpenNodeId} onOpenNote={() => navigate(pathForView('outline'))} />
         ) : activeView === 'tags' ? (

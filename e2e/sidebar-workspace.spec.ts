@@ -5,14 +5,23 @@ import { test, expect } from './fixtures.ts'
 // history renders) needs a live LLM backend, so it's covered by the API
 // integration tests (agent-sessions.test.ts) plus manual browser
 // verification instead of e2e.
+//
+// docs/feature/35.project-secondary-panel/spec.md — Favorites and My
+// Projects moved out of the primary sidebar into a single "Projects" row
+// (updated here too), which opens a secondary panel mirroring MailView's
+// folder column.
 
-test('sidebar groups: Todo on top, Workspace quarantined below projects', async ({ page, userEmail: _userEmail }) => {
+test('sidebar groups: Todo on top, Projects as one row, Workspace quarantined below', async ({ page, userEmail: _userEmail }) => {
   const sidebar = page.getByRole('complementary')
 
-  // The six Things views live in the top nav list, unlabeled.
-  for (const label of ['Inbox', 'Today', 'Upcoming', 'Anytime', 'Someday', 'Logbook']) {
+  // The six Things views plus the single "Projects" row live in the top nav
+  // list, unlabeled.
+  for (const label of ['Inbox', 'Today', 'Upcoming', 'Projects', 'Anytime', 'Someday', 'Logbook']) {
     await expect(sidebar.getByRole('button', { name: label, exact: false }).first()).toBeVisible()
   }
+
+  // Favorites and My Projects no longer live inline in the primary sidebar.
+  await expect(sidebar.getByText('My Projects', { exact: true })).toBeHidden()
 
   // The Workspace section exists and holds the modules — including Tags.
   await expect(sidebar.getByText('Workspace', { exact: true })).toBeVisible()
@@ -20,16 +29,18 @@ test('sidebar groups: Todo on top, Workspace quarantined below projects', async 
     await expect(sidebar.getByRole('button', { name: label, exact: true })).toBeVisible()
   }
 
-  // Workspace comes AFTER My Projects in document order (spec §3: projects
-  // sit right under the Things views, modules below them).
-  const order = await sidebar.evaluate((el) => {
-    const titles = [...el.querySelectorAll('.sidebar__section-title')].map((t) => t.textContent)
-    return titles
-  })
-  expect(order.indexOf('My Projects')).toBeLessThan(order.indexOf('Workspace'))
-
   // No sessions yet — Recent Chats must not render at all.
+  const order = await sidebar.evaluate((el) => [...el.querySelectorAll('.sidebar__section-title')].map((t) => t.textContent))
   expect(order).not.toContain('Recent Chats')
+})
+
+test('clicking Projects opens the secondary panel, mirroring MailView\'s folder column', async ({ page, userEmail: _userEmail }) => {
+  const sidebar = page.getByRole('complementary')
+  await sidebar.getByRole('button', { name: 'Projects', exact: true }).click()
+
+  const panel = page.locator('.project-list-panel')
+  await expect(panel.getByText('My Projects', { exact: true })).toBeVisible()
+  await expect(page.getByText('Select a project')).toBeVisible()
 })
 
 test('workspace fold persists across reload', async ({ page, userEmail: _userEmail }) => {

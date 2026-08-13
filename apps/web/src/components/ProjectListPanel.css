@@ -1,0 +1,25 @@
+/* ProjectListPanel — secondary nav column, same shape as Mail's folder
+   column (35.project-secondary-panel). */
+.project-list-panel {
+  flex: 0 0 220px;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px 12px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--divider-primary);
+}
+
+@media (max-width: 1023px) {
+  .project-list-panel {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  /* Drill-down: once a project is open on a narrow viewport, the list gives
+     up its space to the project's own content (mirrors MailView's phone
+     behavior — the folder rail disappears while reading a message). */
+  .project-list-panel--drilldown-hidden {
+    display: none;
+  }
+}

@@ -17,6 +17,9 @@ import { test, expect } from './fixtures.ts'
 // transaction before it lands and the assertion after reload finds nothing.
 
 async function createProject(page: import('@playwright/test').Page, name: string): Promise<void> {
+  // "Add project or area" lives in the Projects secondary panel now
+  // (35.project-secondary-panel), not the primary sidebar.
+  await page.getByRole('complementary').getByRole('button', { name: 'Projects', exact: true }).click()
   await page.getByRole('button', { name: 'Add project or area' }).click()
   await page.getByRole('menuitem', { name: 'New Project' }).click()
   await page.getByPlaceholder('Project name').fill(name)

@@ -16,7 +16,9 @@ export function pathForView(view: ViewType, projectId?: string | null, sub?: str
 
 export function deriveViewFromPathname(pathname: string): { view: ViewType; projectId: string | null; sub: string | null } {
   const [, first, second] = pathname.split('/')
-  if (first === 'project' && second) return { view: 'project', projectId: second, sub: null }
+  // Bare '/project' (no id) is the project-list panel with nothing selected
+  // yet — same shape as '/mail' defaulting to its Inbox folder.
+  if (first === 'project') return { view: 'project', projectId: second ?? null, sub: null }
   if (first && (PLAIN_VIEWS as string[]).includes(first)) {
     return { view: first as ViewType, projectId: null, sub: second ?? null }
   }

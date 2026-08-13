@@ -114,3 +114,42 @@
     height: calc(52px + env(safe-area-inset-top));
   }
 }
+
+/* Content pane for the 'project' view — wraps ProjectReal (or the
+   nothing-selected prompt) next to ProjectListPanel, 35.project-secondary-panel */
+.project-content-shell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project-content-shell--empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-normal);
+}
+
+.project-content-shell__back {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* The list panel already fills this space when nothing is picked yet. */
+  .project-content-shell--empty {
+    display: none;
+  }
+
+  .project-content-shell__back {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    flex-shrink: 0;
+  }
+}
