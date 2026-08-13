@@ -10,6 +10,12 @@
 
 Fase Storage dan Mail ditunda; Agent naik menjadi fase 3.
 
+> **Sebagian digantikan.** §6 (perakitan konteks), §7 (tools), §8 (alur kerja),
+> §9 (streaming & persistensi), §10 (error), dan §12 (migrasi frontend)
+> digantikan [`35.agent-orchestrator`](../../35.agent-orchestrator/spec.md),
+> yang ditulis dari enam bug yang ditemukan setelah implementasi pertama.
+> §3 (provider), §4 (memori tiga tingkat), dan §11 (keamanan) tetap berlaku.
+
 ---
 
 ## 1. Objective
