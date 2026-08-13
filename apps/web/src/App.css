@@ -98,6 +98,13 @@
   background: var(--scrim);
 }
 
+/* Popup mode (phone More menu) is a small anchored card, not a takeover —
+   the backdrop still catches outside taps to dismiss it, but dimming the
+   whole screen behind a small popup would look like a mistake. */
+.app-backdrop--transparent {
+  background: transparent;
+}
+
 /* Safe area insets for topbar on notched phones */
 @media (max-width: 1023px) {
   .app-topbar {

@@ -24,6 +24,13 @@ interface SidebarProps {
   /* Below 1024px the sidebar is an off-canvas drawer instead of a docked column */
   drawer?: boolean
   drawerOpen?: boolean
+  /**
+   * 'drawer' (default) slides in full-height from the left — tablet width.
+   * 'popup' is a small rounded card anchored above BottomNav's More tab on
+   * phone (34.sidebar-workspace follow-up): same content, no full-screen
+   * takeover for what's fundamentally a secondary nav.
+   */
+  variant?: 'drawer' | 'popup'
   theme: Theme
   onToggleTheme: () => void
   /**
@@ -45,6 +52,8 @@ interface SidebarProps {
   onEditNode?: (node: TaskNode) => void
   /** Opens the Agent view on a specific session (Recent Chats click) */
   onOpenChat?: (sessionId: string) => void
+  /** Opens the centered quick-add task modal */
+  onAddTask: () => void
 }
 
 const ChevronDown = ({ open }: { open: boolean }) => (
@@ -100,11 +109,11 @@ function ProjectRow({
 }
 
 export default function Sidebar({
-  activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false,
+  activeView, activeProjectId, collapsed, drawer = false, drawerOpen = false, variant = 'drawer',
   theme, onToggleTheme, realNodes = [], timezone = 'Asia/Jakarta',
   userName = 'Pasqa',
   onViewChange, onProjectChange, onToggleCollapse, onAddProject, onLogout,
-  onEditNode, onOpenChat,
+  onEditNode, onOpenChat, onAddTask,
 }: SidebarProps) {
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [favoritesExpanded, setFavoritesExpanded] = useState(true)
@@ -209,10 +218,11 @@ export default function Sidebar({
     )
   }
 
+  const drawerVariantClass = variant === 'popup' ? 'sidebar--popup' : 'sidebar--drawer'
   const rootClass = [
     'sidebar',
-    drawer ? 'sidebar--drawer' : '',
-    drawer && drawerOpen ? 'sidebar--drawer-open' : '',
+    drawer ? drawerVariantClass : '',
+    drawer && drawerOpen ? `${drawerVariantClass}-open` : '',
   ].filter(Boolean).join(' ')
 
   const initial = (userName.charAt(0) || 'P').toUpperCase()
@@ -290,7 +300,7 @@ export default function Sidebar({
         {/* Primary navigation */}
         <ul className="sidebar__nav-list">
           <li>
-            <button className="sidebar__add-task" type="button">
+            <button className="sidebar__add-task" type="button" onClick={onAddTask}>
               <span className="sidebar__add-task-icon"><PlusIcon size={16} weight="bold" /></span>
               <span>Add task</span>
             </button>

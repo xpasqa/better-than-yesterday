@@ -27,6 +27,7 @@ import SearchView from './components/SearchView'
 import TagsView from './components/TagsView'
 import SettingsView from './components/SettingsView'
 import BottomNav from './components/BottomNav'
+import QuickAddModal from './components/QuickAddModal'
 import { pathForView, deriveViewFromPathname } from './routes'
 import { fetchMe, logout, type AuthUser } from './store/auth-api'
 import { clearLocalStore } from './store/db'
@@ -98,13 +99,14 @@ function App() {
 
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
 
   // Pending "g" prefix for two-key nav shortcuts (g→i, g→t, g→u)
   const pendingGRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingG = useRef(false)
 
   useEffect(() => {
-    const modalOpen = Boolean(projectModal) || Boolean(openNodeId) || showShortcuts
+    const modalOpen = Boolean(projectModal) || Boolean(openNodeId) || showShortcuts || quickAddOpen
 
     const handler = (e: KeyboardEvent) => {
       if (shouldIgnore(e, modalOpen)) return
@@ -160,7 +162,7 @@ function App() {
 
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [navigate, projectModal, openNodeId, showShortcuts])
+  }, [navigate, projectModal, openNodeId, showShortcuts, quickAddOpen])
 
   /*
    * Below 1024px the sidebar stops being a docked column and becomes an
@@ -222,6 +224,7 @@ function App() {
           collapsed={!isCompact && sidebarCollapsed}
           drawer={isCompact}
           drawerOpen={drawerOpen}
+          variant={isPhone ? 'popup' : 'drawer'}
           theme={theme}
           onToggleTheme={toggleTheme}
           realNodes={realNodes}
@@ -230,6 +233,7 @@ function App() {
           onViewChange={(view) => { navigate(pathForView(view)); setDrawerOpen(false) }}
           onProjectChange={(id) => { navigate(pathForView('project', id)); setDrawerOpen(false) }}
           onOpenChat={(sessionId) => { navigate(pathForView('agent', null, sessionId)); setDrawerOpen(false) }}
+          onAddTask={() => { setQuickAddOpen(true); setDrawerOpen(false) }}
           onToggleCollapse={() => isCompact ? setDrawerOpen(false) : setSidebarCollapsed(c => !c)}
           onAddProject={(kind) => setProjectModal({ mode: 'create', kind })}
           onLogout={handleLogout}
@@ -240,7 +244,10 @@ function App() {
           })}
         />
         {isCompact && drawerOpen && (
-          <div className="app-backdrop" onClick={() => setDrawerOpen(false)} />
+          <div
+            className={`app-backdrop${isPhone ? ' app-backdrop--transparent' : ''}`}
+            onClick={() => setDrawerOpen(false)}
+          />
         )}
         {activeView === 'outline' ? (
           <OutlineView user={user} />
@@ -298,13 +305,16 @@ function App() {
       {showShortcuts && (
         <ShortcutsModal onClose={() => setShowShortcuts(false)} />
       )}
+      {quickAddOpen && (
+        <QuickAddModal timezone={user.timezone ?? 'Asia/Jakarta'} onClose={() => setQuickAddOpen(false)} />
+      )}
       {openNodeId && (() => {
         const openNode = realNodes.find(n => n.id === openNodeId) ?? null
         return openNode ? (
           <NodeDetailModal node={openNode} onClose={() => setOpenNodeId(null)} timezone={user.timezone ?? 'Asia/Jakarta'} />
         ) : null
       })()}
-      <BottomNav onMorePress={() => setDrawerOpen(true)} />
+      <BottomNav moreOpen={drawerOpen} onMorePress={() => setDrawerOpen(o => !o)} />
       <UndoToast />
     </div>
   )

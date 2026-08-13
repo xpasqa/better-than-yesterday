@@ -39,6 +39,41 @@
   }
 }
 
+/*
+ * Popup mode (phone) — BottomNav's More tab opens the same sections as the
+ * drawer, but as a small anchored card instead of a full-height takeover:
+ * this is secondary navigation, not the primary screen.
+ */
+.sidebar--popup {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(56px + env(safe-area-inset-bottom) + 8px);
+  top: auto;
+  height: auto;
+  max-height: min(70vh, 520px);
+  width: auto;
+  min-width: 0;
+  z-index: 65; /* above bottom-nav's 60 and app-backdrop's 55 */
+  border-radius: 16px;
+  box-shadow: var(--shadow-raised-2);
+  border: 1px solid var(--divider-primary);
+  transform: translateY(8px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--animation-short) var(--ease-in-out), opacity var(--animation-short) var(--ease-in-out);
+}
+
+.sidebar--popup-open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar--popup .sidebar__nav {
+  overflow-y: auto;
+}
+
 .sidebar--collapsed {
   width: 48px;
   min-width: 48px;
