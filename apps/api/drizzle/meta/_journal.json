@@ -78,6 +78,13 @@
       "when": 1786563600001,
       "tag": "0010_outline_degrade_orphan_items",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786650000001,
+      "tag": "0011_agent_two_rooms",
+      "breakpoints": true
     }
   ]
 }

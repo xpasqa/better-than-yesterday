@@ -72,4 +72,49 @@ describe('accumulate + finalize', () => {
     const result = finalize(state)
     expect(result[0]!.id).toBe('real_id')
   })
+
+  // finalize() used to swallow JSON parse failures and hand the tool an empty
+  // object, which surfaced as a confusing "content is required" from the tool
+  // instead of something the model could correct. spec §5.1 says the failure
+  // goes back to the model.
+  describe('argsError', () => {
+    it('flags fragments that are not valid JSON', () => {
+      const state: ToolCallState = {}
+      accumulate(state, { index: 0, id: 'c1', function: { name: 'add_task', arguments: '{"content": "beli' } })
+      const [call] = finalize(state)
+      expect(call!.args).toEqual({})
+      expect(call!.argsError).toMatch(/not valid JSON/)
+      expect(call!.argsError).toContain('{"content": "beli')
+    })
+
+    it('flags JSON that is not an object', () => {
+      const state: ToolCallState = {}
+      accumulate(state, { index: 0, id: 'c1', function: { name: 'add_task', arguments: '["a","b"]' } })
+      const [call] = finalize(state)
+      expect(call!.argsError).toMatch(/must be a JSON object/)
+    })
+
+    it('treats absent fragments as a no-argument call, not an error', () => {
+      const state: ToolCallState = {}
+      accumulate(state, { index: 0, id: 'c1', function: { name: 'list_tasks', arguments: '' } })
+      const [call] = finalize(state)
+      expect(call!.args).toEqual({})
+      expect(call!.argsError).toBeUndefined()
+    })
+
+    it('treats an explicit empty object as a no-argument call', () => {
+      const state: ToolCallState = {}
+      accumulate(state, { index: 0, id: 'c1', function: { name: 'list_tasks', arguments: '{}' } })
+      const [call] = finalize(state)
+      expect(call!.argsError).toBeUndefined()
+    })
+
+    it('truncates a very long fragment in the message', () => {
+      const state: ToolCallState = {}
+      accumulate(state, { index: 0, id: 'c1', function: { name: 'add_task', arguments: 'x'.repeat(300) } })
+      const [call] = finalize(state)
+      expect(call!.argsError!.length).toBeLessThan(200)
+      expect(call!.argsError).toContain('…')
+    })
+  })
 })

@@ -57,6 +57,30 @@ export function parseSse(chunk: string): ParseResult {
   return { events, rest: tail }
 }
 
+/**
+ * Serialize an AgentEvent into the `event`/`data` pair that hono's writeSSE
+ * expects. This is the inverse of `parseSse` and exists so the wire format is
+ * checked by the compiler on the *sending* side too — previously each route
+ * hand-rolled its `writeSSE` calls, and `runner.ts` emitted a `patch` for a
+ * tool name that did not exist without anything catching it.
+ *
+ * Text-bearing events (`token`, `notice`, `error`) are sent as raw text rather
+ * than JSON: hono splits a multi-line payload across several `data:` lines and
+ * `parseSse` rejoins them with \n, so text survives intact without paying an
+ * encode/decode per token. Structured events are JSON.
+ */
+export function serializeEvent(event: AgentEvent): { event: string; data: string } {
+  switch (event.type) {
+    case 'token':  return { event: 'token',  data: event.text }
+    case 'notice': return { event: 'notice', data: event.text }
+    case 'error':  return { event: 'error',  data: event.message }
+    case 'done':   return { event: 'done',   data: '' }
+    case 'tool':   return { event: 'tool',   data: JSON.stringify({ name: event.name, status: event.status }) }
+    case 'file':   return { event: 'file',   data: JSON.stringify({ path: event.path }) }
+    case 'patch':  return { event: 'patch',  data: JSON.stringify({ nodeId: event.nodeId }) }
+  }
+}
+
 function parseEvent(type: string, data: string): AgentEvent | null {
   switch (type) {
     case 'token': {

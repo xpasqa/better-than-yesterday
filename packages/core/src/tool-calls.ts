@@ -20,8 +20,18 @@ export interface ToolCallState {
 export interface FinalizedToolCall {
   id: string
   name: string
-  /** Parsed arguments. On JSON parse failure, value is {} */
+  /** Parsed arguments. `{}` when the fragments were empty or unparseable. */
   args: Record<string, unknown>
+  /**
+   * Set when the accumulated fragments were non-empty but not valid JSON.
+   * The runner returns this to the model as the tool result so it can retry
+   * (spec §5.1) — previously the failure was swallowed and the tool ran with
+   * empty arguments, which surfaced as a confusing "content is required".
+   *
+   * Absent for a tool legitimately called with no arguments: empty fragments
+   * are `{}`, not an error.
+   */
+  argsError?: string
 }
 
 type Delta = {
@@ -67,12 +77,31 @@ export function finalize(state: ToolCallState): FinalizedToolCall[] {
   return Object.values(state)
     .filter(entry => entry.name.length > 0)
     .map(entry => {
-      let args: Record<string, unknown> = {}
+      const raw = entry.args.trim()
+      // No fragments at all is a tool called without arguments — not an error.
+      if (raw === '') return { id: entry.id, name: entry.name, args: {} }
       try {
-        args = JSON.parse(entry.args) as Record<string, unknown>
+        const parsed = JSON.parse(raw) as unknown
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          return {
+            id: entry.id,
+            name: entry.name,
+            args: {},
+            argsError: `arguments must be a JSON object, got: ${truncate(raw)}`,
+          }
+        }
+        return { id: entry.id, name: entry.name, args: parsed as Record<string, unknown> }
       } catch {
-        // Invalid JSON returned to model as error (runner handles this)
+        return {
+          id: entry.id,
+          name: entry.name,
+          args: {},
+          argsError: `arguments are not valid JSON: ${truncate(raw)}`,
+        }
       }
-      return { id: entry.id, name: entry.name, args }
     })
+}
+
+function truncate(s: string): string {
+  return s.length > 120 ? `${s.slice(0, 120)}…` : s
 }

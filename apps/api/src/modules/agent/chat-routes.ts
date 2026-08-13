@@ -5,6 +5,14 @@ import { streamSSE } from 'hono/streaming'
 import { z } from 'zod'
 import { AppError } from '../../http/errors.ts'
 import { runAgent } from './runner.ts'
+import { serializeEvent } from '@better/core/sse'
+import type { AgentEvent } from '@better/core/agent-events'
+import type { SSEStreamingApi } from 'hono/streaming'
+
+/** Every event leaves through here, so the wire format is compiler-checked. */
+async function send(stream: SSEStreamingApi, event: AgentEvent): Promise<void> {
+  await stream.writeSSE(serializeEvent(event))
+}
 
 export const chatRoutes = new Hono()
 
@@ -32,26 +40,20 @@ chatRoutes.post('/chat', async (c) => {
         userId,
         nodeId,
         userMessage: message,
-        onToken: async (token) => {
-          await stream.writeSSE({ event: 'token', data: token })
-        },
-        onFileCreated: async (path) => {
-          await stream.writeSSE({ event: 'file', data: JSON.stringify({ path }) })
-        },
-        onPatch: async (nodeId: string) => {
-          await stream.writeSSE({ event: 'patch', data: JSON.stringify({ nodeId }) })
-        },
-        onError: async (err) => {
-          await stream.writeSSE({ event: 'error', data: err })
-        },
+        onToken: async (text) => { await send(stream, { type: 'token', text }) },
+        onFileCreated: async (path) => { await send(stream, { type: 'file', path }) },
+        onPatch: async (nodeId: string) => { await send(stream, { type: 'patch', nodeId }) },
+        onNotice: async (text) => { await send(stream, { type: 'notice', text }) },
+        onToolStart: async (name) => { await send(stream, { type: 'tool', name, status: 'start' }) },
+        onToolEnd: async (name) => { await send(stream, { type: 'tool', name, status: 'done' }) },
+        onError: async (message) => { await send(stream, { type: 'error', message }) },
         onDone: async () => {
-          // onDone is called in runner's finally block — we send done here
-          // but the stream closes naturally after this handler returns
+          // Sent in the finally below so it also fires when runAgent throws.
         },
       })
     } finally {
       // done is always the last event (Blok C requirement)
-      await stream.writeSSE({ event: 'done', data: '' })
+      await send(stream, { type: 'done' })
     }
   })
 })

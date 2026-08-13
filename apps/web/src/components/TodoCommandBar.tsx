@@ -29,6 +29,8 @@ export default function TodoCommandBar({ nodeId = null }: TodoCommandBarProps) {
   const [hasWrites, setHasWrites] = useState(false)
   const [previousTurn, setPreviousTurn] = useState<PreviousTurn | null>(null)
   const [expanded, setExpanded] = useState(false)
+  /** Truncation, retries, step ceiling — surfaced rather than swallowed (spec §6). */
+  const [notice, setNotice] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const sendCommand = useCallback(async (message: string) => {
@@ -38,6 +40,7 @@ export default function TodoCommandBar({ nodeId = null }: TodoCommandBarProps) {
     setReply('')
     setToolStatus(null)
     setHasWrites(false)
+    setNotice(null)
 
     let accumulated = ''
 
@@ -97,23 +100,21 @@ export default function TodoCommandBar({ nodeId = null }: TodoCommandBarProps) {
           setReply(accumulated)
           break
         case 'tool':
-          if (event.status === 'start') {
-            setToolStatus(toolLabel(event.name))
-          } else {
-            setToolStatus(null)
-            // Mark that this turn wrote tasks — enables Undo
-            if (
-              event.name === 'add_task' ||
-              event.name === 'update_task' ||
-              event.name === 'add_subtask'
-            ) {
-              setHasWrites(true)
-            }
-          }
+          setToolStatus(event.status === 'start' ? toolLabel(event.name) : null)
+          break
+        case 'patch':
+          // Driven by the event the server only emits after a node was really
+          // written, rather than by a list of tool names kept in sync by hand —
+          // that list had already drifted and left Undo permanently hidden.
+          setHasWrites(true)
+          break
+        case 'notice':
+          setNotice(event.text)
           break
         case 'error':
           setReply(event.message || 'An error occurred.')
           break
+        case 'file':
         case 'done':
           break
       }
@@ -122,12 +123,20 @@ export default function TodoCommandBar({ nodeId = null }: TodoCommandBarProps) {
 
   function toolLabel(name: string): string {
     switch (name) {
-      case 'list_tasks': return 'Listing tasks…'
-      case 'get_task': return 'Reading task…'
-      case 'add_task': return 'Creating task…'
-      case 'add_subtask': return 'Adding subtask…'
-      case 'update_task': return 'Updating task…'
-      default: return 'Working…'
+      case 'list_workspace':  return 'Melihat workspace…'
+      case 'list_tasks':      return 'Membaca daftar task…'
+      case 'search_tasks':    return 'Mencari…'
+      case 'get_task':        return 'Membuka task…'
+      case 'create_task':     return 'Membuat task…'
+      case 'update_task':     return 'Memperbarui task…'
+      case 'complete_task':   return 'Menyelesaikan task…'
+      case 'delete_task':     return 'Menghapus task…'
+      case 'move_task':       return 'Memindahkan task…'
+      case 'manage_project':  return 'Mengatur project…'
+      case 'manage_section':  return 'Mengatur section…'
+      case 'manage_tag':      return 'Mengatur tag…'
+      case 'set_reminder':    return 'Memasang reminder…'
+      default:                return 'Bekerja…'
     }
   }
 
@@ -181,6 +190,7 @@ export default function TodoCommandBar({ nodeId = null }: TodoCommandBarProps) {
 
       {reply !== null && !isStreaming && (
         <div className="todo-command-bar__reply">
+          {notice !== null && <p className="todo-command-bar__notice">{notice}</p>}
           <p className="todo-command-bar__reply-text">{reply}</p>
           <div className="todo-command-bar__reply-actions">
             {hasWrites && (

@@ -1,7 +1,49 @@
 // Tests for SSE parser — 100% branch coverage required (Blok C).
 // docs/feature/35.agent-orchestrator/spec.md §3
 import { describe, it, expect } from 'vitest'
-import { parseSse } from './sse.ts'
+import { parseSse, serializeEvent } from './sse.ts'
+import type { AgentEvent } from './agent-events.ts'
+
+/** Reproduces hono's writeSSE framing so the round-trip test exercises the real wire. */
+function frame(ev: AgentEvent): string {
+  const { event, data } = serializeEvent(ev)
+  const dataLines = data.split(/\r\n|\r|\n/).map(l => `data: ${l}`).join('\n')
+  return `event: ${event}\n${dataLines}\n\n`
+}
+
+describe('serializeEvent → parseSse round-trip', () => {
+  const cases: AgentEvent[] = [
+    { type: 'token', text: 'hello' },
+    { type: 'token', text: ' ' },
+    { type: 'token', text: 'a\nb' },
+    { type: 'token', text: '  leading and trailing  ' },
+    { type: 'token', text: '# Judul\n\n- satu\n- dua' },
+    { type: 'tool', name: 'list_tasks', status: 'start' },
+    { type: 'tool', name: 'list_tasks', status: 'done' },
+    { type: 'file', path: 'riset/temuan.md' },
+    { type: 'patch', nodeId: 'node-1' },
+    { type: 'notice', text: 'percakapan awal diringkas' },
+    { type: 'error', message: 'Rate limit reached.' },
+    { type: 'done' },
+  ]
+
+  for (const ev of cases) {
+    it(`survives the wire: ${ev.type} ${JSON.stringify('text' in ev ? ev.text : '')}`, () => {
+      const { events, rest } = parseSse(frame(ev))
+      expect(rest).toBe('')
+      expect(events).toEqual([ev])
+    })
+  }
+
+  it('survives being split at every byte boundary', () => {
+    const wire = cases.map(frame).join('')
+    for (let cut = 1; cut < wire.length; cut++) {
+      const a = parseSse(wire.slice(0, cut))
+      const b = parseSse(a.rest + wire.slice(cut))
+      expect([...a.events, ...b.events]).toEqual(cases)
+    }
+  })
+})
 
 describe('parseSse', () => {
   it('parses a simple token event', () => {
